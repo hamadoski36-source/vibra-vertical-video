@@ -6,6 +6,11 @@
 - [x] Test the app in the preview (feed renders, buttons work, upload flow)
 - [x] Report migration status + next steps
 
+## Full-screen feed and lyrics
+- [ ] Keep one edge-to-edge mobile clip per snap, with accessible overlays
+- [ ] Add per-clip Lyrics panel below Share without invented lyrics
+- [ ] Test phone-sized scrolling, layers, lyrics, and existing controls
+
 ## Future (waiting on user's go-ahead)
 - [ ] Real accounts + shared likes/comments/follows via Lovable Cloud (free tier available)
 - [ ] Real LIVE streaming (needs an external paid streaming service)
