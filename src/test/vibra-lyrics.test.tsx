@@ -16,13 +16,13 @@ describe('Per-video lyrics', () => {
     const App = Route.options.component;
     if (!App) throw new Error('Vibra component is unavailable');
     render(<App />);
-    fireEvent.click(within(await screen.findByTestId('card-clip-first')).getByRole('button', { name: 'Lyrics', exact: true }));
+    fireEvent.click(within(await screen.findByTestId('card-clip-first')).getByRole('button', { name: /^Lyrics$/ }));
     const first = screen.getByRole('dialog');
     expect(first.textContent).toContain('Provided first line\nProvided second line');
     expect(first.textContent).not.toContain('Different provided verse');
     fireEvent.click(within(first).getByRole('button', { name: 'Close lyrics' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    fireEvent.click(within(screen.getByTestId('card-clip-second')).getByRole('button', { name: 'Lyrics', exact: true }));
+    fireEvent.click(within(screen.getByTestId('card-clip-second')).getByRole('button', { name: /^Lyrics$/ }));
     expect(screen.getByRole('dialog').textContent).toContain('Different provided verse');
     expect(screen.getByRole('dialog').textContent).not.toContain('Provided first line');
   });
