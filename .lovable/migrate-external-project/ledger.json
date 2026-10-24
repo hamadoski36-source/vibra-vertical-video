@@ -1,0 +1,14 @@
+{
+  "source": "replit",
+  "project": "Vibra-Video-Hub",
+  "capabilities": [
+    { "capability": "Frontend app (TikTok-style vertical feed, likes, comments, saves, follows, profile editing, video upload, LIVE placeholder)", "source": "artifacts/vibra/src/App.tsx + vibra.css", "outcome": "migrate", "status": "in_progress", "next_action": "Port into TanStack Start index route" },
+    { "capability": "Database schema", "source": "lib/db/src/schema/index.ts", "outcome": "nothing_to_migrate", "status": "verified", "next_action": "Schema file is empty (export {}); no tables existed on Replit" },
+    { "capability": "API server", "source": "artifacts/api-server", "outcome": "nothing_to_migrate", "status": "verified", "next_action": "Only a /healthz health check existed; app never calls it" },
+    { "capability": "User accounts / auth", "source": "none found", "outcome": "nothing_to_migrate", "status": "verified", "next_action": "No auth in source; profiles are local-only. Real accounts require Lovable Cloud (future step, needs user confirmation)" },
+    { "capability": "User records / data", "source": "browser localStorage + IndexedDB on user's device", "outcome": "not_portable", "status": "verified", "next_action": "Data never left the user's browser; nothing to export from Replit. User re-adds clips in the new app" },
+    { "capability": "Secrets", "source": "DATABASE_URL, PORT, BASE_PATH etc.", "outcome": "not_needed", "status": "verified", "next_action": "Platform/runtime vars only; no user-owned API keys found" },
+    { "capability": "LIVE streaming", "source": "placeholder panel in App.tsx", "outcome": "preserve_placeholder", "status": "migrated", "next_action": "Keep 'not connected' panel; real streaming needs an external provider (paid) — future step" },
+    { "capability": "Creator monetization", "source": "not present in source", "outcome": "future", "status": "pending", "next_action": "User wants it later; requires Lovable Cloud + Stripe (paid). Confirm with user before building" }
+  ]
+}
