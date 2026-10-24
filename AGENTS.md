@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep mobile Home as a viewport-bounded native snap scroller; layer existing navigation over it so each clip fills the screen without changing other views.
+- Store optional lyrics with each local clip and use a controlled Radix dialog for its selected ID; this preserves per-clip content and accessible dismissal without a lyrics service.

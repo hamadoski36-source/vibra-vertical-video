@@ -3,6 +3,11 @@
 :root {
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-mono: 'Space Grotesk', sans-serif;
+  --vibra-overlay-text: #f7f4fa;
+  --vibra-muted-text: #aaa0b1;
+  --vibra-control-fill: rgba(20,16,25,.32);
+  --vibra-control-border: rgba(255,255,255,.12);
+  --vibra-header-fill: rgba(16,14,20,.35);
 }
 
 body {
@@ -352,3 +357,34 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .action-follow-badge { position:absolute;left:50%;bottom:0;z-index:5;width:20px;height:20px;min-width:20px;min-height:20px;padding:0;display:grid;place-items:center;transform:translateX(-50%);border:2px solid #fff;border-radius:50%;background:#f15cba;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.5);transition:background .18s,transform .18s; }
 .action-follow-badge:hover { transform:translateX(-50%) scale(1.08);background:#ff78c7; }
 .action-follow-badge.following { background:#261a2a;border-color:#f4b7dd;color:#fff; }
+
+/* Retain the imported styling, with a bounded, edge-to-edge phone feed. */
+.lyrics-action { flex:none;width:44px;height:57px;min-height:57px;padding:3px 0;gap:3px;display:flex;flex-direction:column;background:transparent;color:var(--vibra-overlay-text);border:0;border-radius:0; }
+.lyrics-action svg { width:21px;height:21px; }
+.lyrics-action span { font-size:10px;line-height:15px;letter-spacing:0; }
+.lyrics-scrim { display:block; }
+.lyrics-dialog { position:fixed;z-index:51;left:50%;top:50%;transform:translate(-50%,-50%);animation:none; }
+.lyrics-dialog .dialog-head h2 { letter-spacing:0; }
+.lyrics-clip-title { margin:16px 0;color:var(--vibra-muted-text);font-size:13px;overflow-wrap:anywhere; }
+.lyrics-text { white-space:pre-wrap;overflow-wrap:anywhere;color:var(--vibra-overlay-text);font-size:16px;line-height:1.8;padding:8px 0 16px; }
+.clip-playback-controls { position:absolute;z-index:4;top:65px;right:15px;display:flex;align-items:center;gap:6px; }
+.sound-prompt { color:var(--vibra-overlay-text);background:var(--vibra-control-fill);font-size:11px; }
+@media (max-width:760px) {
+  .home-feed-shell { position:fixed;inset:0;height:100dvh;min-height:0;overflow:hidden;--feed-nav-height:calc(68px + max(0px,env(safe-area-inset-bottom) - 8px)); }
+  .home-feed-shell .mobile-header { position:absolute;inset:0 0 auto;height:calc(58px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);background:var(--vibra-header-fill);border:0; }
+  .home-feed-shell .view-home { position:absolute;inset:0;min-height:0;height:100%;padding:0; }
+  .home-feed-shell .feed-tabs { position:absolute;z-index:21;top:calc(66px + env(safe-area-inset-top));left:14px;right:14px;margin:0;border:0;pointer-events:none; }
+  .home-feed-shell .feed-tab { pointer-events:auto;color:var(--vibra-overlay-text); }
+  .home-feed-shell .tip-banner { position:absolute;z-index:21;top:calc(145px + env(safe-area-inset-top));left:14px;right:80px;margin:0;background:var(--vibra-control-fill); }
+  .home-feed-shell .feed-scroll { position:absolute;inset:0;height:100%;min-height:0;display:flex;gap:0;padding:0;overflow-x:hidden;overflow-y:auto;scroll-snap-type:y mandatory;scroll-padding:0;overscroll-behavior-y:contain;touch-action:pan-y; }
+  .home-feed-shell .feed-item { flex:0 0 100%;height:100%;min-height:0;width:100%;border:0;border-radius:0;box-shadow:none;scroll-snap-align:start;scroll-snap-stop:always; }
+  .home-feed-shell .creator-byline { top:calc(105px + env(safe-area-inset-top));right:80px; }
+  .home-feed-shell .clip-meta { bottom:calc(var(--feed-nav-height) + 20px);left:14px;right:80px; }
+  .home-feed-shell .clip-meta h2 { letter-spacing:0;overflow-wrap:anywhere; }
+  .home-feed-shell .clip-meta p { overflow-wrap:anywhere; }
+  .home-feed-shell .clip-actions { bottom:calc(var(--feed-nav-height) + 12px);right:10px;gap:3px; }
+  .home-feed-shell .clip-playback-controls { top:calc(98px + env(safe-area-inset-top));right:10px;flex-direction:column; }
+  .home-feed-shell .sound-prompt { position:absolute;right:48px;top:43px; }
+  .home-feed-shell .mobile-nav { height:var(--feed-nav-height); }
+  .lyrics-dialog { left:0;top:auto;bottom:0;transform:none;width:100%;max-height:85dvh; }
+}
