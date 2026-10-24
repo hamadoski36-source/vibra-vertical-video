@@ -4,8 +4,10 @@ import type { FormEvent, ReactNode } from "react";
 import {
   Bookmark, Camera, Check, Compass, Film, Heart, Home, Inbox, MessageCircle,
   Pause, Play, Plus, Search, Send, Share2, Sparkles, UserRound, X, Radio,
-  ArrowUpRight, ImagePlus, Camera as CameraIcon,
+  ArrowUpRight, ImagePlus, Camera as CameraIcon, Music, Volume2, VolumeX,
 } from "lucide-react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { Button } from "@/components/ui/button";
 
 import "../vibra.css";
 
@@ -33,7 +35,7 @@ export const Route = createFileRoute("/")({
 
 type Clip = {
   id: string; title: string; creator: string; username: string; palette: string;
-  shape: string; caption: string; createdAt: number; blobKey?: string; url?: string;
+  shape: string; caption: string; createdAt: number; blobKey?: string; url?: string; lyrics?: string;
 };
 type LocalComment = { id: string; text: string; createdAt: number };
 type View = 'home' | 'explore' | 'live' | 'inbox' | 'profile';
@@ -134,6 +136,8 @@ function VibraApp() {
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState<'comments' | 'profile' | null>(null);
   const [activeClip, setActiveClip] = useState<string | null>(null);
+  const [lyricsClipId, setLyricsClipId] = useState<string | null>(null);
+  const lyricsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [commentText, setCommentText] = useState('');
   const [isPlaying, setIsPlaying] = useState<Record<string, boolean>>({});
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -182,6 +186,7 @@ function VibraApp() {
 
   const allClips = useMemo(() => [...state.clips].reverse(), [state.clips]);
   const activeClipData = useMemo(() => [...allClips, ...DEMO_CLIPS].find(c => c.id === activeClip) ?? null, [activeClip, allClips]);
+  const lyricsClip = [...allClips, ...DEMO_CLIPS].find(c => c.id === lyricsClipId);
   const profileClips = allClips;
   const isOwnProfile = !profileUsername || profileUsername === state.profile.handle;
   const viewedCreator: Profile | DemoCreator = isOwnProfile
@@ -244,12 +249,14 @@ function VibraApp() {
       : new IntersectionObserver(scheduleSelection, { threshold: [0, 0.15, 0.35, 0.55, 0.75, 0.95] });
     items.forEach(item => observer?.observe(item));
     window.addEventListener('scroll', scheduleSelection, { passive: true });
+    window.addEventListener('resize', scheduleSelection);
     feed.addEventListener('scroll', scheduleSelection, { passive: true });
     scheduleSelection();
 
     return () => {
       observer?.disconnect();
       window.removeEventListener('scroll', scheduleSelection);
+      window.removeEventListener('resize', scheduleSelection);
       feed.removeEventListener('scroll', scheduleSelection);
       if (frame) window.cancelAnimationFrame(frame);
     };
@@ -293,7 +300,7 @@ function VibraApp() {
       return;
     }
     const video = clipId ? videoRefs.current[clipId] : null;
-    if (video?.paused) playFeedVideo(clipId!, video);
+    if (clipId && video?.paused) playFeedVideo(clipId, video);
   }
 
   useEffect(() => {
@@ -427,7 +434,7 @@ function VibraApp() {
   if (!mounted) return <div className="app-shell grain" />;
 
   return (
-    <div className="app-shell grain">
+    <div className={`app-shell grain ${view === 'home' ? 'home-feed-shell' : ''}`}>
       <header className="mobile-header">
         <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra home">vibra<span>.</span></button>
         <div className="header-actions">
@@ -466,8 +473,8 @@ function VibraApp() {
           {displayedClips.length === 0
              ? <div className="empty-state"><div className="empty-symbol"><Film size={28}/></div><h2>{view === 'home' ? 'Your feed is ready for a moment.' : 'Nothing in this mood yet.'}</h2><p>{view === 'home' ? 'Add a video from your phone to start your local feed.' : 'Try another search, or add a video to your local feed.'}</p>{view === 'home' && <button className="primary-button" onClick={startCreate}><Plus size={17}/> Add your first clip</button>}</div>
              : displayedClips.map((clip, index) => <article id={`clip-${clip.id}`} key={clip.id} className={`feed-item ${view === 'explore' ? 'explore-card' : ''}`} data-testid={`card-clip-${clip.id}`}>
-              <div className={`clip-art art-${clip.palette} shape-${clip.shape}`} onClick={() => clipUrls[clip.id] ? setIsPlaying(p => ({ ...p, [clip.id]: !p[clip.id] })) : undefined}>
-                {clipUrls[clip.id] ? <video ref={el => { videoRefs.current[clip.id] = el; }} src={clipUrls[clip.id]} playsInline loop controls={false} autoPlay={isPlaying[clip.id] ?? false} onClick={e => { e.stopPropagation(); const video = e.currentTarget; if (video.paused) void video.play(); else video.pause(); setIsPlaying(p => ({ ...p, [clip.id]: !p[clip.id] })); }} /> :
+              <div className={`clip-art art-${clip.palette} shape-${clip.shape}`}>
+                {clipUrls[clip.id] ? <video ref={el => { videoRefs.current[clip.id] = el; }} src={clipUrls[clip.id]} playsInline loop controls={false} onPlay={() => setIsPlaying(p => ({ ...p, [clip.id]: true }))} onPause={() => setIsPlaying(p => ({ ...p, [clip.id]: false }))} onClick={e => { e.stopPropagation(); const video = e.currentTarget; if (video.paused) playFeedVideo(clip.id, video); else video.pause(); }} /> :
                   <div className="art-graphic" aria-hidden="true"><div className="art-halo"/><div className="art-object"/><div className="art-grid"/><span className="art-number">0{index + 1}</span><span className="art-word">{clip.palette === 'violet' ? 'FREQUENCY' : clip.palette === 'lime' ? 'SOFT FOCUS' : 'FEEL MORE'}</span></div>}
                  {!clipUrls[clip.id] && <button className="demo-play" onClick={e => { e.stopPropagation(); setIsPlaying(p => ({ ...p, [clip.id]: !p[clip.id] })); }} aria-label={isPlaying[clip.id] ? 'Pause preview' : 'Play preview'}>{isPlaying[clip.id] ? <Pause size={22} fill="currentColor"/> : <Play size={22} fill="currentColor"/>}</button>}
                 <div className="clip-shade"/>
@@ -484,7 +491,13 @@ function VibraApp() {
                   <span className="action-count">{state.comments[clip.id]?.length ?? 0}</span>
                   <IconButton label={state.saved.includes(clip.id) ? 'Unsave clip' : 'Save clip'} active={state.saved.includes(clip.id)} onClick={() => toggleItem('saved', clip.id)}><Bookmark size={22} fill={state.saved.includes(clip.id) ? 'currentColor' : 'none'}/></IconButton>
                   <IconButton label="Share clip" onClick={() => void shareClip(clip)}><Share2 size={21}/></IconButton>
+                  <Button variant="ghost" className="lyrics-action" aria-label="Lyrics" onClick={e => { lyricsTriggerRef.current = e.currentTarget; setLyricsClipId(clip.id); }}><Music size={21}/><span>Lyrics</span></Button>
                 </div>
+                {view === 'home' && clipUrls[clip.id] && <div className="clip-playback-controls">
+                  <IconButton label={isPlaying[clip.id] ? 'Pause video' : 'Play video'} onClick={() => { const video = videoRefs.current[clip.id]; if (!video) return; if (video.paused) playFeedVideo(clip.id, video); else { video.pause(); setIsPlaying(p => ({ ...p, [clip.id]: false })); } }}>{isPlaying[clip.id] ? <Pause size={19}/> : <Play size={19}/>}</IconButton>
+                  <IconButton label={soundEnabled ? 'Mute video' : 'Unmute video'} onClick={() => changeSoundPreference(!soundEnabled, clip.id)}>{soundEnabled ? <Volume2 size={19}/> : <VolumeX size={19}/>}</IconButton>
+                  {soundPromptClipId === clip.id && <Button variant="ghost" className="sound-prompt" onClick={() => changeSoundPreference(true, clip.id)}>Enable sound</Button>}
+                </div>}
               </div>
             </article>)}
         </div>}
@@ -537,6 +550,17 @@ function VibraApp() {
       </section></div>}
       <input ref={galleryRef} className="visually-hidden" type="file" accept="video/*" multiple={false} aria-label="Choose a video from your gallery" onChange={e => void importVideo(e.target.files?.[0])}/>
       <input ref={cameraRef} className="visually-hidden" type="file" accept="video/*" capture="environment" aria-label="Capture a video with your camera" onChange={e => void importVideo(e.target.files?.[0])}/>
+
+      <DialogPrimitive.Root open={Boolean(lyricsClip)} onOpenChange={open => { if (!open) setLyricsClipId(null); }}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="modal-scrim lyrics-scrim"/>
+          <DialogPrimitive.Content className="dialog lyrics-dialog" onCloseAutoFocus={e => { e.preventDefault(); lyricsTriggerRef.current?.focus({ preventScroll: true }); }}>
+            <div className="dialog-head"><DialogPrimitive.Title>Lyrics</DialogPrimitive.Title><DialogPrimitive.Close asChild><Button variant="ghost" size="icon" className="icon-button" aria-label="Close lyrics"><X size={20}/></Button></DialogPrimitive.Close></div>
+            <DialogPrimitive.Description className="lyrics-clip-title">{lyricsClip?.title}</DialogPrimitive.Description>
+            <div className="lyrics-text">{lyricsClip?.lyrics?.trim() || 'Lyrics are not available for this video yet.'}</div>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
 
       {modal === 'comments' && activeClipData && <div className="modal-scrim" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setModal(null); }}><section className="dialog comments-dialog" role="dialog" aria-modal="true" aria-labelledby="comments-title"><div className="dialog-head"><div><span className="eyebrow">LOCAL ACTIVITY</span><h2 id="comments-title">Comments</h2></div><IconButton label="Close comments" onClick={() => setModal(null)}><X size={20}/></IconButton></div><p className="dialog-copy">Comments are saved only on this device. They are not sent to anyone.</p><div className="comment-list">{(state.comments[activeClipData.id] ?? []).length ? (state.comments[activeClipData.id] ?? []).map(comment => <div className="comment-row" key={comment.id}><div className="comment-avatar">{state.profile.name.slice(0, 1).toUpperCase()}</div><div><strong>{state.profile.name}</strong><p>{comment.text}</p></div></div>) : <div className="comment-empty"><MessageCircle size={24}/><span>No comments here yet.</span><small>Leave a note for yourself.</small></div>}</div><form className="comment-form" onSubmit={e => { e.preventDefault(); addComment(); }}><input value={commentText} onChange={e => setCommentText(e.target.value)} maxLength={240} placeholder="Add a local comment" aria-label="Add a local comment"/><button disabled={!commentText.trim()} aria-label="Post local comment"><Send size={18}/></button></form></section></div>}
 
