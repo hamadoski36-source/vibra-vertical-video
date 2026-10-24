@@ -7,9 +7,9 @@
 - [x] Report migration status + next steps
 
 ## Full-screen feed and lyrics
-- [ ] Keep one edge-to-edge mobile clip per snap, with accessible overlays
-- [ ] Add per-clip Lyrics panel below Share without invented lyrics
-- [ ] Test phone-sized scrolling, layers, lyrics, and existing controls
+- [x] Keep one edge-to-edge mobile clip per snap, with accessible overlays
+- [x] Add per-clip Lyrics panel below Share without invented lyrics
+- [x] Test phone-sized scrolling, layers, lyrics, and existing controls (375×812 and 412×915; touch snapping, close/Escape, likes, saves, comments, upload, playback and sound)
 
 ## Future (waiting on user's go-ahead)
 - [ ] Real accounts + shared likes/comments/follows via Lovable Cloud (free tier available)
