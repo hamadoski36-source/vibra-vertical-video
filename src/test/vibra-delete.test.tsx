@@ -14,7 +14,9 @@ async function openProfile() {
   const App = Route.options.component;
   if (!App) throw new Error('Vibra component is unavailable');
   render(<App/>);
-  fireEvent.click((await screen.findAllByRole('button', { name: /^Profile$/ }))[0]);
+  const profileButton = (await screen.findAllByRole('button', { name: /^Profile$/ }))[0];
+  if (!profileButton) throw new Error('Profile button is unavailable');
+  fireEvent.click(profileButton);
 }
 
 describe('Confirmed owned video deletion', () => {
