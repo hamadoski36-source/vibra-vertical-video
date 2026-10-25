@@ -4,9 +4,10 @@ import type { FormEvent, ReactNode } from "react";
 import {
   Bookmark, Camera, Check, Compass, Film, Heart, Home, Inbox, MessageCircle,
   Pause, Play, Plus, Search, Send, Share2, Sparkles, UserRound, X, Radio,
-  ArrowUpRight, ImagePlus, Camera as CameraIcon, Music, Volume2, VolumeX,
+  ArrowUpRight, ImagePlus, Camera as CameraIcon, Music, Volume2, VolumeX, Trash2,
 } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { Button } from "@/components/ui/button";
 
 import "../vibra.css";
@@ -115,6 +116,18 @@ async function getBlob(key: string): Promise<Blob | undefined> {
   });
   db.close(); return value;
 }
+async function deleteBlob(key: string) {
+  const db = await openDatabase();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction('clips', 'readwrite');
+      tx.objectStore('clips').delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error ?? new Error('Video deletion was cancelled.'));
+    });
+  } finally { db.close(); }
+}
 
 function IconButton({ label, onClick, children, className = '', active = false }: {
   label: string; onClick: () => void; children: ReactNode; className?: string; active?: boolean;
@@ -137,6 +150,9 @@ function VibraApp() {
   const [modal, setModal] = useState<'comments' | 'profile' | null>(null);
   const [activeClip, setActiveClip] = useState<string | null>(null);
   const [lyricsClipId, setLyricsClipId] = useState<string | null>(null);
+  const [deleteClipId, setDeleteClipId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
   const lyricsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [commentText, setCommentText] = useState('');
   const [isPlaying, setIsPlaying] = useState<Record<string, boolean>>({});
@@ -193,6 +209,7 @@ function VibraApp() {
     ? state.profile
     : DEMO_CREATORS[profileUsername] ?? { name: 'Preview creator', handle: profileUsername, bio: 'Demo creator preview. This identity is not a real account.', followers: 0, following: 0 };
   const creatorIsOwn = (clip: Clip) => !!clip.blobKey || clip.username === state.profile.handle;
+  const deleteClip = state.clips.find(clip => clip.id === deleteClipId && creatorIsOwn(clip));
   const creatorForClip = (clip: Clip): Profile | DemoCreator => creatorIsOwn(clip)
     ? state.profile
     : DEMO_CREATORS[clip.username] ?? { name: clip.creator, handle: clip.username, bio: 'Demo creator preview. This identity is not a real account.', followers: 0, following: 0 };
@@ -336,6 +353,30 @@ function VibraApp() {
   }
   function toggleItem(key: 'liked' | 'saved', id: string) {
     setState(s => ({ ...s, [key]: s[key].includes(id) ? s[key].filter(x => x !== id) : [...s[key], id] }));
+  }
+  async function confirmDeleteClip() {
+    if (!deleteClip || !isOwnProfile || isDeleting) return;
+    const selected = deleteClip;
+    setIsDeleting(true);
+    try {
+      if (selected.blobKey && !state.clips.some(clip => clip.id !== selected.id && clip.blobKey === selected.blobKey)) {
+        await deleteBlob(selected.blobKey);
+      }
+      setState(current => ({ ...current, clips: current.clips.filter(clip => clip.id !== selected.id) }));
+      const url = clipUrls[selected.id];
+      if (url) URL.revokeObjectURL(url);
+      setClipUrls(current => {
+        const next = { ...current };
+        delete next[selected.id];
+        return next;
+      });
+      if (activeClip === selected.id) setActiveClip(null);
+      if (lyricsClipId === selected.id) setLyricsClipId(null);
+      setDeleteClipId(null);
+      setNotice('The selected video was deleted from this device.');
+    } catch {
+      setNotice('The video could not be deleted. Please try again.');
+    } finally { setIsDeleting(false); }
   }
   async function importVideo(file?: File) {
     if (!file) return;
@@ -509,13 +550,16 @@ function VibraApp() {
              return (
                <div className="collection-grid">
                  {collection.length > 0 ? collection.map(clip => (
-                    <button className="collection-item" key={clip.id} onClick={() => openClip(clip)}>
+                    <div className="collection-entry" key={clip.id}>
+                    <button className="collection-item" onClick={() => openClip(clip)}>
                      <div className={`mini-art art-${clip.palette}`}>
                        <span>{clip.title.slice(0, 1).toUpperCase()}</span>
                         {clipUrls[clip.id] && <video src={clipUrls[clip.id]} muted playsInline />}
                      </div>
                      <span>{clip.title}</span>
                    </button>
+                    {isOwnProfile && state.clips.some(item => item.id === clip.id) && creatorIsOwn(clip) && <Button variant="ghost" size="sm" className="collection-delete" aria-label={`Delete ${clip.title}`} onClick={e => { deleteTriggerRef.current = e.currentTarget; setDeleteClipId(clip.id); }}><Trash2 size={14}/><span>Delete</span></Button>}
+                    </div>
                  )) : (
                     <div className="profile-empty">
                      <Film size={22} />
@@ -561,6 +605,20 @@ function VibraApp() {
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
+
+      <AlertDialogPrimitive.Root open={Boolean(deleteClip)} onOpenChange={open => { if (!open && !isDeleting) setDeleteClipId(null); }}>
+        <AlertDialogPrimitive.Portal>
+          <AlertDialogPrimitive.Overlay className="modal-scrim lyrics-scrim"/>
+          <AlertDialogPrimitive.Content className="dialog lyrics-dialog delete-dialog" onEscapeKeyDown={e => { if (isDeleting) e.preventDefault(); }} onCloseAutoFocus={e => { e.preventDefault(); if (deleteTriggerRef.current?.isConnected) deleteTriggerRef.current.focus(); }}>
+            <div className="dialog-head"><AlertDialogPrimitive.Title>Delete this video?</AlertDialogPrimitive.Title></div>
+            <AlertDialogPrimitive.Description className="dialog-copy">Delete “{deleteClip?.title}” from this device? This cannot be undone. Your other videos and profile data will stay unchanged.</AlertDialogPrimitive.Description>
+            <div className="dialog-actions">
+              <AlertDialogPrimitive.Cancel asChild><Button variant="outline" className="outline-button" disabled={isDeleting}>Cancel</Button></AlertDialogPrimitive.Cancel>
+              <Button variant="destructive" disabled={isDeleting} onClick={() => void confirmDeleteClip()}><Trash2 size={16}/>{isDeleting ? 'Deleting…' : 'Delete video'}</Button>
+            </div>
+          </AlertDialogPrimitive.Content>
+        </AlertDialogPrimitive.Portal>
+      </AlertDialogPrimitive.Root>
 
       {modal === 'comments' && activeClipData && <div className="modal-scrim" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setModal(null); }}><section className="dialog comments-dialog" role="dialog" aria-modal="true" aria-labelledby="comments-title"><div className="dialog-head"><div><span className="eyebrow">LOCAL ACTIVITY</span><h2 id="comments-title">Comments</h2></div><IconButton label="Close comments" onClick={() => setModal(null)}><X size={20}/></IconButton></div><p className="dialog-copy">Comments are saved only on this device. They are not sent to anyone.</p><div className="comment-list">{(state.comments[activeClipData.id] ?? []).length ? (state.comments[activeClipData.id] ?? []).map(comment => <div className="comment-row" key={comment.id}><div className="comment-avatar">{state.profile.name.slice(0, 1).toUpperCase()}</div><div><strong>{state.profile.name}</strong><p>{comment.text}</p></div></div>) : <div className="comment-empty"><MessageCircle size={24}/><span>No comments here yet.</span><small>Leave a note for yourself.</small></div>}</div><form className="comment-form" onSubmit={e => { e.preventDefault(); addComment(); }}><input value={commentText} onChange={e => setCommentText(e.target.value)} maxLength={240} placeholder="Add a local comment" aria-label="Add a local comment"/><button disabled={!commentText.trim()} aria-label="Post local comment"><Send size={18}/></button></form></section></div>}
 

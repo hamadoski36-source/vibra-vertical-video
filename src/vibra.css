@@ -162,6 +162,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .collection-tabs button.chosen { border-bottom:2px solid #ee64b8;color:#fff; }
 .collection-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px; }
 .collection-item { min-width:0;padding:0;border:0;background:none;color:#e6dfe8;text-align:left;font-size:10px; }
+.collection-entry { min-width:0; }
+.collection-entry .collection-item { width:100%; }
+.collection-delete { width:100%;min-height:44px;margin-top:4px;padding:6px 0;justify-content:flex-start;color:var(--vibra-muted-text);font-size:11px; }
+.delete-dialog .dialog-copy { overflow-wrap:anywhere; }
 .collection-item > span { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-top:7px; }
 .mini-art { position:relative;overflow:hidden;aspect-ratio:.78;border-radius:10px;display:grid;place-items:center; }
 .mini-art span { position:absolute;z-index:1;color:rgba(255,255,255,.86);font:700 36px var(--app-font-mono); }
