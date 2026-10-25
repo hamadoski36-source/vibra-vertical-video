@@ -11,3 +11,4 @@
 
 - Keep mobile Home as a viewport-bounded native snap scroller; layer existing navigation over it so each clip fills the screen without changing other views.
 - Store optional lyrics with each local clip and use a controlled Radix dialog for its selected ID; this preserves per-clip content and accessible dismissal without a lyrics service.
+- Delete local clips by their selected ID only after a controlled confirmation and ownership check; remove only their unshared media blob and preserve other activity and profile data.

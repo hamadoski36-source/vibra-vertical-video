@@ -12,6 +12,7 @@
 - [x] Test phone-sized scrolling, layers, lyrics, and existing controls (375×812 and 412×915; touch snapping, close/Escape, likes, saves, comments, upload, playback and sound)
 
 ## Future (waiting on user's go-ahead)
+- [ ] Add confirmed deletion for owned Profile videos and test selected-only deletion, cancellation, and preservation of other data
 - [ ] Real accounts + shared likes/comments/follows via Lovable Cloud (free tier available)
 - [ ] Real LIVE streaming (needs an external paid streaming service)
 - [ ] Creator monetization (needs Lovable Cloud + Stripe, paid)
