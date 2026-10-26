@@ -16,3 +16,9 @@
 - [ ] Real accounts + shared likes/comments/follows via Lovable Cloud (free tier available)
 - [ ] Real LIVE streaming (needs an external paid streaming service)
 - [ ] Creator monetization (needs Lovable Cloud + Stripe, paid)
+
+## Progress and profile improvements
+- [ ] Add and test actual video seeking and elapsed time
+- [ ] Derive unique Followers, Following, and mutual Friends from local relationships
+- [ ] Add validated editable social links and clickable profile badges
+- [ ] Run regression tests and phone preview checks; preserve existing branding
