@@ -18,7 +18,7 @@
 - [ ] Creator monetization (needs Lovable Cloud + Stripe, paid)
 
 ## Progress and profile improvements
-- [ ] Add and test actual video seeking and elapsed time
-- [ ] Derive unique Followers, Following, and mutual Friends from local relationships
-- [ ] Add validated editable social links and clickable profile badges
-- [ ] Run regression tests and phone preview checks; preserve existing branding
+- [x] Add and test actual video seeking and elapsed time (real video dragged forward/backward on phones and desktop)
+- [x] Derive unique Followers, Following, and mutual Friends from local relationships; shared incoming follows still await real accounts
+- [x] Add validated editable social links and clickable profile badges; verify save and reload
+- [x] Pass all 14 regression tests and preview checks at 375×812, 412×915, and 1280×1800; existing branding unchanged (no WORLDWIDE end screen exists in this project)
