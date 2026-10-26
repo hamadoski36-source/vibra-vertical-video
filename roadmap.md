@@ -1,5 +1,10 @@
 # Vibra migration roadmap
 
+## Active video autoplay and upload access
+- [ ] Start active videos muted automatically; preserve one-tap sound choice during swipes and safely fall back when blocked
+- [ ] Pause and mute inactive videos, preserve seeking, and add visible Profile upload access
+- [ ] Run regression tests and phone-sized playback/upload checks; do not publish
+
 - [x] Receive and inspect Replit export (Vibra-Video-Hub.zip)
 - [x] Port Vibra app (feed, likes, comments, saves, follows, profile, upload, LIVE placeholder) into Lovable project
 - [x] Update page metadata/branding
