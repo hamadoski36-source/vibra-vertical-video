@@ -18,7 +18,7 @@ export async function startActiveVideo(
     return 'playing';
   } catch (error) {
     if (!isActive()) { silenceVideo(video); return 'inactive'; }
-    const name = error instanceof Error ? error.name : '';
+    const name = typeof error === 'object' && error !== null && 'name' in error ? error.name : '';
     if (name === 'AbortError') return 'inactive';
     if (name !== 'NotAllowedError') return 'failed';
     video.muted = true;
