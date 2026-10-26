@@ -14,4 +14,5 @@
 - Delete local clips by their selected ID only after a controlled confirmation and ownership check; remove only their unshared media blob and preserve other activity and profile data.
 - Derive social statistics from normalized directed relationships and migrate legacy local follows without illustrative totals; this prevents duplicate and self counts while keeping existing activity.
 - Keep video seeking in an isolated control subscribed to the actual media element; this avoids rerendering the feed on every playback tick.
+- Centralize playback policy in the browser-safe playback helper and guard asynchronous play completion by active element identity; mute and pause inactive elements to prevent sound leaking across swipes.
 - Validate social profile URLs against each platform's HTTPS hosts before saving or rendering links; this prevents unsafe clickable links.

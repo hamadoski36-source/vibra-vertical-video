@@ -11,6 +11,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { Button } from "@/components/ui/button";
 
 import { VideoProgress } from "@/components/video-progress";
+import { silenceVideo, startActiveVideo } from "@/lib/vibra-playback";
 import { cleanFollows, followGraph, followStats, normalizeHandle, SOCIAL_PLATFORMS, socialUrl } from "@/lib/vibra-social";
 import type { FollowEdge, SocialLinks } from "@/lib/vibra-social";
 
@@ -160,9 +161,8 @@ function VibraApp() {
   const lyricsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [commentText, setCommentText] = useState('');
   const [isPlaying, setIsPlaying] = useState<Record<string, boolean>>({});
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    try { return localStorage.getItem(SOUND_PREFERENCE) !== 'false'; } catch { return true; }
-  });
+  // A fresh visit always starts muted; a tap enables sound for subsequent swipes.
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [activeFeedVideoId, setActiveFeedVideoId] = useState<string | null>(null);
   const [soundPromptClipId, setSoundPromptClipId] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
@@ -182,6 +182,8 @@ function VibraApp() {
   const feedRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const soundEnabledRef = useRef(soundEnabled);
+  const playbackContext = useRef({ view, activeId: activeFeedVideoId });
+  playbackContext.current = { view, activeId: activeFeedVideoId };
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -232,7 +234,7 @@ function VibraApp() {
     soundEnabledRef.current = soundEnabled;
     try { localStorage.setItem(SOUND_PREFERENCE, String(soundEnabled)); } catch { /* Keep the choice for this app session. */ }
     Object.values(videoRefs.current).forEach(video => {
-      if (video) video.muted = !soundEnabled;
+      if (video && !soundEnabled) video.muted = true;
     });
     if (!soundEnabled) setSoundPromptClipId(null);
   }, [soundEnabled]);
@@ -284,32 +286,22 @@ function VibraApp() {
       feed.removeEventListener('scroll', scheduleSelection);
       if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [view, feedClipKey]);
+  }, [view, feedClipKey, mounted]);
 
   function playFeedVideo(clipId: string, video: HTMLVideoElement, isCurrent: () => boolean = () => true) {
-    video.muted = !soundEnabledRef.current;
-    video.playsInline = true;
-    try {
-      void video.play().then(() => {
-        if (!isCurrent() || videoRefs.current[clipId] !== video) {
-          video.pause();
-          return;
-        }
-        setIsPlaying(current => ({ ...current, [clipId]: true }));
-        setSoundPromptClipId(current => current === clipId ? null : current);
-      }).catch(error => {
-        if (!isCurrent() || videoRefs.current[clipId] !== video) return;
-        setIsPlaying(current => ({ ...current, [clipId]: false }));
-        const errorName = error instanceof Error ? error.name : '';
-        if (soundEnabledRef.current && errorName === 'NotAllowedError') {
-          setSoundPromptClipId(clipId);
-        } else if (errorName !== 'AbortError') {
-          setNotice('This video could not be played. Try another video file.');
-        }
-      });
-    } catch {
-      setNotice('This video could not be played. Try another video file.');
-    }
+    const stillActive = () => isCurrent() && videoRefs.current[clipId] === video &&
+      (playbackContext.current.view === 'explore' ||
+        (playbackContext.current.view === 'home' && playbackContext.current.activeId === clipId));
+    Object.entries(videoRefs.current).forEach(([id, other]) => {
+      if (other && id !== clipId) silenceVideo(other);
+    });
+    void startActiveVideo(video, soundEnabledRef.current, stillActive).then(result => {
+      if (!stillActive()) return;
+      setIsPlaying(current => ({ ...current, [clipId]: result === 'playing' || result === 'muted-fallback' }));
+      setSoundPromptClipId(current => result === 'muted-fallback' ? clipId : current === clipId ? null : current);
+      if (result === 'blocked') setNotice('Your browser paused autoplay. Tap Play to start this video.');
+      if (result === 'failed') setNotice('This video could not be played. Try another video file.');
+    });
   }
 
   function changeSoundPreference(enabled: boolean, clipId?: string) {
@@ -317,21 +309,21 @@ function VibraApp() {
     setSoundEnabled(enabled);
     try { localStorage.setItem(SOUND_PREFERENCE, String(enabled)); } catch { /* The choice remains active for this app session. */ }
     Object.values(videoRefs.current).forEach(video => {
-      if (video) video.muted = !enabled;
+      if (video && !enabled) video.muted = true;
     });
     if (!enabled) {
       setSoundPromptClipId(null);
       return;
     }
     const video = clipId ? videoRefs.current[clipId] : null;
-    if (clipId && video?.paused) playFeedVideo(clipId, video);
+    if (clipId && video) playFeedVideo(clipId, video);
   }
 
   useEffect(() => {
     let cancelled = false;
     const activeId = view === 'home' ? activeFeedVideoId : null;
     Object.entries(videoRefs.current).forEach(([id, video]) => {
-      if (video && id !== activeId) video.pause();
+      if (video && id !== activeId) silenceVideo(video);
     });
     setIsPlaying(current => {
       let changed = false;
@@ -352,7 +344,7 @@ function VibraApp() {
     if (!video) return () => { cancelled = true; };
     setSoundPromptClipId(current => current === activeId ? current : null);
     playFeedVideo(activeId, video, () => !cancelled);
-    return () => { cancelled = true; };
+    return () => { cancelled = true; silenceVideo(video); };
   }, [view, activeFeedVideoId, activeFeedVideoUrl]);
 
   function dismissTip() {
@@ -536,7 +528,7 @@ function VibraApp() {
              ? <div className="empty-state"><div className="empty-symbol"><Film size={28}/></div><h2>{view === 'home' ? 'Your feed is ready for a moment.' : 'Nothing in this mood yet.'}</h2><p>{view === 'home' ? 'Add a video from your phone to start your local feed.' : 'Try another search, or add a video to your local feed.'}</p>{view === 'home' && <button className="primary-button" onClick={startCreate}><Plus size={17}/> Add your first clip</button>}</div>
              : displayedClips.map((clip, index) => <article id={`clip-${clip.id}`} key={clip.id} className={`feed-item ${view === 'explore' ? 'explore-card' : ''}`} data-testid={`card-clip-${clip.id}`}>
               <div className={`clip-art art-${clip.palette} shape-${clip.shape}`}>
-                {clipUrls[clip.id] ? <video ref={el => { videoRefs.current[clip.id] = el; }} src={clipUrls[clip.id]} playsInline loop controls={false} onPlay={() => setIsPlaying(p => ({ ...p, [clip.id]: true }))} onPause={() => setIsPlaying(p => ({ ...p, [clip.id]: false }))} onClick={e => { e.stopPropagation(); const video = e.currentTarget; if (video.paused) playFeedVideo(clip.id, video); else video.pause(); }} /> :
+                {clipUrls[clip.id] ? <video ref={el => { videoRefs.current[clip.id] = el; }} src={clipUrls[clip.id]} muted playsInline loop controls={false} onPlay={e => { if (playbackContext.current.view === 'home' && playbackContext.current.activeId !== clip.id) { silenceVideo(e.currentTarget); return; } setIsPlaying(p => ({ ...p, [clip.id]: true })); }} onPause={() => setIsPlaying(p => ({ ...p, [clip.id]: false }))} onClick={e => { e.stopPropagation(); const video = e.currentTarget; if (video.paused) playFeedVideo(clip.id, video); else video.pause(); }} /> :
                   <div className="art-graphic" aria-hidden="true"><div className="art-halo"/><div className="art-object"/><div className="art-grid"/><span className="art-number">0{index + 1}</span><span className="art-word">{clip.palette === 'violet' ? 'FREQUENCY' : clip.palette === 'lime' ? 'SOFT FOCUS' : 'FEEL MORE'}</span></div>}
                  {!clipUrls[clip.id] && <button className="demo-play" onClick={e => { e.stopPropagation(); setIsPlaying(p => ({ ...p, [clip.id]: !p[clip.id] })); }} aria-label={isPlaying[clip.id] ? 'Pause preview' : 'Play preview'}>{isPlaying[clip.id] ? <Pause size={22} fill="currentColor"/> : <Play size={22} fill="currentColor"/>}</button>}
                 <div className="clip-shade"/>
@@ -557,14 +549,14 @@ function VibraApp() {
                 </div>
                 {view === 'home' && clipUrls[clip.id] && <div className="clip-playback-controls">
                   <IconButton label={isPlaying[clip.id] ? 'Pause video' : 'Play video'} onClick={() => { const video = videoRefs.current[clip.id]; if (!video) return; if (video.paused) playFeedVideo(clip.id, video); else { video.pause(); setIsPlaying(p => ({ ...p, [clip.id]: false })); } }}>{isPlaying[clip.id] ? <Pause size={19}/> : <Play size={19}/>}</IconButton>
-                  <IconButton label={soundEnabled ? 'Mute video' : 'Unmute video'} onClick={() => changeSoundPreference(!soundEnabled, clip.id)}>{soundEnabled ? <Volume2 size={19}/> : <VolumeX size={19}/>}</IconButton>
-                  {soundPromptClipId === clip.id && <Button variant="ghost" className="sound-prompt" onClick={() => changeSoundPreference(true, clip.id)}>Enable sound</Button>}
+                  <Button variant="ghost" className="sound-toggle" aria-label={soundEnabled && soundPromptClipId !== clip.id ? 'Mute video' : 'Unmute video'} aria-pressed={soundEnabled && soundPromptClipId !== clip.id} onClick={() => changeSoundPreference(soundPromptClipId === clip.id || !soundEnabled, clip.id)}>{soundEnabled && soundPromptClipId !== clip.id ? <Volume2 size={19}/> : <VolumeX size={19}/>}<span>{soundEnabled && soundPromptClipId !== clip.id ? 'Sound on' : 'Sound off'}</span></Button>
                 </div>}
                 {clipUrls[clip.id] && <VideoProgress clipId={clip.id} source={clipUrls[clip.id] ?? ''} videos={videoRefs} />}
               </div>
             </article>)}
         </div>}
          {view === 'profile' && <div className="profile-collection">
+            {isOwnProfile && <Button className="primary-button profile-upload" onClick={startCreate}><Plus size={18}/><span>Upload a video</span></Button>}
             {isOwnProfile && <div className="collection-tabs"><button className={profileTab === 'clips' ? 'chosen' : ''} onClick={() => setProfileTab('clips')}>Your clips <span>{state.clips.length}</span></button><button className={profileTab === 'liked' ? 'chosen' : ''} onClick={() => setProfileTab('liked')}>Liked <span>{state.liked.length}</span></button><button className={profileTab === 'saved' ? 'chosen' : ''} onClick={() => setProfileTab('saved')}>Saved <span>{state.saved.length}</span></button></div>}
           {(() => {
              const selectedIds = profileTab === 'liked' ? state.liked : state.saved;
