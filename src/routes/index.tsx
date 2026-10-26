@@ -10,6 +10,10 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { Button } from "@/components/ui/button";
 
+import { VideoProgress } from "@/components/video-progress";
+import { cleanFollows, followGraph, followStats, normalizeHandle, SOCIAL_PLATFORMS, socialUrl } from "@/lib/vibra-social";
+import type { FollowEdge, SocialLinks } from "@/lib/vibra-social";
+
 import "../vibra.css";
 
 export const Route = createFileRoute("/")({
@@ -43,7 +47,7 @@ type View = 'home' | 'explore' | 'live' | 'inbox' | 'profile';
 const STORE = 'vibra-state-v1';
 const DATABASE = 'vibra-media-v1';
 const SOUND_PREFERENCE = 'vibra-sound-enabled';
-type Profile = { name: string; handle: string; bio: string; photo?: string | undefined };
+type Profile = { name: string; handle: string; bio: string; photo?: string | undefined; socials?: SocialLinks };
 type DemoCreator = { name: string; handle: string; bio: string; followers: number; following: number; photo?: string | undefined };
 const DEMO_CREATORS: Record<string, DemoCreator> = {
   vibrastudio: { name: 'Vibra Studio', handle: 'vibrastudio', bio: 'A small studio for big feelings. Preview identity, not a real account.', followers: 128, following: 32 },
@@ -57,7 +61,7 @@ const DEMO_CLIPS: Clip[] = [
 ];
 type Persisted = {
   clips: Clip[]; liked: string[]; saved: string[]; comments: Record<string, LocalComment[]>;
-  profile: Profile; follows: string[]; seenTip: boolean;
+  profile: Profile; follows: string[]; followEdges?: FollowEdge[]; seenTip: boolean;
 };
 const initial: Persisted = {
   clips: [], liked: [], saved: [], comments: {},
@@ -142,7 +146,7 @@ function VibraApp() {
       const raw = localStorage.getItem(STORE);
       if (!raw) return initial;
       const saved = JSON.parse(raw) as Partial<Persisted>;
-      return { ...initial, ...saved, profile: { ...initial.profile, ...(saved.profile ?? {}) }, follows: saved.follows ?? [] };
+      return { ...initial, ...saved, profile: { ...initial.profile, ...(saved.profile ?? {}) }, follows: cleanFollows(saved.follows ?? [], saved.profile?.handle ?? initial.profile.handle) };
     } catch { return initial; }
   });
   const [clipUrls, setClipUrls] = useState<Record<string, string>>({});
@@ -164,6 +168,7 @@ function VibraApp() {
   const [notice, setNotice] = useState('');
   const [tipVisible, setTipVisible] = useState(!state.seenTip);
   const [profileForm, setProfileForm] = useState(state.profile);
+  const [socialError, setSocialError] = useState('');
   const [profilePhotoRef, setProfilePhotoRef] = useState<HTMLInputElement | null>(null);
   const [profilePhotoBusy, setProfilePhotoBusy] = useState(false);
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
@@ -208,6 +213,8 @@ function VibraApp() {
   const viewedCreator: Profile | DemoCreator = isOwnProfile
     ? state.profile
     : DEMO_CREATORS[profileUsername] ?? { name: 'Preview creator', handle: profileUsername, bio: 'Demo creator preview. This identity is not a real account.', followers: 0, following: 0 };
+  const relationships = followGraph(state.profile.handle, state.follows, state.followEdges);
+  const statistics = followStats(viewedCreator.handle, relationships);
   const creatorIsOwn = (clip: Clip) => !!clip.blobKey || clip.username === state.profile.handle;
   const deleteClip = state.clips.find(clip => clip.id === deleteClipId && creatorIsOwn(clip));
   const creatorForClip = (clip: Clip): Profile | DemoCreator => creatorIsOwn(clip)
@@ -430,8 +437,18 @@ function VibraApp() {
   }
   function saveProfile(e: FormEvent) {
     e.preventDefault();
-    const nextProfile = { ...profileForm, handle: profileForm.handle.trim().replace(/^@/, '').replace(/\s+/g, '').toLowerCase() || 'yourhandle' };
-    setState(s => ({ ...s, profile: nextProfile, clips: s.clips.map(clip => clip.blobKey ? { ...clip, creator: nextProfile.name, username: nextProfile.handle } : clip) }));
+    const socials: SocialLinks = {};
+    for (const platform of SOCIAL_PLATFORMS) {
+      const url = socialUrl(platform.key, profileForm.socials?.[platform.key] ?? '');
+      if (url === null) { setSocialError(`Enter a valid HTTPS ${platform.label} link, or leave it empty.`); return; }
+      if (url) socials[platform.key] = url;
+    }
+    setSocialError('');
+    const nextProfile = { ...profileForm, socials, handle: normalizeHandle(profileForm.handle) || 'yourhandle' };
+    if (nextProfile.handle !== state.profile.handle && (DEMO_CREATORS[nextProfile.handle] || state.clips.some(clip => !creatorIsOwn(clip) && normalizeHandle(clip.username) === nextProfile.handle) || relationships.some(edge => edge.from === nextProfile.handle || edge.to === nextProfile.handle))) {
+      setSocialError('That handle belongs to another creator. Choose a different handle.'); return;
+    }
+    setState(s => ({ ...s, profile: nextProfile, follows: cleanFollows(s.follows, nextProfile.handle), ...(s.followEdges ? { followEdges: s.followEdges.map(edge => ({ from: normalizeHandle(edge.from) === normalizeHandle(s.profile.handle) ? nextProfile.handle : edge.from, to: normalizeHandle(edge.to) === normalizeHandle(s.profile.handle) ? nextProfile.handle : edge.to })) } : {}), clips: s.clips.map(clip => clip.blobKey || clip.username === s.profile.handle ? { ...clip, creator: nextProfile.name, username: nextProfile.handle } : clip) }));
     setProfileUsername(null);
     setModal(null); setNotice('Your profile is saved on this device.');
   }
@@ -454,8 +471,12 @@ function VibraApp() {
     if (feedRef.current) feedRef.current.scrollTop = 0;
   }
   function toggleFollow(username: string) {
-    if (username === state.profile.handle) return;
-    setState(s => ({ ...s, follows: s.follows.includes(username) ? s.follows.filter(item => item !== username) : [...s.follows, username] }));
+    const target = normalizeHandle(username);
+    if (!target || target === normalizeHandle(state.profile.handle)) return;
+    setState(s => {
+      const follows = cleanFollows(s.follows, s.profile.handle);
+      return { ...s, follows: follows.includes(target) ? follows.filter(item => item !== target) : [...follows, target] };
+    });
   }
   function openClip(clip: Clip) {
     setActiveClip(clip.id); setView('home'); setProfileUsername(null);
@@ -508,7 +529,7 @@ function VibraApp() {
 
         {view === 'inbox' && <section className="feature-panel inbox-panel"><div className="feature-icon"><Inbox size={25}/></div><div className="eyebrow">YOUR INBOX</div><h2>A quieter<br/><em>kind of connection.</em></h2><p>Messaging is not connected. This demo does not send messages to other people. Comments you leave are saved only on this device.</p><button className="outline-button" onClick={() => navTo('home')}>Back to your feed <ArrowUpRight size={16}/></button></section>}
 
-        {view === 'profile' && <section className={`profile-top ${isOwnProfile ? 'own-profile' : 'creator-profile'}`}><Avatar profile={viewedCreator} size="large"/><div className="profile-copy"><span className="eyebrow">{isOwnProfile ? 'LOCAL PROFILE' : 'DEMO CREATOR · PREVIEW'}</span><h2>{viewedCreator.name}</h2><span className="handle">@{viewedCreator.handle}</span><p>{viewedCreator.bio}</p>{isOwnProfile ? <button className="outline-button edit-profile" onClick={() => { setProfileForm(state.profile); setModal('profile'); }}>Edit profile</button> : <button className={`follow-button profile-follow ${state.follows.includes(viewedCreator.handle) ? 'following' : ''}`} onClick={() => toggleFollow(viewedCreator.handle)}>{state.follows.includes(viewedCreator.handle) ? <Check size={15}/> : <Plus size={15}/>} {state.follows.includes(viewedCreator.handle) ? 'Following' : 'Follow'}</button>}</div><div className="profile-stats"><div><strong>{isOwnProfile ? state.clips.length : [...allClips, ...DEMO_CLIPS].filter(c => c.username === viewedCreator.handle).length}</strong><span>clips</span></div><div><strong>{isOwnProfile ? '0' : (DEMO_CREATORS[viewedCreator.handle]?.followers ?? 0) + Number(state.follows.includes(viewedCreator.handle))}</strong><span>{isOwnProfile ? 'local followers' : 'preview followers'}</span></div><div><strong>{isOwnProfile ? state.follows.length : `${DEMO_CREATORS[viewedCreator.handle]?.following ?? 0}`}</strong><span>{isOwnProfile ? 'following' : 'preview following'}</span></div></div><div className="local-note"><span className="online-dot"/>{isOwnProfile ? 'Profile and activity are stored on this device' : 'Preview creator · counts are illustrative, not server-backed'}</div></section>}
+        {view === 'profile' && <section className={`profile-top ${isOwnProfile ? 'own-profile' : 'creator-profile'}`}><Avatar profile={viewedCreator} size="large"/><div className="profile-copy"><span className="eyebrow">{isOwnProfile ? 'LOCAL PROFILE' : 'DEMO CREATOR · PREVIEW'}</span><h2>{viewedCreator.name}</h2><span className="handle">@{viewedCreator.handle}</span><p>{viewedCreator.bio}</p>{isOwnProfile ? <button className="outline-button edit-profile" onClick={() => { setProfileForm(state.profile); setSocialError(''); setModal('profile'); }}>Edit profile</button> : <button className={`follow-button profile-follow ${state.follows.includes(viewedCreator.handle) ? 'following' : ''}`} onClick={() => toggleFollow(viewedCreator.handle)}>{state.follows.includes(viewedCreator.handle) ? <Check size={15}/> : <Plus size={15}/>} {state.follows.includes(viewedCreator.handle) ? 'Following' : 'Follow'}</button>}</div><div className="profile-stats"><div><strong>{isOwnProfile ? state.clips.length : [...allClips, ...DEMO_CLIPS].filter(c => c.username === viewedCreator.handle).length}</strong><span>clips</span></div><div data-testid="stat-followers"><strong>{statistics.followers}</strong><span>Followers</span></div><div data-testid="stat-following"><strong>{statistics.following}</strong><span>Following</span></div><div data-testid="stat-friends"><strong>{statistics.friends}</strong><span>Friends</span></div></div>{isOwnProfile && <div className="profile-socials">{SOCIAL_PLATFORMS.map(platform => { const url = socialUrl(platform.key, state.profile.socials?.[platform.key] ?? ''); return url ? <a key={platform.key} className="social-badge" href={url} target="_blank" rel="noopener noreferrer" aria-label={`Open ${platform.label} profile`}>{platform.label}<ArrowUpRight size={14}/></a> : null; })}</div>}<div className="local-note"><span className="online-dot"/>{isOwnProfile ? 'Profile and activity are stored on this device' : 'Preview creator · relationships stored on this device'}</div></section>}
 
         {(view === 'home' || view === 'explore') && <div className={`feed-scroll ${view === 'explore' ? 'explore-grid' : ''}`} ref={feedRef}>
           {displayedClips.length === 0
@@ -539,6 +560,7 @@ function VibraApp() {
                   <IconButton label={soundEnabled ? 'Mute video' : 'Unmute video'} onClick={() => changeSoundPreference(!soundEnabled, clip.id)}>{soundEnabled ? <Volume2 size={19}/> : <VolumeX size={19}/>}</IconButton>
                   {soundPromptClipId === clip.id && <Button variant="ghost" className="sound-prompt" onClick={() => changeSoundPreference(true, clip.id)}>Enable sound</Button>}
                 </div>}
+                {clipUrls[clip.id] && <VideoProgress clipId={clip.id} source={clipUrls[clip.id]} videos={videoRefs} />}
               </div>
             </article>)}
         </div>}
@@ -622,7 +644,7 @@ function VibraApp() {
 
       {modal === 'comments' && activeClipData && <div className="modal-scrim" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setModal(null); }}><section className="dialog comments-dialog" role="dialog" aria-modal="true" aria-labelledby="comments-title"><div className="dialog-head"><div><span className="eyebrow">LOCAL ACTIVITY</span><h2 id="comments-title">Comments</h2></div><IconButton label="Close comments" onClick={() => setModal(null)}><X size={20}/></IconButton></div><p className="dialog-copy">Comments are saved only on this device. They are not sent to anyone.</p><div className="comment-list">{(state.comments[activeClipData.id] ?? []).length ? (state.comments[activeClipData.id] ?? []).map(comment => <div className="comment-row" key={comment.id}><div className="comment-avatar">{state.profile.name.slice(0, 1).toUpperCase()}</div><div><strong>{state.profile.name}</strong><p>{comment.text}</p></div></div>) : <div className="comment-empty"><MessageCircle size={24}/><span>No comments here yet.</span><small>Leave a note for yourself.</small></div>}</div><form className="comment-form" onSubmit={e => { e.preventDefault(); addComment(); }}><input value={commentText} onChange={e => setCommentText(e.target.value)} maxLength={240} placeholder="Add a local comment" aria-label="Add a local comment"/><button disabled={!commentText.trim()} aria-label="Post local comment"><Send size={18}/></button></form></section></div>}
 
-      {modal === 'profile' && <div className="modal-scrim" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setModal(null); }}><section className="dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title"><div className="dialog-head"><div><span className="eyebrow">YOUR CORNER</span><h2 id="profile-title">Edit profile</h2></div><IconButton label="Close profile editor" onClick={() => setModal(null)}><X size={20}/></IconButton></div><form onSubmit={saveProfile}><div className="photo-edit-row"><Avatar profile={profileForm} size="large"/><div><strong>Profile photo</strong><small>Saved on this device, resized for your profile.</small><button type="button" className="outline-button" onClick={() => profilePhotoRef?.click()}><CameraIcon size={15}/>{profilePhotoBusy ? 'Preparing photo…' : 'Choose photo'}</button>{profileForm.photo && <button type="button" className="remove-photo" onClick={() => setProfileForm(p => ({ ...p, photo: undefined }))}>Remove photo</button>}</div></div><input ref={setProfilePhotoRef} className="visually-hidden" type="file" accept="image/*" aria-label="Choose profile photo" onChange={e => void selectProfilePhoto(e.target.files?.[0])}/><label className="field-label" htmlFor="profile-name">Display name</label><input id="profile-name" className="text-field" value={profileForm.name} onChange={e => setProfileForm(p => ({ ...p, name: e.target.value }))} maxLength={40} required/><label className="field-label" htmlFor="profile-handle">Username / handle</label><div className="handle-input"><span>@</span><input id="profile-handle" value={profileForm.handle} onChange={e => setProfileForm(p => ({ ...p, handle: e.target.value }))} maxLength={24}/></div><label className="field-label" htmlFor="profile-bio">A line about you</label><textarea id="profile-bio" className="text-field bio-field" value={profileForm.bio} onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))} maxLength={140}/><div className="dialog-actions"><button type="button" className="outline-button" onClick={() => setModal(null)}>Cancel</button><button className="primary-button" type="submit"><Check size={17}/> Save changes</button></div></form></section></div>}
+      {modal === 'profile' && <div className="modal-scrim" role="presentation" onMouseDown={e => { if (e.target === e.currentTarget) setModal(null); }}><section className="dialog profile-dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title"><div className="dialog-head"><div><span className="eyebrow">YOUR CORNER</span><h2 id="profile-title">Edit profile</h2></div><IconButton label="Close profile editor" onClick={() => setModal(null)}><X size={20}/></IconButton></div><form onSubmit={saveProfile}><div className="photo-edit-row"><Avatar profile={profileForm} size="large"/><div><strong>Profile photo</strong><small>Saved on this device, resized for your profile.</small><button type="button" className="outline-button" onClick={() => profilePhotoRef?.click()}><CameraIcon size={15}/>{profilePhotoBusy ? 'Preparing photo…' : 'Choose photo'}</button>{profileForm.photo && <button type="button" className="remove-photo" onClick={() => setProfileForm(p => ({ ...p, photo: undefined }))}>Remove photo</button>}</div></div><input ref={setProfilePhotoRef} className="visually-hidden" type="file" accept="image/*" aria-label="Choose profile photo" onChange={e => void selectProfilePhoto(e.target.files?.[0])}/><label className="field-label" htmlFor="profile-name">Display name</label><input id="profile-name" className="text-field" value={profileForm.name} onChange={e => setProfileForm(p => ({ ...p, name: e.target.value }))} maxLength={40} required/><label className="field-label" htmlFor="profile-handle">Username / handle</label><div className="handle-input"><span>@</span><input id="profile-handle" value={profileForm.handle} onChange={e => setProfileForm(p => ({ ...p, handle: e.target.value }))} maxLength={24}/></div><label className="field-label" htmlFor="profile-bio">A line about you</label><textarea id="profile-bio" className="text-field bio-field" value={profileForm.bio} onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))} maxLength={140}/><fieldset className="social-fields"><legend>Social accounts</legend>{SOCIAL_PLATFORMS.map(platform => <div key={platform.key}><label className="field-label" htmlFor={`social-${platform.key}`}>{platform.label}</label><input id={`social-${platform.key}`} className="text-field" type="text" inputMode="url" autoCapitalize="none" autoCorrect="off" value={profileForm.socials?.[platform.key] ?? ''} onChange={e => { setSocialError(''); setProfileForm(p => ({ ...p, socials: { ...p.socials, [platform.key]: e.target.value } })); }} placeholder={`https://${platform.hosts[0]}/…`} maxLength={500}/></div>)}</fieldset>{socialError && <p className="social-error" role="alert">{socialError}</p>}<div className="dialog-actions"><Button type="button" variant="outline" className="outline-button" onClick={() => setModal(null)}>Cancel</Button><Button className="primary-button" type="submit"><Check size={17}/> Save changes</Button></div></form></section></div>}
 
       {notice && <div className="toast-message" role="status"><span className="toast-dot"/>{notice}<button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={15}/></button></div>}
     </div>
