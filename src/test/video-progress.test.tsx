@@ -1,9 +1,10 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { VideoProgress } from '@/components/video-progress';
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 it('seeks the actual video forward and backward and reads elapsed playback', () => {
+  vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
   const video = document.createElement('video');
   Object.defineProperty(video, 'duration', { value: 120, configurable: true });
   video.currentTime = 30;

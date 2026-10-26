@@ -560,7 +560,7 @@ function VibraApp() {
                   <IconButton label={soundEnabled ? 'Mute video' : 'Unmute video'} onClick={() => changeSoundPreference(!soundEnabled, clip.id)}>{soundEnabled ? <Volume2 size={19}/> : <VolumeX size={19}/>}</IconButton>
                   {soundPromptClipId === clip.id && <Button variant="ghost" className="sound-prompt" onClick={() => changeSoundPreference(true, clip.id)}>Enable sound</Button>}
                 </div>}
-                {clipUrls[clip.id] && <VideoProgress clipId={clip.id} source={clipUrls[clip.id]} videos={videoRefs} />}
+                {clipUrls[clip.id] && <VideoProgress clipId={clip.id} source={clipUrls[clip.id] ?? ''} videos={videoRefs} />}
               </div>
             </article>)}
         </div>}
