@@ -1,5 +1,12 @@
 # Vibra migration roadmap
 
+## Existing project inspection and accounts
+- [x] Inspect framework and integrations: React 19, TanStack Start/Router, Vite, localStorage metadata and IndexedDB videos; no authentication integration installed
+- [x] Run all 20 regression tests and real-video checks at 375×812 and 412×915: muted autoplay, sound across swipes, previous-video silence, forward/backward seek, Lyrics, both upload controls; no page errors and no confirmed playback defect
+- [x] Check local Git configuration without exposing credentials: no GitHub remote configured; Lovable hosted Git sync status cannot be read here
+- [ ] Verify user's existing external Supabase connection and hosted auth settings — waiting for user to connect/select that project in Settings → General → External Supabase
+- [ ] Add email signup/login, logout, public password recovery, and private owner-only profiles after connection verification; preserve local clips and existing features
+
 ## Active video autoplay and upload access
 - [x] Start active videos muted automatically; preserve one-tap sound choice during swipes and safely fall back when blocked
 - [x] Pause and mute inactive videos, preserve seeking, and add visible Profile upload access
@@ -18,7 +25,7 @@
 
 ## Future (waiting on user's go-ahead)
 - [x] Add confirmed deletion for owned Profile videos; automated tests and 390×844 preview verify cancellation, selected-only metadata/media deletion, reload persistence, and preservation of other videos and user data
-- [ ] Real accounts + shared likes/comments/follows via Lovable Cloud (free tier available)
+- [ ] Real accounts and private profiles using the user's existing external Supabase project; shared likes/comments/follows remain a later step
 - [ ] Real LIVE streaming (needs an external paid streaming service)
 - [ ] Creator monetization (needs Lovable Cloud + Stripe, paid)
 
