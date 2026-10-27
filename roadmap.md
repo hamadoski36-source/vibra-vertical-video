@@ -29,6 +29,28 @@
 - [ ] Real LIVE streaming (needs an external paid streaming service)
 - [ ] Creator monetization (needs Lovable Cloud + Stripe, paid)
 
+## Google Play readiness (planning only; after secure accounts)
+- [x] Inspect existing project: no Android wrapper, AAB configuration, AdMob integration, or privacy-policy page found; only the existing favicon is present
+- [ ] Verify GitHub sync and the user's existing Supabase connection before account work; preserve all local clips and app features
+- [ ] Implement and test signup, login, logout, password recovery, and owner-only private profiles before release work
+- [ ] Assess Capacitor Android packaging against a Trusted Web Activity; preserve TanStack web app and its server hosting, verify gallery/camera access, playback, sound, seeking, sharing, and storage on physical Android before selecting packaging
+- [ ] Determine whether updating an existing Play listing or creating the first listing; verify package identity, signing ownership, and Play account access without requesting secrets in chat
+- [ ] Prepare signed Android App Bundle (AAB) for Play and APK for direct device testing; verify current target SDK requirements at submission
+- [ ] Confirm store app name, create approved icon and screenshots from the real app, and draft store description without claiming unavailable features
+- [ ] Add an accurate publicly accessible privacy policy and support contact; review actual data flows, permissions, data safety declaration, ads declaration, age audience, and content rating
+- [ ] Before shared user content launches, implement terms acceptance, reporting, user blocking, moderation, and applicable child-safety requirements; verify account deletion in-app and via a public web request path when accounts are introduced
+- [ ] Explain Play Console upload, internal/closed testing, conditional production-access testing requirements, review, and staged rollout; do not claim publication until Google approval and release are confirmed
+- [ ] Explain any mandatory Google registration cost upfront without purchasing or asking for upgrades
+
+## Google AdMob (assessment only; after secure app and Android validation)
+- [ ] Assess a maintained Capacitor-compatible native AdMob bridge; AdMob is for the Android app, not an ad script added to the website
+- [ ] Plan restrained banners away from playback, seeking, navigation, and action controls; no automatic disruptive ads between every clip
+- [ ] Consider optional rewarded ads only with a defined genuine user benefit, explicit opt-in, and verified reward completion; do not invent rewards or grant them for clicking an ad
+- [ ] Guide account/app registration, review requirements, and real banner/rewarded ad-unit creation; use Google's documented test units or registered test devices during development, never invented IDs or live-ad clicks
+- [ ] Implement and verify Google consent flow and privacy choices, child/age handling, SDK declarations, and applicable advertising policies before requesting ads
+- [ ] Test ad load/failure/dismissal and rewards on Android, including continued feed playback and no control overlap; request real configured IDs only when live verification is ready
+- [ ] Verify app readiness review and applicable app-ads.txt/store association before live advertising; do not claim integration or earnings before verification
+
 ## Progress and profile improvements
 - [x] Add and test actual video seeking and elapsed time (real video dragged forward/backward on phones and desktop)
 - [x] Derive unique Followers, Following, and mutual Friends from local relationships; shared incoming follows still await real accounts
