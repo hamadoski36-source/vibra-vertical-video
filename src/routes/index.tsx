@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
@@ -502,7 +502,7 @@ function VibraApp() {
         <div className="header-actions">
           {!authLoading && (user
             ? <button className="account-chip" onClick={() => void handleSignOut()} aria-label="Sign out"><LogOut size={15}/><span>Sign out</span></button>
-            : <Link to="/auth" className="account-chip" aria-label="Sign in"><UserRound size={15}/><span>Sign in</span></Link>)}
+            : <a href="/auth" className="account-chip" aria-label="Sign in"><UserRound size={15}/><span>Sign in</span></a>)}
           <IconButton label="Search clips" onClick={() => navTo('explore')}><Search size={20}/></IconButton>
           <button className="create-small" onClick={startCreate} aria-label="Create a clip"><Plus size={19}/></button>
         </div>
@@ -514,7 +514,7 @@ function VibraApp() {
           <button className="rail-link create-link" onClick={startCreate}><Plus size={20}/><span>Create</span></button>
           {!authLoading && (user
             ? <button className="rail-link" onClick={() => void handleSignOut()}><LogOut size={20}/><span>Sign out</span></button>
-            : <Link to="/auth" className="rail-link"><UserRound size={20}/><span>Sign in</span></Link>)}
+            : <a href="/auth" className="rail-link"><UserRound size={20}/><span>Sign in</span></a>)}
         </div>
         <div className="rail-note"><span className="online-dot"/><span>Made for your moments</span></div>
       </aside>
