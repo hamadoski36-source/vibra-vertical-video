@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
-  Bookmark, Camera, Check, Compass, Film, Heart, Home, Inbox, MessageCircle,
+  Bookmark, Camera, Check, Compass, Film, Heart, Home, Inbox, LogOut, MessageCircle,
   Pause, Play, Plus, Search, Send, Share2, Sparkles, UserRound, X, Radio,
   ArrowUpRight, ImagePlus, Camera as CameraIcon, Music, Volume2, VolumeX, Trash2,
 } from "lucide-react";
@@ -14,19 +14,21 @@ import { VideoProgress } from "@/components/video-progress";
 import { silenceVideo, startActiveVideo } from "@/lib/vibra-playback";
 import { cleanFollows, followGraph, followStats, normalizeHandle, SOCIAL_PLATFORMS, socialUrl } from "@/lib/vibra-social";
 import type { FollowEdge, SocialLinks } from "@/lib/vibra-social";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 
 import "../vibra.css";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Vibra — Your daily frequency" },
+      { title: "Vibra Worldwide — Your daily frequency" },
       {
         name: "description",
         content:
-          "Vibra is a vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
+          "Vibra Worldwide is a vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
       },
-      { property: "og:title", content: "Vibra — Your daily frequency" },
+      { property: "og:title", content: "Vibra Worldwide — Your daily frequency" },
       {
         property: "og:description",
         content:
