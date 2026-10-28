@@ -387,7 +387,7 @@ function VibraApp() {
   }
   async function importVideo(file?: File) {
     if (!file) return;
-    if (!file.type.startsWith('video/')) { setNotice('Choose a video file to add it to Vibra.'); return; }
+    if (!file.type.startsWith('video/')) { setNotice('Choose a video file to add it to Vibra Worldwide.'); return; }
     if (file.size > 400 * 1024 * 1024) { setNotice('This video is over 400 MB. Choose a smaller clip.'); return; }
     setIsImporting(true);
     try {
@@ -400,7 +400,10 @@ function VibraApp() {
       };
       setClipUrls(prev => ({ ...prev, [id]: URL.createObjectURL(file) }));
       setState(s => ({ ...s, clips: [...s.clips, clip] }));
-      setDraftTitle(''); setComposerOpen(false); setView('home'); setNotice('Your clip is ready in your local Vibra feed.');
+      setDraftTitle(''); setComposerOpen(false); setView('home'); setNotice('Your clip is ready in your local Vibra Worldwide feed.');
+      // The newest clip is prepended, so the browser keeps the old scroll
+      // offset; jump back to the top so the new clip is the active one.
+      window.setTimeout(() => feedRef.current?.scrollTo({ top: 0 }), 60);
     } catch {
       setNotice('Video storage is unavailable. Check browser storage permissions and try again.');
     } finally { setIsImporting(false); if (galleryRef.current) galleryRef.current.value = ''; if (cameraRef.current) cameraRef.current.value = ''; }
