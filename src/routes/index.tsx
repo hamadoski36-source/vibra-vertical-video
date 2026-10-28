@@ -510,7 +510,7 @@ function VibraApp() {
       <aside className="desktop-rail">
         <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra Worldwide home">vibra<span> worldwide</span></button>
         <div className="rail-links">
-          {navItems.map(({ key, label, icon: Icon }) => <button key={key} onClick={() => navTo(key)} className={`rail-link ${view === key ? 'selected' : ''} `} aria-current={view === key ? 'page' : undefined}><Icon size={20}/><span>{label}</span></button>)}
+          {navItems.map(({ key, label, icon: Icon }) => <button key={key} onClick={() => navTo(key)} className={`rail-link ${view === key ? 'selected' : ''}`} aria-current={view === key ? 'page' : undefined}><Icon size={20}/><span>{label}</span></button>)}
           <button className="rail-link create-link" onClick={startCreate}><Plus size={20}/><span>Create</span></button>
           {!authLoading && (user
             ? <button className="rail-link" onClick={() => void handleSignOut()}><LogOut size={20}/><span>Sign out</span></button>
@@ -521,7 +521,7 @@ function VibraApp() {
 
       <main className={`main-content view-${view}`}>
         <div className="page-heading">
-          <div><span className="eyebrow">{view === 'home' ? 'YOUR DAILY FREQUENCY' : 'VIBRA / YOUR SPACE'}</span><h1>{pageTitle}<span className="heading-period">.</span></h1></div>
+          <div><span className="eyebrow">{view === 'home' ? 'YOUR DAILY FREQUENCY' : 'VIBRA WORLDWIDE / YOUR SPACE'}</span><h1>{pageTitle}<span className="heading-period">.</span></h1></div>
           {view === 'home' && <button className="text-link" onClick={() => navTo('explore')}>Find a new mood <ArrowUpRight size={16}/></button>}
         </div>
 

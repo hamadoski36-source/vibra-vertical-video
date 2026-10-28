@@ -78,13 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Vibra — Your daily frequency" },
+      { title: "Vibra Worldwide — Your daily frequency" },
       {
         name: "description",
         content:
-          "Vibra is a vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
+          "Vibra Worldwide is a vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
       },
-      { property: "og:title", content: "Vibra — Your daily frequency" },
+      { property: "og:title", content: "Vibra Worldwide — Your daily frequency" },
       {
         property: "og:description",
         content:
