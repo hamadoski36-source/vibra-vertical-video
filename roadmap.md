@@ -4,8 +4,12 @@
 - [x] Inspect framework and integrations: React 19, TanStack Start/Router, Vite, localStorage metadata and IndexedDB videos; no authentication integration installed
 - [x] Run all 20 regression tests and real-video checks at 375×812 and 412×915: muted autoplay, sound across swipes, previous-video silence, forward/backward seek, Lyrics, both upload controls; no page errors and no confirmed playback defect
 - [x] Check local Git configuration without exposing credentials: no GitHub remote configured; Lovable hosted Git sync status cannot be read here
-- [ ] Verify user's existing external Supabase connection and hosted auth settings — waiting for user to connect/select that project in Settings → General → External Supabase
-- [ ] Add email signup/login, logout, public password recovery, and private owner-only profiles after connection verification; preserve local clips and existing features
+- [x] Connect the user's existing Supabase project (svrjacetnlwlwesferwz) via publishable key in src/lib/supabase.ts; no secret keys in code
+- [x] Add /auth (sign up, sign in, forgot password) and /reset-password screens with loading, validation, and error states; email confirmation is ON in the user's project, so signup requires clicking the email link
+- [x] Rename app to Vibra Worldwide (titles, meta, brand, share text) and add new icon: favicon.png, pwa-192/512, manifest.webmanifest
+- [x] Fix upload landing: feed now scrolls to the newly uploaded clip (verified playing, muted autoplay, drag seek, sound toggle at 390×844)
+- [ ] Add a profiles table with owner-only RLS policies in the user's Supabase dashboard when shared profiles are built (no private data is stored server-side yet, so there is nothing to protect today)
+- [ ] Full login/logout round-trip test with a confirmed email account (needs a real inbox; signup, validation, reset-email, and unconfirmed-login blocking are tested)
 
 ## Active video autoplay and upload access
 - [x] Start active videos muted automatically; preserve one-tap sound choice during swipes and safely fall back when blocked
