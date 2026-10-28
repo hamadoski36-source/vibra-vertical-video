@@ -174,6 +174,11 @@ function VibraApp() {
   const [socialError, setSocialError] = useState('');
   const [profilePhotoRef, setProfilePhotoRef] = useState<HTMLInputElement | null>(null);
   const [profilePhotoBusy, setProfilePhotoBusy] = useState(false);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setNotice('You are signed out. Your clips on this device are untouched.');
+  }
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const [profileTab, setProfileTab] = useState<'clips' | 'liked' | 'saved'>('clips');
   const [draftTitle, setDraftTitle] = useState('');
@@ -493,8 +498,11 @@ function VibraApp() {
   return (
     <div className={`app-shell grain ${view === 'home' ? 'home-feed-shell' : ''}`}>
       <header className="mobile-header">
-        <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra home">vibra<span>.</span></button>
+        <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra Worldwide home">vibra<span> worldwide</span></button>
         <div className="header-actions">
+          {!authLoading && (user
+            ? <button className="account-chip" onClick={() => void handleSignOut()} aria-label="Sign out"><LogOut size={15}/><span>Sign out</span></button>
+            : <Link to="/auth" className="account-chip" aria-label="Sign in"><UserRound size={15}/><span>Sign in</span></Link>)}
           <IconButton label="Search clips" onClick={() => navTo('explore')}><Search size={20}/></IconButton>
           <button className="create-small" onClick={startCreate} aria-label="Create a clip"><Plus size={19}/></button>
         </div>
