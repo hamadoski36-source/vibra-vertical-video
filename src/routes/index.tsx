@@ -508,10 +508,13 @@ function VibraApp() {
         </div>
       </header>
       <aside className="desktop-rail">
-        <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra home">vibra<span>.</span></button>
+        <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra Worldwide home">vibra<span> worldwide</span></button>
         <div className="rail-links">
-          {navItems.map(({ key, label, icon: Icon }) => <button key={key} onClick={() => navTo(key)} className={`rail-link ${view === key ? 'selected' : ''}`} aria-current={view === key ? 'page' : undefined}><Icon size={20}/><span>{label}</span></button>)}
+          {navItems.map(({ key, label, icon: Icon }) => <button key={key} onClick={() => navTo(key)} className={`rail-link ${view === key ? 'selected' : ''} `} aria-current={view === key ? 'page' : undefined}><Icon size={20}/><span>{label}</span></button>)}
           <button className="rail-link create-link" onClick={startCreate}><Plus size={20}/><span>Create</span></button>
+          {!authLoading && (user
+            ? <button className="rail-link" onClick={() => void handleSignOut()}><LogOut size={20}/><span>Sign out</span></button>
+            : <Link to="/auth" className="rail-link"><UserRound size={20}/><span>Sign in</span></Link>)}
         </div>
         <div className="rail-note"><span className="online-dot"/><span>Made for your moments</span></div>
       </aside>
