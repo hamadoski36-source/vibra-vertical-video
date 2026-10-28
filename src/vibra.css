@@ -40,7 +40,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 /* Vibra / chromatic night — compact vertical feed, electric rose + violet */
 #root { min-height:100dvh; }
 .app-shell { display:grid; grid-template-columns:228px minmax(0,680px) 276px; justify-content:center; gap:38px; padding:0 38px; background:radial-gradient(ellipse at 56% 0%,rgba(115,59,110,.12),transparent 44%),#080808; }
-.brand { padding:0; background:none; border:0; color:#fff5fb; font-size:32px; line-height:1; font-weight:700; }
+.brand { padding:0; background:none; border:0; color:#fff5fb; font-size:24px; line-height:1; font-weight:700; }
 .brand span { color:#f05bb9; }
 .mobile-header { display:none; }
 .desktop-rail { position:sticky; top:0; height:100dvh; padding:34px 0 28px; display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,.07); }
@@ -234,7 +234,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   .app-shell { display:block;padding:0;min-height:100dvh;background:radial-gradient(ellipse at 50% -10%,rgba(131,59,134,.12),transparent 47%),#080808; }
   .desktop-rail,.right-rail { display:none; }
   .mobile-header { position:sticky;z-index:20;top:0;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:rgba(16,14,20,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.06); }
-  .mobile-header .brand { font-size:27px; }
+  .mobile-header .brand { font-size:19px; }
   .header-actions { display:flex;align-items:center;gap:10px; }
   .header-actions .icon-button { width:34px;min-width:34px;min-height:34px;background:transparent;border:0;color:#c9bfce; }
   .create-small { width:33px;height:33px;display:grid;place-items:center;border:0;border-radius:10px;background:linear-gradient(130deg,#ed67b6,#a874dc);color:#201220; }
@@ -417,3 +417,20 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   .home-feed-shell .mobile-nav { height:var(--feed-nav-height); }
   .lyrics-dialog { left:0;top:auto;bottom:0;transform:none;width:100%;max-height:85dvh; }
 }
+
+/* --- Account & authentication --- */
+.account-chip { display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px; border-radius:999px; border:1px solid var(--control-border, rgba(255,245,251,.28)); background:var(--control-fill, rgba(20,12,24,.55)); color:#fff5fb; font-size:13px; font-weight:600; text-decoration:none; cursor:pointer; }
+.account-chip:hover { border-color:#f05bb9; }
+
+.auth-shell { display:flex; align-items:center; justify-content:center; min-height:100dvh; padding:24px 16px; }
+.auth-card { position:relative; width:min(430px, 100%); padding:28px 24px; }
+.auth-brand { display:inline-block; margin-bottom:14px; text-decoration:none; }
+.auth-title { margin:6px 0 18px; font-size:26px; line-height:1.15; }
+.auth-tabs { display:flex; gap:8px; margin-bottom:18px; }
+.auth-tabs button { flex:1; min-height:40px; border-radius:10px; border:1px solid rgba(255,245,251,.18); background:transparent; color:#fff5fb; font-size:14px; font-weight:600; cursor:pointer; }
+.auth-tabs button.chosen { background:#f05bb9; border-color:#f05bb9; color:#140c18; }
+.auth-error { margin:12px 0 0; padding:10px 12px; border-radius:10px; background:rgba(240,91,91,.14); border:1px solid rgba(240,91,91,.45); color:#ffb4b4; font-size:13px; }
+.auth-success { display:flex; align-items:flex-start; gap:8px; margin:12px 0 0; padding:10px 12px; border-radius:10px; background:rgba(120,220,150,.12); border:1px solid rgba(120,220,150,.4); color:#b9f0cd; font-size:13px; }
+.auth-submit { width:100%; margin-top:18px; min-height:46px; justify-content:center; }
+.auth-forgot { margin-top:14px; }
+.auth-card .text-field { width:100%; }
