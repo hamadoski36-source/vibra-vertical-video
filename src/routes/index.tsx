@@ -143,6 +143,7 @@ function IconButton({ label, onClick, children, className = '', active = false }
 }
 
 function VibraApp() {
+  const { user, loading: authLoading } = useAuth();
   const [view, setView] = useState<View>('home');
   const [state, setState] = useState<Persisted>(() => {
     try {
