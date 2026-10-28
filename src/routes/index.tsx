@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import {
-  Bookmark, Camera, Check, Compass, Film, Heart, Home, Inbox, MessageCircle,
+  Bookmark, Camera, Check, Compass, Film, Heart, Home, Inbox, LogOut, MessageCircle,
   Pause, Play, Plus, Search, Send, Share2, Sparkles, UserRound, X, Radio,
   ArrowUpRight, ImagePlus, Camera as CameraIcon, Music, Volume2, VolumeX, Trash2,
 } from "lucide-react";
@@ -14,19 +14,21 @@ import { VideoProgress } from "@/components/video-progress";
 import { silenceVideo, startActiveVideo } from "@/lib/vibra-playback";
 import { cleanFollows, followGraph, followStats, normalizeHandle, SOCIAL_PLATFORMS, socialUrl } from "@/lib/vibra-social";
 import type { FollowEdge, SocialLinks } from "@/lib/vibra-social";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 
 import "../vibra.css";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Vibra — Your daily frequency" },
+      { title: "Vibra Worldwide — Your daily frequency" },
       {
         name: "description",
         content:
-          "Vibra is a vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
+          "Vibra Worldwide is a vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
       },
-      { property: "og:title", content: "Vibra — Your daily frequency" },
+      { property: "og:title", content: "Vibra Worldwide — Your daily frequency" },
       {
         property: "og:description",
         content:
@@ -141,6 +143,7 @@ function IconButton({ label, onClick, children, className = '', active = false }
 }
 
 function VibraApp() {
+  const { user, loading: authLoading } = useAuth();
   const [view, setView] = useState<View>('home');
   const [state, setState] = useState<Persisted>(() => {
     try {
@@ -171,6 +174,11 @@ function VibraApp() {
   const [socialError, setSocialError] = useState('');
   const [profilePhotoRef, setProfilePhotoRef] = useState<HTMLInputElement | null>(null);
   const [profilePhotoBusy, setProfilePhotoBusy] = useState(false);
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    setNotice('You are signed out. Your clips on this device are untouched.');
+  }
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const [profileTab, setProfileTab] = useState<'clips' | 'liked' | 'saved'>('clips');
   const [draftTitle, setDraftTitle] = useState('');
@@ -379,7 +387,7 @@ function VibraApp() {
   }
   async function importVideo(file?: File) {
     if (!file) return;
-    if (!file.type.startsWith('video/')) { setNotice('Choose a video file to add it to Vibra.'); return; }
+    if (!file.type.startsWith('video/')) { setNotice('Choose a video file to add it to Vibra Worldwide.'); return; }
     if (file.size > 400 * 1024 * 1024) { setNotice('This video is over 400 MB. Choose a smaller clip.'); return; }
     setIsImporting(true);
     try {
@@ -392,13 +400,16 @@ function VibraApp() {
       };
       setClipUrls(prev => ({ ...prev, [id]: URL.createObjectURL(file) }));
       setState(s => ({ ...s, clips: [...s.clips, clip] }));
-      setDraftTitle(''); setComposerOpen(false); setView('home'); setNotice('Your clip is ready in your local Vibra feed.');
+      setDraftTitle(''); setComposerOpen(false); setView('home'); setNotice('Your clip is ready in your local Vibra Worldwide feed.');
+      // The newest clip is prepended, so the browser keeps the old scroll
+      // offset; jump back to the top so the new clip is the active one.
+      window.setTimeout(() => feedRef.current?.scrollTo({ top: 0 }), 60);
     } catch {
       setNotice('Video storage is unavailable. Check browser storage permissions and try again.');
     } finally { setIsImporting(false); if (galleryRef.current) galleryRef.current.value = ''; if (cameraRef.current) cameraRef.current.value = ''; }
   }
   async function shareClip(clip: Clip) {
-    const shareData = { title: `${clip.title} · Vibra`, text: clip.caption };
+    const shareData = { title: `${clip.title} · Vibra Worldwide`, text: clip.caption };
     if (navigator.share) {
       try {
         if (clip.blobKey && typeof navigator.canShare === 'function') {
@@ -490,24 +501,30 @@ function VibraApp() {
   return (
     <div className={`app-shell grain ${view === 'home' ? 'home-feed-shell' : ''}`}>
       <header className="mobile-header">
-        <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra home">vibra<span>.</span></button>
+        <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra Worldwide home">vibra<span> worldwide</span></button>
         <div className="header-actions">
+          {!authLoading && (user
+            ? <button className="account-chip" onClick={() => void handleSignOut()} aria-label="Sign out"><LogOut size={15}/><span>Sign out</span></button>
+            : <a href="/auth" className="account-chip" aria-label="Sign in"><UserRound size={15}/><span>Sign in</span></a>)}
           <IconButton label="Search clips" onClick={() => navTo('explore')}><Search size={20}/></IconButton>
           <button className="create-small" onClick={startCreate} aria-label="Create a clip"><Plus size={19}/></button>
         </div>
       </header>
       <aside className="desktop-rail">
-        <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra home">vibra<span>.</span></button>
+        <button className="brand brand-type" onClick={() => navTo('home')} aria-label="Vibra Worldwide home">vibra<span> worldwide</span></button>
         <div className="rail-links">
           {navItems.map(({ key, label, icon: Icon }) => <button key={key} onClick={() => navTo(key)} className={`rail-link ${view === key ? 'selected' : ''}`} aria-current={view === key ? 'page' : undefined}><Icon size={20}/><span>{label}</span></button>)}
           <button className="rail-link create-link" onClick={startCreate}><Plus size={20}/><span>Create</span></button>
+          {!authLoading && (user
+            ? <button className="rail-link" onClick={() => void handleSignOut()}><LogOut size={20}/><span>Sign out</span></button>
+            : <a href="/auth" className="rail-link"><UserRound size={20}/><span>Sign in</span></a>)}
         </div>
         <div className="rail-note"><span className="online-dot"/><span>Made for your moments</span></div>
       </aside>
 
       <main className={`main-content view-${view}`}>
         <div className="page-heading">
-          <div><span className="eyebrow">{view === 'home' ? 'YOUR DAILY FREQUENCY' : 'VIBRA / YOUR SPACE'}</span><h1>{pageTitle}<span className="heading-period">.</span></h1></div>
+          <div><span className="eyebrow">{view === 'home' ? 'YOUR DAILY FREQUENCY' : 'VIBRA WORLDWIDE / YOUR SPACE'}</span><h1>{pageTitle}<span className="heading-period">.</span></h1></div>
           {view === 'home' && <button className="text-link" onClick={() => navTo('explore')}>Find a new mood <ArrowUpRight size={16}/></button>}
         </div>
 

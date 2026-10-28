@@ -1,0 +1,15 @@
+{
+  "name": "Vibra Worldwide",
+  "short_name": "Vibra",
+  "description": "A vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#140c18",
+  "theme_color": "#140c18",
+  "icons": [
+    { "src": "/pwa-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/pwa-512x512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/pwa-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

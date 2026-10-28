@@ -78,13 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Vibra — Your daily frequency" },
+      { name: "theme-color", content: "#140c18" },
+      { title: "Vibra Worldwide — Your daily frequency" },
       {
         name: "description",
         content:
-          "Vibra is a vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
+          "Vibra Worldwide is a vertical short-video feed for your moments: watch clips, like, comment, save, follow creators, and add your own videos.",
       },
-      { property: "og:title", content: "Vibra — Your daily frequency" },
+      { property: "og:title", content: "Vibra Worldwide — Your daily frequency" },
       {
         property: "og:description",
         content:
@@ -104,7 +105,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "apple-touch-icon", href: "/pwa-192x192.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
   shellComponent: RootShell,
