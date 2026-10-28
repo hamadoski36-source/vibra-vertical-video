@@ -78,6 +78,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#140c18" },
       { title: "Vibra Worldwide — Your daily frequency" },
       {
         name: "description",
@@ -107,7 +108,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", type: "image/png", href: "/favicon.png" },
       { rel: "apple-touch-icon", href: "/pwa-192x192.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
-      { name: "theme-color", content: "#140c18" },
     ],
   }),
   shellComponent: RootShell,
