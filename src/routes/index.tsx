@@ -409,7 +409,7 @@ function VibraApp() {
     } finally { setIsImporting(false); if (galleryRef.current) galleryRef.current.value = ''; if (cameraRef.current) cameraRef.current.value = ''; }
   }
   async function shareClip(clip: Clip) {
-    const shareData = { title: `${clip.title} · Vibra`, text: clip.caption };
+    const shareData = { title: `${clip.title} · Vibra Worldwide`, text: clip.caption };
     if (navigator.share) {
       try {
         if (clip.blobKey && typeof navigator.canShare === 'function') {
