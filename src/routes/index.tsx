@@ -14,7 +14,7 @@ export default function Home() {
         setMuted(new Set())
         videoRefs.current.forEach(v => {
           v.muted = false
-          v.play().catch(()=>{})
+          v.play().catch(() => {})
         })
       }
     }
@@ -43,7 +43,9 @@ export default function Home() {
         video_url: urlData.publicUrl,
         username: 'vibra_official',
         creator: 'VIBRA Official',
-        title: file.name
+        title: file.name,
+        likes: 0,
+        comments: 0
       })
       const { data: newClips } = await supabase.from('clips').select('*').order('created_at', { ascending: false })
       if (newClips) setClips(newClips)
@@ -53,7 +55,7 @@ export default function Home() {
   return (
     <div className="h-screen w-screen bg-black overflow-y-scroll snap-y snap-mandatory">
       {!hasInteracted && (
-        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white/90 text-black px-6 py-3 rounded-full font-bold animate-pulse pointer-events-none">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white/90 text-black px-6 py-3 rounded-full font-bold animate-pulse">
           Tap anywhere for sound 🔊
         </div>
       )}
@@ -70,26 +72,23 @@ export default function Home() {
             onClick={() => {
               const v = videoRefs.current.get(clip.id)
               if (v) {
+                setHasInteracted(true)
                 if (v.muted) {
-                  setHasInteracted(true)
-                  setMuted(prev => {
-                    const n = new Set(prev)
-                    n.delete(clip.id)
-                    return n
-                  })
                   v.muted = false
+                  setMuted(prev => { const n = new Set(prev); n.delete(clip.id); return n })
                 } else {
                   v.muted = true
+                  setMuted(prev => { const n = new Set(prev); n.add(clip.id); return n })
                 }
               }
             }}
           />
-          <div className="absolute bottom-20 left-4 text-white">
+          <div className="absolute bottom-24 left-4 text-white">
             <p className="font-bold text-lg">@{clip.username || 'vibra_official'}</p>
             <p className="text-sm opacity-80">{clip.creator || 'VIBRA Official'}</p>
             <p className="text-sm mt-1">{clip.title}</p>
           </div>
-          <label className="absolute top-4 right-4 bg-white text-black px-4 py-2 rounded-full text-sm font-bold cursor-pointer">
+          <label className="absolute top-6 right-4 bg-white text-black px-4 py-2 rounded-full text-sm font-bold cursor-pointer">
             Upload
             <input type="file" accept="video/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleUpload(e.target.files[0]) }} />
           </label>
