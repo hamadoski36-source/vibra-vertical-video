@@ -28,16 +28,10 @@ function VibraFinal() {
     if(l){ const m={}; const s=new Set(); l.forEach(a=>{ m[a.clip_id]=(m[a.clip_id]||0)+1; if(a.user_id==='vibra_boy') s.add(a.clip_id)}); setLikesMap(m); setMyLikes(s)}
   }
 
-  // SAUTI INAKATA AUTOMATIC UKITOKA
-  useEffect(()=>{
-   
-       // SAUTI INAKATA AUTOMATIC UKITOKA
   useEffect(()=>{
     if(showPage!=='home' || tab==='live' || tab==='friends'){
       videoRefs.current.forEach(v=>{ v.pause() })
       document.querySelectorAll('video').forEach(v=>{ v.pause() })
-    }
-  }, [showPage, tab])
     }
   }, [showPage, tab])
 
@@ -66,16 +60,17 @@ function VibraFinal() {
           <button onClick={()=>setShowPage('home')} className="bg-zinc-800 text-white px-4 py-2 rounded-full text-sm">← Back - Sauti itarudi</button>
           <h2 className="text-white font-bold text-xl mt-4">{showPage.toUpperCase()} - Sauti imezimwa ✓</h2>
           {showPage==='me' && <div className="mt-6 flex flex-col items-center"><div className="w-20 h-20 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-2xl">V</div><p className="text-white mt-2">@vibra_boy - {clips.length} videos</p></div>}
-          {showPage==='inbox' && <p className="text-zinc-400 mt-4">Inbox - 9+ messages</p>}
+          {showPage==='inbox' && <p className="text-zinc-400 mt-4">Inbox - 9+ messages - Sauti OFF ✓</p>}
           {showPage==='explore' && <div className="grid grid-cols-2 gap-2 mt-4">{clips.map(c=><video key={c.id} src={c.url} className="h-32 w-full object-cover rounded" muted />)}</div>}
-          {showPage==='lyrics' && <p className="text-white mt-4">Familia yangu 😂<br/>Lyrics zote hapa...</p>}
+          {showPage==='lyrics' && <p className="text-white mt-4">Familia yangu 😂<br/>Lyrics hapa...</p>}
         </div>
       )}
 
       {showPage==='home' && (
         <div className="h-screen overflow-y-scroll snap-y snap-mandatory">
           {tab==='live' && <div className="h-screen flex items-center justify-center text-white flex-col"><p className="text-4xl">🔴 LIVE</p><p className="text-zinc-400 mt-2">Sauti imezimwa ✓</p><button onClick={()=>setTab('foryou')} className="mt-4 bg-white text-black px-6 py-2 rounded-full">For You</button></div>}
-          {tab!=='live' && filtered.map(c=>{
+          {tab==='friends' && <div className="h-screen flex items-center justify-center text-white flex-col"><p className="text-2xl">Friends 👥 - Sauti OFF ✓</p><button onClick={()=>setTab('foryou')} className="mt-4 bg-white text-black px-6 py-2 rounded-full">For You</button></div>}
+          {tab!=='live' && tab!=='friends' && filtered.map(c=>{
             const liked=myLikes.has(c.id); const isF=following.has(c.username)
             return (
               <div key={c.id} className="h-screen w-full snap-start relative bg-black">
