@@ -69,9 +69,9 @@ describe('Worldwide Supabase feed', () => {
     await waitFor(() => expect(screen.getByText('Uploaded worldwide!')).toBeInTheDocument());
     expect(storageUpload).toHaveBeenCalledOnce();
     expect(tableInsert).toHaveBeenCalledOnce();
-    const row = tableInsert.mock.calls[0][0] as Record<string, unknown>;
-    expect(row.video_url).toContain('Vibra%20clips');
-    expect(typeof row.created_at).toBe('number');
+    const row = tableInsert.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(row['video_url']).toContain('Vibra%20clips');
+    expect(typeof row['created_at']).toBe('number');
   });
 
   it('deletes a clip from bucket and table when signed in', async () => {
