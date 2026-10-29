@@ -35,7 +35,7 @@ export default function Home() {
   }, [])
 
   const handleUpload = async (file: File) => {
-    const fileName = `${Date.now()}-${file.name}`
+      const fileName = Date.now() + '-' + file.name
     const { data } = await supabase.storage.from('clips').upload(fileName, file)
     if (data) {
       const { data: urlData } = supabase.storage.from('clips').getPublicUrl(fileName)
