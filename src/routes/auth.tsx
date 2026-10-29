@@ -2,45 +2,37 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/auth')({
-  component: AuthPage,
+  component: VibraAuth,
 })
 
-function AuthPage() {
-  const [email, setEmail] = useState('')
+function VibraAuth() {
+  const [name, setName] = useState('vibra_boy')
   const navigate = useNavigate()
 
-  const handleLogin = () => {
-    if (!email) {
-      alert('Weka email yako!')
-      return
-    }
-    // Tunahifadhi login kwenye simu yako
-    localStorage.setItem('vibra_user', email)
-    alert('Umeingia! Karibu Vibra! 🎉')
+  function ingia() {
+    if (!name.trim()) { alert('Weka jina!'); return }
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+    localStorage.setItem('vibra_user', cleanName)
+    localStorage.setItem('vibra_display', name)
+    alert(`Umeingia kama @${cleanName}! Karibu Vibra! 🎉`)
     navigate({ to: '/' })
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white p-6">
-      <h1 className="text-3xl font-bold mb-2">Ingia Vibra 🔥</h1>
-      <p className="text-gray-400 mb-6">Ingiza email yako uanze ku-upload</p>
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
+      <h1 className="text-3xl font-bold">Ingia Vibra 🔥</h1>
+      <p className="opacity-60 mt-2 text-sm">Karibu @vibra_boy!</p>
       
       <input
-        type="email"
-        placeholder="email yako@gmail.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full max-w-sm p-4 rounded-xl bg-gray-800 border border-gray-700 mb-4 text-white"
+        value={name}
+        onChange={e => setName(e.target.value)}
+        className="mt-6 w-full max-w-sm bg-zinc-800 p-4 rounded-2xl text-white font-bold text-center text-lg"
       />
-      
-      <button
-        onClick={handleLogin}
-        className="w-full max-w-sm p-4 bg-purple-600 rounded-xl font-bold"
-      >
-        Ingia Sasa
-      </button>
 
-      <p className="mt-4 text-sm text-gray-500">Hakuna password inahitajika kwa sasa</p>
+      <button onClick={ingia} className="mt-5 w-full max-w-sm bg-white text-black p-4 rounded-2xl font-bold text-lg">
+        Ingia kama @vibra_boy 🚀
+      </button>
+      <p className="opacity-40 mt-4 text-xs">Jina la siri, hakuna jina la kweli!</p>
     </div>
   )
 }
