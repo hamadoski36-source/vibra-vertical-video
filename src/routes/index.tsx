@@ -4,10 +4,10 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 export const Route = createFileRoute('/')({
-  component: VibraFinal,
+  component: VibraAllInOne,
 })
 
-function VibraFinal() {
+function VibraAllInOne() {
   const [clips, setClips] = useState([])
   const [likesMap, setLikesMap] = useState({})
   const [myLikes, setMyLikes] = useState(new Set())
@@ -20,36 +20,48 @@ function VibraFinal() {
   const [tab, setTab] = useState('foryou')
   const [isMuted, setIsMuted] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [showCaption, setShowCaption] = useState(false)
+  const [captionText, setCaptionText] = useState('Familia yangu 😂 #vibra #familia #comedy')
+  const [pendingFile, setPendingFile] = useState(null)
   const fileRef = useRef(null)
   const videoRefs = useRef(new Map())
-  const containerRef = useRef(null)
 
   useEffect(()=>{ load() }, [])
 
   async function load(){
     const {data} = await supabase.from('clips').select('*').order('created_at',{ascending:false})
-    if(data) setClips(data.map(x=>({id:x.id, url:x.url||x.video_url, username:x.username||'vibra_boy', caption:x.caption||'Familia yangu 😂'})))
+    if(data) setClips(data.map(x=>({id:x.id, url:x.url||x.video_url, username:x.username||'vibra_boy', caption:x.caption||'Familia yangu 😂 #vibra', views: Math.floor(Math.random()*1500000+500)})))
     const {data:l} = await supabase.from('likes').select('*')
     if(l){ const m={}; const s=new Set(); l.forEach(a=>{ m[a.clip_id]=(m[a.clip_id]||0)+1; if(a.user_id==='vibra_boy') s.add(a.clip_id)}); setLikesMap(m); setMyLikes(s)}
     const {data:c} = await supabase.from('comments').select('*')
     if(c){ const m={}; c.forEach(x=>{ if(!m[x.clip_id]) m[x.clip_id]=[]; m[x.clip_id].push(x)}); setCommentsMap(m)}
   }
 
-  // SAUTI INAKATA UKITOKA TU - SIO KILA WAKATI
+  // FIX 1 & 2: SAUTI INAKATA UKITOKA PAGE + UKITOKA KWENYE APP
   useEffect(()=>{
     if(showPage!=='home' || tab==='live' || tab==='friends'){
       videoRefs.current.forEach(v=>{ try{v.pause()}catch{}})
       document.querySelectorAll('video').forEach(v=>{ try{v.pause()}catch{}})
-    } else {
-      // Rudi Home - cheza tena
-      setTimeout(()=>{
-        const first = videoRefs.current.values().next().value
-        if(first){ try{ first.muted=isMuted; first.play() }catch{} }
-      }, 300)
     }
   }, [showPage, tab])
 
-  // AUTO-PLAY KAMA TIKTOK
+  useEffect(()=>{
+    const stopAll = ()=>{
+      videoRefs.current.forEach(v=>{ try{v.pause()}catch{}})
+      document.querySelectorAll('video').forEach(v=>{ try{v.pause()}catch{}})
+    }
+    const handleVis = ()=>{ if(document.hidden) stopAll() }
+    document.addEventListener('visibilitychange', handleVis)
+    window.addEventListener('blur', stopAll)
+    window.addEventListener('pagehide', stopAll)
+    return ()=>{
+      document.removeEventListener('visibilitychange', handleVis)
+      window.removeEventListener('blur', stopAll)
+      window.removeEventListener('pagehide', stopAll)
+    }
+  }, [])
+
+  // AUTO-PLAY SCROLL
   useEffect(()=>{
     if(showPage!=='home' || tab==='live' || tab==='friends') return
     const obs = new IntersectionObserver((entries)=>{
@@ -68,17 +80,40 @@ function VibraFinal() {
     return ()=>obs.disconnect()
   }, [clips, showPage, tab, isMuted])
 
+  async function doUpload(){
+    if(!pendingFile) return
+    setUploading(true)
+    const n=`${Date.now()}_${pendingFile.name}`
+    await supabase.storage.from('Vibra clips').upload(n,pendingFile)
+    const {data}=supabase.storage.from('Vibra clips').getPublicUrl(n)
+    await supabase.from('clips').insert({url:data.publicUrl, video_url:data.publicUrl, username:'vibra_boy', user_id:'vibra_boy', caption:captionText})
+    setUploading(false); setShowCaption(false); setPendingFile(null); load()
+  }
+
   const filtered = tab==='following' ? clips.filter(c=>following.has(c.username)) : clips
+  const totalLikes = Object.values(likesMap).reduce((a,b)=>a+b, 0)
+  const fmt = (n)=> n>=1000000 ? (n/1000000).toFixed(1)+'M' : n>=1000 ? (n/1000).toFixed(1)+'K' : n
 
   return (
     <div className="h-screen bg-black relative overflow-hidden">
-      <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={async(e)=>{
-        const f=e.target.files?.[0]; if(!f) return; setUploading(true)
-        const n=`${Date.now()}_${f.name}`; await supabase.storage.from('Vibra clips').upload(n,f)
-        const {data}=supabase.storage.from('Vibra clips').getPublicUrl(n)
-        await supabase.from('clips').insert({url:data.publicUrl, video_url:data.publicUrl, username:'vibra_boy', user_id:'vibra_boy', caption:'Familia yangu 😂'})
-        setUploading(false); load()
+      <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e)=>{
+        const f=e.target.files?.[0]; if(!f) return; setPendingFile(f); setShowCaption(true)
       }} />
+
+      {/* #TAGS MODAL */}
+      {showCaption && (
+        <div className="absolute inset-0 bg-black/90 z-50 flex flex-col justify-end p-4">
+          <div className="bg-zinc-900 rounded-3xl p-5">
+            <h3 className="text-white font-bold">Andika Caption na #Tags</h3>
+            <textarea value={captionText} onChange={e=>setCaptionText(e.target.value)} className="w-full bg-zinc-800 text-white p-4 rounded-xl mt-3 h-28 outline-none text-sm" placeholder="#familia #comedy #vibra" />
+            <p className="text-zinc-400 text-xs mt-2">Mfano: Familia yangu 😂 #familia #comedy #tanzania</p>
+            <div className="flex gap-3 mt-4">
+              <button onClick={()=>{setShowCaption(false); setPendingFile(null)}} className="flex-1 bg-zinc-700 text-white py-3 rounded-full font-bold">Cancel</button>
+              <button onClick={doUpload} className="flex-1 bg-white text-black py-3 rounded-full font-bold">{uploading?'Uploading...':'Post ✓'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="absolute top-0 left-0 right-0 z-20 pt-2 pb-2 bg-gradient-to-b from-black/70 to-transparent">
         <div className="flex justify-center gap-6 text-[15px] font-bold">
@@ -89,58 +124,80 @@ function VibraFinal() {
       </div>
 
       {showPage!=='home' && (
-        <div className="absolute inset-0 bg-black z-30 pt-16 p-4 overflow-y-auto">
-          <button onClick={()=>setShowPage('home')} className="bg-zinc-800 text-white px-5 py-2 rounded-full text-sm font-bold">← Back - Sauti itarudi</button>
-          <h2 className="text-white font-bold text-xl mt-6">{showPage.toUpperCase()} ✓ Sauti imezimwa</h2>
-          {showPage==='me' && <div className="mt-6 flex flex-col items-center"><div className="w-20 h-20 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-2xl">V</div><p className="text-white mt-2">@vibra_boy - {clips.length} videos</p></div>}
-          {showPage==='inbox' && <p className="text-zinc-400 mt-4">Inbox - Sauti OFF ✓</p>}
-          {showPage==='explore' && <div className="grid grid-cols-2 gap-2 mt-4">{clips.map(c=><video key={c.id} src={c.url} className="h-36 w-full object-cover rounded" muted />)}</div>}
-          {showPage==='lyrics' && <p className="text-white mt-4">Familia yangu 😂<br/>Lyrics hapa...</p>}
+        <div className="absolute inset-0 bg-white z-30 overflow-y-auto">
+          {showPage==='me' ? (
+            <div className="bg-white min-h-screen">
+              <div className="flex items-center justify-between p-3 pt-4">
+                <button onClick={()=>setShowPage('home')} className="text-2xl">←</button>
+                <p className="font-bold text-[16px]">athman said</p>
+                <button className="text-xl">⋮</button>
+              </div>
+              <div className="flex flex-col items-center pt-2">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-yellow-400 to-pink-500 p-1">
+                  <div className="w-full h-full rounded-full bg-zinc-200 flex items-center justify-center text-3xl font-bold">V</div>
+                </div>
+                <p className="font-bold mt-3 text-[15px]">@vibra_boy</p>
+                <div className="flex gap-8 mt-4">
+                  <div className="text-center"><p className="font-bold text-[16px]">10K</p><p className="text-zinc-500 text-[12px]">Following</p></div>
+                  <div className="text-center border-l border-r border-zinc-200 px-8"><p className="font-bold text-[16px]">250.8K</p><p className="text-zinc-500 text-[12px]">Followers</p></div>
+                  <div className="text-center"><p className="font-bold text-[16px]">{fmt(totalLikes||2000000)}</p><p className="text-zinc-500 text-[12px]">Likes</p></div>
+                </div>
+                <div className="flex gap-2 mt-5 w-full px-4">
+                  <button className="flex-1 bg-[#FE2C55] text-white py-3 rounded-lg font-bold text-[15px]">Follow</button>
+                  <button className="bg-zinc-100 px-4 rounded-lg">👤+</button>
+                </div>
+                <p className="text-[13px] text-zinc-600 mt-3 px-4 text-center">Familia yangu 😂 #familia #vibra #comedy 🔥</p>
+                <div className="flex w-full mt-5 border-b border-zinc-200">
+                  <button className="flex-1 py-3 flex justify-center border-b-2 border-black"><span className="text-[18px]">☰</span></button>
+                  <button className="flex-1 py-3 flex justify-center text-zinc-400"><span className="text-[18px]">♡</span></button>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-[2px]">
+                {clips.map((c,i)=>(
+                  <div key={c.id} className="relative aspect-[3/4] bg-black">
+                    <video src={c.url} className="w-full h-full object-cover" muted />
+                    {i<3 && <span className="absolute top-1 left-1 bg-[#FE2C55] text-white text-[10px] px-1.5 py-0.5 rounded font-bold">Pinned</span>}
+                    <div className="absolute bottom-1 left-1 flex items-center gap-1 text-white text-[11px] font-bold drop-shadow">▷ {fmt(c.views)}</div>
+                    <div className="absolute bottom-6 left-1 text-white text-[8px] bg-black/50 px-1 rounded">{i===0?'15h ago': i===1?'16h ago': i===2?'Just watched': `${Math.floor(Math.random()*20+1)}h ago`}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-black min-h-screen p-4 pt-16">
+              <button onClick={()=>setShowPage('home')} className="bg-zinc-800 text-white px-5 py-2 rounded-full text-sm font-bold">← Back - Sauti OFF ✓</button>
+              <h2 className="text-white font-bold text-xl mt-6">{showPage.toUpperCase()}</h2>
+            </div>
+          )}
         </div>
       )}
 
       {showPage==='home' && (
-        <>
-          {tab==='live' && <div className="h-screen flex items-center justify-center text-white flex-col"><p className="text-4xl">🔴 LIVE</p><p className="text-zinc-400 mt-2">Sauti OFF ✓</p><button onClick={()=>setTab('foryou')} className="mt-4 bg-white text-black px-6 py-2 rounded-full font-bold">For You</button></div>}
-          {tab==='friends' && <div className="h-screen flex items-center justify-center text-white flex-col"><p className="text-2xl">Friends 👥 - Sauti OFF ✓</p><button onClick={()=>setTab('foryou')} className="mt-4 bg-white text-black px-6 py-2 rounded-full font-bold">For You</button></div>}
-          {tab!=='live' && tab!=='friends' && (
-            <div ref={containerRef} className="h-screen overflow-y-scroll snap-y snap-mandatory">
-              {filtered.map(c=>{
-                const liked=myLikes.has(c.id); const isF=following.has(c.username); const isSaved=mySaves.has(c.id); const comments=commentsMap[c.id]||[]
-                return (
-                  <div key={c.id} data-id={c.id} className="h-screen w-full snap-start relative bg-black">
-                    <video ref={el=>{if(el) videoRefs.current.set(c.id, el)}} src={c.url} loop playsInline muted={isMuted} onClick={()=>setIsMuted(!isMuted)} className="h-full w-full object-cover" />
-                    <button onClick={()=>setIsMuted(!isMuted)} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 px-5 py-2 rounded-full text-white text-sm border border-white font-bold z-10">
-                      {isMuted?'🔇 Tap for sound':'🔊 ON'}
-                    </button>
-                    <div className="absolute right-2 bottom-28 flex flex-col gap-4 items-center">
-                      <div className="relative">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 to-pink-500 p-0.5"><div className="w-full h-full rounded-full bg-zinc-800 flex items-center justify-center text-white font-bold">V</div></div>
-                        <button onClick={()=>{const s=new Set(following); if(s.has(c.username)) s.delete(c.username); else s.add(c.username); setFollowing(s)}} className={`absolute -bottom-1 left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 border-black ${isF?'bg-zinc-600':'bg-[#FF3B5C]'} text-white`}>{isF?'✓':'+'}</button>
-                      </div>
-                      <button onClick={async()=>{ if(liked){ await supabase.from('likes').delete().eq('clip_id',c.id).eq('user_id','vibra_boy'); setMyLikes(p=>{const n=new Set(p); n.delete(c.id); return n}); setLikesMap(m=>({...m,[c.id]:Math.max(0,(m[c.id]||1)-1)}))} else { await supabase.from('likes').insert({clip_id:c.id,user_id:'vibra_boy'}); setMyLikes(p=>{const n=new Set(p); n.add(c.id); return n}); setLikesMap(m=>({...m,[c.id]:(m[c.id]||0)+1}))}}} className="flex flex-col items-center"><div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${liked?'bg-[#FF3B5C]':'bg-white/20'}`}>❤️</div><span className="text-white text-xs font-bold">{likesMap[c.id]||0}</span></button>
-                      <button onClick={()=>setActiveClip(activeClip===c.id?null:c.id)} className="flex flex-col items-center"><div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl">💬</div><span className="text-white text-xs font-bold">{comments.length}</span></button>
-                      <button onClick={()=>{const s=new Set(mySaves); if(s.has(c.id)) s.delete(c.id); else s.add(c.id); setMySaves(s)}} className="flex flex-col items-center"><div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${isSaved?'bg-yellow-400':'bg-white/20'}`}>🔖</div><span className="text-white text-[10px]">Save</span></button>
-                      <button onClick={()=>{ if(navigator.share) navigator.share({url:c.url}); else {navigator.clipboard.writeText(c.url); alert('Copied!')}}} className="flex flex-col items-center"><div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl">↗️</div><span className="text-white text-[10px]">Share</span></button>
-                      <button onClick={()=>setShowPage('lyrics')} className="w-10 h-10 rounded-full bg-zinc-800 border border-white/30 flex items-center justify-center text-xs">🎵</button>
-                    </div>
-                    <div className="absolute bottom-20 left-3 right-20 text-white">
-                      <p className="font-bold text-sm">@{c.username} <button onClick={()=>{const s=new Set(following); if(s.has(c.username)) s.delete(c.username); else s.add(c.username); setFollowing(s)}} className={`ml-2 text-xs px-3 py-1 rounded-full font-bold ${isF?'bg-zinc-700':'bg-[#FF3B5C]'}`}>{isF?'Following':'Follow'}</button></p>
-                      <p className="text-[13px] mt-1">{c.caption}</p>
-                    </div>
-                    {activeClip===c.id && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-zinc-900 rounded-t-3xl p-4 max-h-[45vh] flex flex-col z-20">
-                        <div className="w-10 h-1 bg-zinc-600 rounded-full mx-auto mb-3" onClick={()=>setActiveClip(null)} />
-                        <div className="flex-1 overflow-y-auto space-y-2 mb-3">{comments.map(cm=><p key={cm.id} className="text-white text-sm"><b>@{cm.username}:</b> {cm.text}</p>)}</div>
-                        <div className="flex gap-2"><input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add comment..." className="flex-1 bg-zinc-800 text-white p-3 rounded-full text-sm outline-none"/><button onClick={async()=>{ if(!commentText.trim()) return; const {data}=await supabase.from('comments').insert({clip_id:c.id,user_id:'vibra_boy',username:'vibra_boy',text:commentText}).select().single(); if(data){ setCommentsMap(m=>({...m,[c.id]:[...(m[c.id]||[]),data]})); setCommentText('')}}} className="bg-white text-black px-5 rounded-full font-bold">➤</button></div>
-                      </div>
-                    )}
+        <div className="h-screen overflow-y-scroll snap-y snap-mandatory">
+          {filtered.map(c=>{
+            const liked=myLikes.has(c.id); const isF=following.has(c.username); const comments=commentsMap[c.id]||[]
+            return (
+              <div key={c.id} data-id={c.id} className="h-screen w-full snap-start relative bg-black">
+                <video ref={el=>{if(el) videoRefs.current.set(c.id, el)}} src={c.url} loop playsInline muted={isMuted} onClick={()=>setIsMuted(!isMuted)} className="h-full w-full object-cover" />
+                <button onClick={()=>setIsMuted(!isMuted)} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 px-5 py-2 rounded-full text-white text-sm border border-white font-bold z-10">
+                  {isMuted?'🔇 Tap for sound':'🔊 ON'}
+                </button>
+                <div className="absolute right-2 bottom-28 flex flex-col gap-4 items-center">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 to-pink-500 p-0.5"><div className="w-full h-full rounded-full bg-zinc-800 flex items-center justify-center text-white font-bold">V</div></div>
+                    <button onClick={()=>{const s=new Set(following); if(s.has(c.username)) s.delete(c.username); else s.add(c.username); setFollowing(s)}} className={`absolute -bottom-1 left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 border-black ${isF?'bg-zinc-600':'bg-[#FF3B5C]'} text-white`}>{isF?'✓':'+'}</button>
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </>
+                  <button onClick={async()=>{ if(liked){ await supabase.from('likes').delete().eq('clip_id',c.id).eq('user_id','vibra_boy'); setMyLikes(p=>{const n=new Set(p); n.delete(c.id); return n}); setLikesMap(m=>({...m,[c.id]:Math.max(0,(m[c.id]||1)-1)}))} else { await supabase.from('likes').insert({clip_id:c.id,user_id:'vibra_boy'}); setMyLikes(p=>{const n=new Set(p); n.add(c.id); return n}); setLikesMap(m=>({...m,[c.id]:(m[c.id]||0)+1}))}}} className="flex flex-col items-center"><div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${liked?'bg-[#FF3B5C]':'bg-white/20'}`}>❤️</div><span className="text-white text-xs font-bold">{likesMap[c.id]||0}</span></button>
+                  <button onClick={()=>setActiveClip(activeClip===c.id?null:c.id)} className="flex flex-col items-center"><div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl">💬</div><span className="text-white text-xs font-bold">{comments.length}</span></button>
+                </div>
+                <div className="absolute bottom-20 left-3 right-20 text-white">
+                  <p className="font-bold text-sm">@{c.username}</p>
+                  <p className="text-[13px] mt-1">{c.caption}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       )}
 
       <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-800 flex justify-around p-2 text-white text-[10px] z-30 items-center h-[60px]">
