@@ -1,11 +1,19 @@
 # Vibra migration roadmap
 
-## Current worldwide release request — October 29, 2026
-- [x] Inspect existing code, auth, storage and deployment indicators without replacing the app: React 19/TanStack Start/Vite web app with PWA manifest; uploads/media and social activity remain device-local
-- [x] Run all existing tests: 20 tests across 7 files passed
-- [x] Phone-sized browser check at 390×844: real local WebM upload, muted autoplay, one-tap sound and sign-in screen passed; no page errors; not a cloud or authenticated cross-account test
-- [x] Check existing external account service: settings endpoint responds; email login and signup enabled, email auto-confirm currently enabled (earlier confirmation-required observation is no longer current)
-- [x] Verify management access blocker: project database query reports no connected backend; no available service connections or backend management credentials; visitor-visible bucket list is empty, which does not prove there are no private buckets
+## Worldwide cloud feed — October 29, 2026 (done)
+- [x] Feed now reads from the cloud clips table (newest first, paginated), not localStorage; localStorage clip logic removed
+- [x] Uploads go to the public 'Vibra clips' storage bucket, then a row is inserted with the public URL; success message is exactly "Uploaded worldwide!"
+- [x] Matched the real table schema by probing the live API: id (number, required), title, creator, username, caption, video_url, created_at (epoch ms number); NO owner_id, user_id or visibility columns exist
+- [x] Verified the real cloud path end to end with the publishable key: uploaded a real WebM to the bucket, inserted its row, read it back in the feed, confirmed the public video URL serves 200, then cleaned up the test file and row
+- [x] Phone-sized browser check at 390×844: the live app loaded and fully buffered the cloud video (readyState 4); no page errors
+- [x] Fixed route registration (missing Route export broke the build) and delete-path parsing for the space in the bucket name (%20 in public URLs)
+- [x] Replaced 3 obsolete localStorage test files with vibra-worldwide.test.tsx (cloud feed, upload success message, delete signed-in/signed-out); all 18 tests pass, build OK
+- [ ] Ownership protection for delete: the clips table has no owner column, so any signed-in user can delete any video; user must add an owner_id column in their Supabase dashboard (Table editor → clips → Add column → name: owner_id, type: text) before per-owner delete rules can return
+- [ ] Tighten RLS: policies are currently true-for-everyone on clips and storage, so anyone on the internet can write or delete; narrow them once owner_id exists
+
+## Earlier inspection — October 29, 2026
+- [x] Inspect existing code, auth, storage and deployment indicators without replacing the app: React 19/TanStack Start/Vite web app with PWA manifest
+- [x] Check existing external account service: settings endpoint responds; email login and signup enabled, email auto-confirm currently enabled
 - [x] Inspect Git indicators: current remotes are Lovable internal hosting, not proof of external GitHub sync; hosted GitHub status remains unverified
 - [ ] Connect the EXISTING external project through Project settings → General → External Supabase → Connect; blocker: user must complete the dashboard connection, no replacement backend authorized
 - [ ] Inspect existing tables, grants, policies, buckets and Auth redirect configuration after connection; reuse compatible tables and preserve all device clips
