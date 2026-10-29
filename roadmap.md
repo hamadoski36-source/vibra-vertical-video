@@ -1,5 +1,28 @@
 # Vibra migration roadmap
 
+## Current worldwide release request — October 29, 2026
+- [x] Inspect existing code, auth, storage and deployment indicators without replacing the app: React 19/TanStack Start/Vite web app with PWA manifest; uploads/media and social activity remain device-local
+- [x] Run all existing tests: 20 tests across 7 files passed
+- [x] Phone-sized browser check at 390×844: real local WebM upload, muted autoplay, one-tap sound and sign-in screen passed; no page errors; not a cloud or authenticated cross-account test
+- [x] Check existing external account service: settings endpoint responds; email login and signup enabled, email auto-confirm currently enabled (earlier confirmation-required observation is no longer current)
+- [x] Verify management access blocker: project database query reports no connected backend; no available service connections or backend management credentials; visitor-visible bucket list is empty, which does not prove there are no private buckets
+- [x] Inspect Git indicators: current remotes are Lovable internal hosting, not proof of external GitHub sync; hosted GitHub status remains unverified
+- [ ] Connect the EXISTING external project through Project settings → General → External Supabase → Connect; blocker: user must complete the dashboard connection, no replacement backend authorized
+- [ ] Inspect existing tables, grants, policies, buckets and Auth redirect configuration after connection; reuse compatible tables and preserve all device clips
+- [ ] Implement cloud video metadata and private Storage objects with owner-scoped access; public reads only for public, nondeleted videos; owner reads include drafts/private videos; test public-to-private/deleted access revocation
+- [ ] Add global cursor-paginated public discovery, cloud upload progress/errors, thumbnail metadata, caption/date/creator ID and truthful shared likes/comments/views; retain working feed, playback, seeking and local clips
+- [ ] Test upload/readback with two confirmed accounts and visitor browsing; reject other-user writes/deletes and private/draft/deleted media access; blocker: connected backend and authenticated test access
+- [ ] Verify signup/login/logout/password-reset end to end; add private profiles and secure in-app/public account-deletion path without deleting another user's content
+- [ ] Implement UGC terms acceptance, reporting, blocking, moderation, copyright requests and privacy controls before public release
+- [ ] Build advertising foundation only after cloud verification: approved web solution assessment, native AdMob only in Android wrapper, consent/privacy choices, settings and reporting; blocker: approved ad account/site and real configuration
+- [ ] Build creator dashboard and separate role-protected administration: 100,000 unique followers PLUS configurable valid views, eligible account, originality, guideline compliance and fraud checks; no automatic eligibility/payment
+- [ ] Add configurable program rules and payout thresholds, estimated/approved/paid ledger states and history; leave earnings unavailable until verified revenue and an approved rate exist
+- [ ] Prepare server-verified, idempotent, admin-approved payouts through a legitimate Kenya M-Pesa/international provider; blocker: business onboarding, provider approval/credentials, funded verified revenue and chosen program rules; never collect M-Pesa PINs
+- [ ] Assess maintainable Capacitor Android wrapper while preserving hosted TanStack app; test gallery/camera, auth, upload, seeking, playback, consent, deletion and tablet navigation on physical Android
+- [ ] Prepare signed AAB and APK only after package identity/signing ownership, SDK requirements and Android build environment are verified; blocker: release identity, signing and Android device validation
+- [ ] Complete icon/splash/store screenshots, truthful description, privacy policy/support contact, data safety, rating and Play Console testing/submission; blocker: real operator/legal/support details and developer account; Google registration may cost US$25
+- [ ] Do not publish or enable live ads/payments until tested and explicitly authorized; Google Play approval remains unverified
+
 ## Existing project inspection and accounts
 - [x] Inspect framework and integrations: React 19, TanStack Start/Router, Vite, localStorage metadata and IndexedDB videos; no authentication integration installed
 - [x] Run all 20 regression tests and real-video checks at 375×812 and 412×915: muted autoplay, sound across swipes, previous-video silence, forward/backward seek, Lyrics, both upload controls; no page errors and no confirmed playback defect
