@@ -1,7 +1,22 @@
 import { useEffect, useState, useRef } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
 import { supabase } from '@/lib/supabase'
 
 // ===== VIBRA WORLDWIDE - CLEAN WORLDWIDE VERSION =====
+
+export const Route = createFileRoute('/')({
+  component: VibraApp,
+  head: () => ({
+    meta: [
+      { title: 'Vibra Worldwide — Global short-video feed' },
+      { name: 'description', content: 'Vibra Worldwide: upload and watch short videos shared by creators around the world.' },
+      { property: 'og:title', content: 'Vibra Worldwide — Global short-video feed' },
+      { property: 'og:description', content: 'Upload and watch short videos shared by creators around the world.' },
+      { property: 'og:type', content: 'website' },
+      { name: 'twitter:card', content: 'summary' },
+    ],
+  }),
+})
 
 type Clip = {
   id: string
@@ -90,7 +105,9 @@ export default function VibraApp() {
   async function deleteClip(clip: Clip) {
     const { data: { user } } = await supabase.auth.getUser()
     if (user?.id !== clip.owner_id) { setNotice('You can only delete your own videos'); return }
-    await supabase.storage.from('Vibra clips').remove([clip.video_url.split('/Vibra clips/')[1] || ''])
+    // Public URLs encode the space in the bucket name as %20 — handle both forms.
+    const path = clip.video_url.split('/Vibra%20clips/')[1] || clip.video_url.split('/Vibra clips/')[1]
+    if (path) await supabase.storage.from('Vibra clips').remove([decodeURIComponent(path)])
     await supabase.from('clips').delete().eq('id', clip.id)
     setClips(prev => prev.filter(c => c.id !== clip.id))
     setNotice('Deleted')
