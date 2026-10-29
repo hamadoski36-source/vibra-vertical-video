@@ -27,7 +27,7 @@ function VibraFinal() {
   const [isFollowingMe, setIsFollowingMe] = useState(false)
   const [isLive, setIsLive] = useState(false)
   const [showAdContact, setShowAdContact] = useState(false)
-  const [showWithdraw, setShowWithdraw] = useState(false)
+  const [dataSaver, setDataSaver] = useState(true)
   const fileRef = useRef(null)
   const videoRefs = useRef(new Map())
   const meVideoRef = useRef(null)
@@ -38,6 +38,8 @@ function VibraFinal() {
   const myEarnings = 4850 // KES earned
   const MY_MPESA = "0740805970"
 
+  const MY_PAYPAL = "vibra.worldwide@gmail.com"
+  const MY_MTN = "+256 740 805970"
   useEffect(()=>{
     const stopAll = () => { videoRefs.current.forEach(v=>{ try{ v.pause(); }catch{} }); if(meVideoRef.current) try{ meVideoRef.current.pause() }catch{} }
     const handleVis = () => { if(document.hidden) stopAll() }
