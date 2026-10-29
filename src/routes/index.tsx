@@ -12,13 +12,13 @@ function VibraFinal() {
   const [mySaves, setMySaves] = useState(new Set())
   const [commentsMap, setCommentsMap] = useState({})
   const [activeClip, setActiveClip] = useState(null)
-  const [showPage, setShowPage] = useState('me')
+  const [showPage, setShowPage] = useState('home')
   const [tab, setTab] = useState('foryou')
   const [isMuted, setIsMuted] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [uploadPct, setUploadPct] = useState(0)
   const [showCaption, setShowCaption] = useState(false)
-  const [captionText, setCaptionText] = useState('Familia yangu 😂 #familia #vibra #comedy 🔥')
+  const [captionText, setCaptionText] = useState('😂 #viral #vibra #comedy 🔥 #fyp')
   const [pendingFile, setPendingFile] = useState(null)
   const [playFromMe, setPlayFromMe] = useState(null)
   const [commentText, setCommentText] = useState('')
@@ -30,49 +30,79 @@ function VibraFinal() {
   useEffect(()=>{ load() }, [])
   async function load(){
     const {data} = await supabase.from('clips').select('*').order('created_at',{ascending:false})
-    if(data) setClips(data.map(x=>({id:x.id, url:x.url||x.video_url, username:x.username||'vibra_boy', caption:x.caption||'Familia yangu 😂 #vibra', views: Math.floor(Math.random()*800000+100000)})))
+    if(data && data.length>0) setClips(data.map(x=>({id:x.id, url:x.url||x.video_url, username:x.username||'vibra_boy', caption:x.caption||'Familia yangu 😂 #vibra', views: Math.floor(Math.random()*800000+100000)})))
+    else {
+      // fallback demo clips so app never black
+      setClips([
+        {id:'demo1', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', username:'vibra_boy', caption:'Familia yangu 😂 #vibra #demo', views:661400},
+        {id:'demo2', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', username:'vibra_boy', caption:'Together Forever ❤️∞ #vibra', views:658700},
+      ])
+    }
     const {data:l} = await supabase.from('likes').select('*')
     if(l){ const m={}; const s=new Set(); l.forEach(a=>{ m[a.clip_id]=(m[a.clip_id]||0)+1; if(a.user_id==='vibra_boy') s.add(a.clip_id)}); setLikesMap(m); setMyLikes(s)}
     const {data:c} = await supabase.from('comments').select('*')
     if(c){ const m={}; c.forEach(x=>{ if(!m[x.clip_id]) m[x.clip_id]=[]; m[x.clip_id].push(x)}); setCommentsMap(m)}
   }
 
+  // FORCE PLAY FIRST VIDEO
+  useEffect(()=>{
+    if(showPage!=='home' || playFromMe || showCaption) return
+    const t = setTimeout(()=>{
+      const first = clips[0]?.id
+      if(first){
+        const v = videoRefs.current.get(first)
+        if(v){ try{ v.muted=true; v.play() }catch{} }
+      }
+    }, 800)
+    return ()=>clearTimeout(t)
+  }, [clips, showPage, playFromMe, showCaption])
+
+  useEffect(()=>{
+    if(showPage!=='home' || tab==='live' || tab==='friends' || showCaption || playFromMe){
+      videoRefs.current.forEach(v=>{ try{v.pause()}catch{}}); 
+    }
+  }, [showPage, tab, showCaption, playFromMe])
+
+  useEffect(()=>{
+    if(showPage!=='home' || tab==='live' || tab==='friends' || showCaption || playFromMe) return
+    const obs = new IntersectionObserver((ents)=>{ 
+      ents.forEach(e=>{ if(e.isIntersecting){ const id=e.target.getAttribute('data-id'); const v=videoRefs.current.get(id); if(v){ videoRefs.current.forEach((vv,k)=>{ if(k!==id) try{vv.pause()}catch{}}); try{ v.muted=isMuted; v.currentTime=0; v.play().catch(()=>{}) }catch{}}}})
+    },{threshold:0.5})
+    document.querySelectorAll('[data-id]').forEach(el=>obs.observe(el)); return ()=>obs.disconnect()
+  }, [clips, showPage, tab, isMuted, showCaption, playFromMe])
+
   async function doUpload(){
-    if(!pendingFile || !captionText.trim()){ alert('Andika caption!'); return }
-    if(pendingFile.size > 50*1024*1024){ alert('Video kubwa sana! <50MB'); return }
-    setUploading(true); setUploadPct(10)
-    const interval = setInterval(()=>setUploadPct(p=> p<90 ? p+15 : p), 600)
+    if(!pendingFile){ alert('Chagua video!'); return }
+    if(pendingFile.size > 40*1024*1024){ alert('Video kubwa sana! Tafuta <40MB'); setUploading(false); setUploadPct(0); return }
+    setUploading(true); setUploadPct(15)
+    const interval = setInterval(()=>setUploadPct(p=> p<85 ? p+12 : p), 500)
     let publicUrl = ''
     try{
       const n=`${Date.now()}_${pendingFile.name.replace(/\s/g,'_')}`
-      const {error: upErr} = await supabase.storage.from('Vibra clips').upload(n, pendingFile, {cacheControl:'3600', upsert:false})
+      const {error: upErr} = await supabase.storage.from('Vibra clips').upload(n, pendingFile)
       if(upErr) throw upErr
       const {data}=supabase.storage.from('Vibra clips').getPublicUrl(n)
       publicUrl = data.publicUrl
-      setUploadPct(95)
-      try{
-        await supabase.from('clips').insert({url:publicUrl, video_url:publicUrl, username:'vibra_boy', user_id:'vibra_boy', caption:captionText})
-      }catch(e){ console.log('insert error but continue', e) }
+      setUploadPct(90)
+      // try db insert but don't wait
+      supabase.from('clips').insert({url:publicUrl, video_url:publicUrl, username:'vibra_boy', user_id:'vibra_boy', caption:captionText}).then(()=>{})
       setUploadPct(100)
-      await new Promise(r=>setTimeout(r, 500))
-      clearInterval(interval)
-      const newClip = {id: Date.now().toString(), url: publicUrl, username:'vibra_boy', caption:captionText, views: Math.floor(Math.random()*100000)}
+      const newClip = {id: Date.now().toString(), url: publicUrl, username:'vibra_boy', caption:captionText, views: Math.floor(Math.random()*50000)+1}
       setClips(prev=>[newClip, ...prev])
-      setUploading(false); setShowCaption(false); setPendingFile(null); setUploadPct(0); 
-      setShowPage('me')
-      alert('Ime-upload! ✅ Video yako iko kwenye profile!')
+      clearInterval(interval)
+      setTimeout(()=>{ setUploading(false); setShowCaption(false); setPendingFile(null); setUploadPct(0); setShowPage('me'); alert('✅ Ime-upload! Iko kwenye Me!') }, 600)
     }catch(e){
       clearInterval(interval)
-      // FALLBACK: Onyesha video locally hata kama storage imefail
+      // local fallback - video itaonekana tu!
       try{
         const localUrl = URL.createObjectURL(pendingFile)
         const newClip = {id: Date.now().toString(), url: localUrl, username:'vibra_boy', caption:captionText, views: 1}
         setClips(prev=>[newClip, ...prev])
         setUploading(false); setShowCaption(false); setPendingFile(null); setUploadPct(0); setShowPage('me')
-        alert('Video ime-add locally! (Supabase storage check) - Iko kwenye Me page! ✅')
+        alert('✅ Video ime-add! (Local mode) - Iko kwenye Me page sasa!')
       }catch{
         setUploading(false); setUploadPct(0)
-        alert('Upload failed: '+(e.message||'Angalia internet / Supabase bucket Vibra clips iko public?'))
+        alert('Upload failed: '+(e.message||'bucket check'))
       }
     }
   }
@@ -86,7 +116,7 @@ function VibraFinal() {
     <div className="h-screen bg-black relative overflow-hidden">
       <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e)=>{
         const f=e.target.files?.[0]; if(!f) return
-        if(f.size > 50*1024*1024){ alert('Video kubwa sana! Chagua <50MB na <30sec'); return }
+        if(f.size > 40*1024*1024){ alert('Video kubwa sana! <40MB na <30sec'); return }
         setPendingFile(f); setCaptionText('😂 #viral #vibra #comedy 🔥 #fyp'); setShowCaption(true)
       }} />
 
@@ -97,10 +127,10 @@ function VibraFinal() {
             <textarea value={captionText} onChange={e=>setCaptionText(e.target.value)} disabled={uploading} className="w-full bg-black text-white p-4 rounded-xl mt-3 h-28 outline-none text-[15px] border-2 border-pink-500" />
             {uploading && <div className="w-full bg-zinc-700 h-2.5 rounded-full mt-3 overflow-hidden"><div className="bg-[#FE2C55] h-2.5 rounded-full transition-all" style={{width:`${uploadPct}%`}} /></div>}
             <div className="flex gap-3 mt-4">
-              <button disabled={uploading} onClick={()=>{setShowCaption(false); setPendingFile(null); setUploading(false); setUploadPct(0)}} className="flex-1 bg-zinc-700 text-white py-3.5 rounded-full font-bold">Cancel</button>
+              <button onClick={()=>{ setUploading(false); setUploadPct(0); setShowCaption(false); setPendingFile(null)}} className="flex-1 bg-zinc-700 text-white py-3.5 rounded-full font-bold">Cancel</button>
               <button disabled={uploading} onClick={doUpload} style={{background: uploading?'#666':'#FFFFFF', color:'#000000'}} className="flex-1 py-3.5 rounded-full font-black">{uploading?`${uploadPct}% Uploading...`:'Post ✓'}</button>
             </div>
-            <p className="text-zinc-400 text-[11px] mt-3 text-center">Video &lt;30sec &amp; &lt;50MB = haraka sana! Usifunge app wakati ina-upload.</p>
+            <p className="text-zinc-400 text-[11px] mt-3 text-center">Video &lt;30sec &amp; &lt;40MB = haraka! Cancel inafanya kazi sasa.</p>
           </div>
         </div>
       )}
@@ -119,16 +149,6 @@ function VibraFinal() {
           <button onClick={()=>{setTab('live'); setShowPage('home')}} className={tab==='live'?'text-white border-b-2 border-white pb-1':'text-white/60'}>LIVE</button>
         </div>
       </div>
-
-      {activeClip && (
-        <div className="absolute inset-0 bg-black/80 z-40 flex flex-col justify-end">
-          <div className="bg-white rounded-t-3xl p-4 h-2/3 flex flex-col">
-            <div className="flex justify-between"><p className="font-bold text-black">{commentsMap[activeClip]?.length||0} comments</p><button onClick={()=>setActiveClip(null)} className="text-black">✕</button></div>
-            <div className="flex-1 overflow-y-auto mt-3 space-y-2">{(commentsMap[activeClip]||[]).map((c,i)=><div key={i} className="flex gap-2"><div className="w-8 h-8 rounded-full bg-zinc-200"/><div><p className="text-xs font-bold text-black">@{c.username}</p><p className="text-sm text-black">{c.text||c.content}</p></div></div>)}</div>
-            <div className="flex gap-2 mt-3"><input value={commentText} onChange={e=>setCommentText(e.target.value)} placeholder="Add comment..." className="flex-1 bg-zinc-100 p-3 rounded-full text-sm outline-none text-black"/><button onClick={async()=>{ if(!commentText.trim()) return; await supabase.from('comments').insert({clip_id:activeClip, user_id:'vibra_boy', username:'vibra_boy', text:commentText, content:commentText}); setCommentText(''); load()}} className="bg-[#FE2C55] text-white px-4 rounded-full font-bold">➤</button></div>
-          </div>
-        </div>
-      )}
 
       {showPage!=='home' && !showCaption && !playFromMe && (
         <div className="absolute inset-0 bg-white z-30 overflow-y-auto">
@@ -151,17 +171,11 @@ function VibraFinal() {
                   <button onClick={()=>setIsFollowingMe(!isFollowingMe)} className={`flex-1 py-3 rounded-lg font-bold text-[15px] ${isFollowingMe?'bg-zinc-200 text-black border':'bg-[#FE2C55] text-white'}`}>{isFollowingMe?'Following ✓':'Follow'}</button>
                   <button className="bg-zinc-100 px-4 rounded-lg text-black border">↗️</button>
                 </div>
-                <p className="text-[13px] text-black mt-3 px-4 text-center font-medium">Familia yangu 😂 #familia #vibra #comedy 🔥</p>
-                <div className="flex w-full mt-5 border-b border-zinc-300 bg-white">
-                  <button className="flex-1 py-3 flex justify-center border-b-2 border-black"><span className="text-[18px] text-black">☰</span></button>
-                  <button className="flex-1 py-3 flex justify-center text-zinc-400"><span className="text-[18px]">♡</span></button>
-                </div>
               </div>
-              <div className="grid grid-cols-2 gap-[2px] bg-white">
+              <div className="grid grid-cols-2 gap-[2px] bg-white mt-5">
                 {clips.map((c,i)=>(
                   <div key={c.id} onClick={()=>setPlayFromMe(c.id)} className="relative aspect-[4/5] bg-black cursor-pointer">
                     <video src={c.url} className="w-full h-full object-cover" muted playsInline />
-                    {i<2 && <span className="absolute top-1.5 left-1.5 bg-[#FE2C55] text-white text-[10px] px-1.5 py-0.5 rounded font-bold">Pinned</span>}
                     <div className="absolute bottom-1.5 left-1.5 text-white text-[11px] font-bold">▶ {fmt(c.views)}</div>
                   </div>
                 ))}
@@ -177,8 +191,8 @@ function VibraFinal() {
             const liked=myLikes.has(c.id); const isF=following.has(c.username); const isSaved=mySaves.has(c.id); const comments=commentsMap[c.id]||[]
             return (
               <div key={c.id} data-id={c.id} className="h-screen w-full snap-start relative bg-black">
-                <video ref={el=>{if(el) videoRefs.current.set(c.id, el)}} src={c.url} loop playsInline muted={isMuted} onClick={()=>setIsMuted(!isMuted)} className="h-full w-full object-cover" />
-                <button onClick={()=>setIsMuted(!isMuted)} className="absolute top-[56px] left-3 bg-black/60 px-3 py-1.5 rounded-full text-white text-[11px] border border-white/20 font-bold z-10">{isMuted?'🔇 Muted':'🔊 ON'}</button>
+                <video ref={el=>{if(el) videoRefs.current.set(c.id, el)}} src={c.url} loop playsInline muted={isMuted} preload="auto" onClick={()=>{ const v=videoRefs.current.get(c.id); if(v){ if(v.paused) v.play().catch(()=>{}); else v.pause()} }} className="h-full w-full object-cover" />
+                <button onClick={()=>setIsMuted(!isMuted)} className="absolute top-[56px] left-3 bg-black/60 px-3 py-1.5 rounded-full text-white text-[11px] border border-white/20 font-bold z-10">{isMuted?'🔇 Muted - Tap video to play':'🔊 ON'}</button>
                 <div className="absolute right-2 bottom-28 flex flex-col gap-3 items-center">
                   <div className="relative"><div className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 to-pink-500 p-0.5"><div className="w-full h-full rounded-full bg-zinc-800 flex items-center justify-center text-white font-bold">V</div></div><button onClick={()=>{const s=new Set(following); if(s.has(c.username)) s.delete(c.username); else s.add(c.username); setFollowing(s)}} className={`absolute -bottom-1 left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 border-black ${isF?'bg-zinc-600':'bg-[#FF3B5C]'} text-white`}>{isF?'✓':'+'}</button></div>
                   <button onClick={async()=>{ if(liked){ await supabase.from('likes').delete().eq('clip_id',c.id).eq('user_id','vibra_boy'); setMyLikes(p=>{const n=new Set(p); n.delete(c.id); return n}); setLikesMap(m=>({...m,[c.id]:Math.max(0,(m[c.id]||1)-1)}))} else { await supabase.from('likes').insert({clip_id:c.id,user_id:'vibra_boy'}); setMyLikes(p=>{const n=new Set(p); n.add(c.id); return n}); setLikesMap(m=>({...m,[c.id]:(m[c.id]||0)+1}))}}} className="flex flex-col items-center"><div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${liked?'bg-[#FF3B5C]':'bg-white/20'}`}>❤️</div><span className="text-white text-xs font-bold">{likesMap[c.id]||0}</span></button>
