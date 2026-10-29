@@ -74,18 +74,19 @@ export default function VibraApp() {
 
       const { data: urlData } = supabase.storage.from('Vibra clips').getPublicUrl(fileName)
       
+      const now = Date.now()
       const { error: dbErr } = await supabase.from('clips').insert({
-        owner_id: user.id,
+        id: now,
         title: title || file.name.replace(/\.[^/.]+$/, ''),
         caption: 'Vibra Worldwide',
         video_url: urlData.publicUrl,
-        visibility: 'public',
         creator: user.email?.split('@')[0] || 'Creator',
-        username: user.email?.split('@')[0] || 'user'
+        username: user.email?.split('@')[0] || 'user',
+        created_at: now
       })
       if (dbErr) throw dbErr
 
-      setNotice('✅ Uploaded WORLDWIDE! Dunia nzima inaiona!')
+      setNotice('Uploaded worldwide!')
       setTitle('')
       setPage(0)
       setTimeout(() => fetchWorldwide(true), 1000)
@@ -98,10 +99,10 @@ export default function VibraApp() {
     }
   }
 
-  // 3. DELETE OWN ONLY
+  // 3. DELETE (table has no owner column yet — anyone signed in can delete)
   async function deleteClip(clip: Clip) {
     const { data: { user } } = await supabase.auth.getUser()
-    if (user?.id !== clip.owner_id) { setNotice('You can only delete your own videos'); return }
+    if (!user) { setNotice('Please login first'); return }
     // Public URLs encode the space in the bucket name as %20 — handle both forms.
     const path = clip.video_url.split('/Vibra%20clips/')[1] || clip.video_url.split('/Vibra clips/')[1]
     if (path) await supabase.storage.from('Vibra clips').remove([decodeURIComponent(path)])
