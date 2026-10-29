@@ -30,8 +30,14 @@ function VibraFinal() {
 
   // SAUTI INAKATA AUTOMATIC UKITOKA
   useEffect(()=>{
-    if(showPage!=='home' || tab!=='foryou'){
+   
+       // SAUTI INAKATA AUTOMATIC UKITOKA
+  useEffect(()=>{
+    if(showPage!=='home' || tab==='live' || tab==='friends'){
       videoRefs.current.forEach(v=>{ v.pause() })
+      document.querySelectorAll('video').forEach(v=>{ v.pause() })
+    }
+  }, [showPage, tab])
     }
   }, [showPage, tab])
 
