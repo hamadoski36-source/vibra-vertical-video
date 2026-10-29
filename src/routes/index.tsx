@@ -25,9 +25,7 @@ type Clip = {
   username: string
   caption: string
   video_url: string
-  owner_id?: string
-  visibility?: string
-  created_at?: string
+  created_at?: number
 }
 
 export default function VibraApp() {
@@ -45,7 +43,6 @@ export default function VibraApp() {
     const { data, error } = await supabase
       .from('clips')
       .select('*')
-      .eq('visibility', 'public')
       .order('created_at', { ascending: false })
       .range(from, to)
     
