@@ -6,7 +6,7 @@ The existing app is React 19 with TanStack Start/Router and Vite. It is a hosted
 
 The existing external account service responds using its browser-safe publishable key. Current hosted settings allow email login/signup and enable automatic email confirmation. Successful account login/logout and recovery were not exercised with a real account during this inspection. Account data is not yet the identity layer for clips or social activity.
 
-Clips remain in IndexedDB; profile/activity metadata remains in localStorage. No shared video queries or cloud-upload calls exist in the reviewed feed. All 20 existing regression tests passed. These tests do not establish database security, cloud uploads, cross-account discovery, ads, payouts or Android readiness.
+Clips remain in IndexedDB; profile/activity metadata remains in localStorage. No shared video queries or cloud-upload calls exist in the reviewed feed. All 20 existing regression tests passed. A 390×844 browser check uploaded a real WebM, verified muted autoplay and one-tap sound, found the seek control and rendered the sign-in screen without page errors. Actual seeking is covered by the existing regression test, not a drag in this inspection. These tests do not establish database security, cloud uploads, cross-account discovery, ads, payouts or Android readiness.
 
 Management access is not connected: the project database command returns no connected backend. There are no available external service connections or backend management credentials. Visitor bucket listing returns no visible buckets; private buckets and policies cannot be inferred from that. Repository remotes are internal Lovable hosts, not verification of external GitHub sync.
 

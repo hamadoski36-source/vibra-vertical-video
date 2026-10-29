@@ -3,6 +3,7 @@
 ## Current worldwide release request — October 29, 2026
 - [x] Inspect existing code, auth, storage and deployment indicators without replacing the app: React 19/TanStack Start/Vite web app with PWA manifest; uploads/media and social activity remain device-local
 - [x] Run all existing tests: 20 tests across 7 files passed
+- [x] Phone-sized browser check at 390×844: real local WebM upload, muted autoplay, one-tap sound and sign-in screen passed; no page errors; not a cloud or authenticated cross-account test
 - [x] Check existing external account service: settings endpoint responds; email login and signup enabled, email auto-confirm currently enabled (earlier confirmation-required observation is no longer current)
 - [x] Verify management access blocker: project database query reports no connected backend; no available service connections or backend management credentials; visitor-visible bucket list is empty, which does not prove there are no private buckets
 - [x] Inspect Git indicators: current remotes are Lovable internal hosting, not proof of external GitHub sync; hosted GitHub status remains unverified
