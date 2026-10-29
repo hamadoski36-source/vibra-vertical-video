@@ -3,20 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the Supabase client so tests never touch the network.
 const clips = [
-  { id: 'c1', title: 'Nairobi nights', creator: 'amina', username: 'amina', caption: 'Kenya', video_url: 'https://example.supabase.co/storage/v1/object/public/Vibra%20clips/u1/a.webm', owner_id: 'user-1', visibility: 'public', created_at: '2026-10-01' },
-  { id: 'c2', title: 'Tokyo lights', creator: 'kenji', username: 'kenji', caption: 'Japan', video_url: 'https://example.supabase.co/storage/v1/object/public/Vibra%20clips/u2/b.webm', owner_id: 'user-2', visibility: 'public', created_at: '2026-10-02' },
+  { id: '1001', title: 'Nairobi nights', creator: 'amina', username: 'amina', caption: 'Kenya', video_url: 'https://example.supabase.co/storage/v1/object/public/Vibra%20clips/u1/a.webm', created_at: 2000 },
+  { id: '1002', title: 'Tokyo lights', creator: 'kenji', username: 'kenji', caption: 'Japan', video_url: 'https://example.supabase.co/storage/v1/object/public/Vibra%20clips/u2/b.webm', created_at: 3000 },
 ];
 
 const storageRemove = vi.fn().mockResolvedValue({ error: null });
 const storageUpload = vi.fn().mockResolvedValue({ error: null });
-const tableDelete = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }));
+const deleteEq = vi.fn().mockResolvedValue({ error: null });
 const tableInsert = vi.fn().mockResolvedValue({ error: null });
 let currentUser: { id: string; email: string } | null = null;
 
 function thenable(result: unknown) {
   const builder: any = new Promise((resolve) => resolve(result));
   for (const m of ['select', 'eq', 'order', 'range', 'insert', 'delete', 'single']) {
-    builder[m] = vi.fn(() => (m === 'insert' ? tableInsert() : m === 'delete' ? tableDelete() : builder));
+    builder[m] = vi.fn(() => (m === 'insert' ? tableInsert() : m === 'delete' ? { eq: deleteEq } : builder));
   }
   return builder;
 }
@@ -59,23 +59,36 @@ describe('Worldwide Supabase feed', () => {
     expect(screen.queryByText('Local ghost')).toBeNull();
   });
 
-  it('uploads to the cloud bucket, inserts a row and shows the worldwide success message', async () => {
+  it('uploads to the cloud bucket, inserts a row and shows "Uploaded worldwide!"', async () => {
     currentUser = { id: 'user-9', email: 'me@example.com' };
     await start();
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['x'], 'my clip.webm', { type: 'video/webm' });
     fireEvent.change(input, { target: { files: [file] } });
-    await waitFor(() => expect(screen.getByText(/Uploaded WORLDWIDE!/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Uploaded worldwide!')).toBeInTheDocument());
     expect(storageUpload).toHaveBeenCalledOnce();
     expect(tableInsert).toHaveBeenCalledOnce();
+    const row = tableInsert.mock.calls[0][0] as Record<string, unknown>;
+    expect(row.video_url).toContain('Vibra%20clips');
+    expect(typeof row.created_at).toBe('number');
   });
 
-  it('blocks deleting a video owned by someone else', async () => {
+  it('deletes a clip from bucket and table when signed in', async () => {
     currentUser = { id: 'user-1', email: 'me@example.com' };
     await start();
     const tokyo = screen.getByText('Tokyo lights').closest('div')!.parentElement!;
     fireEvent.click(Array.from(tokyo.querySelectorAll('button')).find(b => b.textContent === 'Delete my video')!);
-    await waitFor(() => expect(screen.getByText('You can only delete your own videos')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Deleted')).toBeInTheDocument());
+    expect(storageRemove).toHaveBeenCalledWith(['u2/b.webm']);
+    expect(deleteEq).toHaveBeenCalledWith('id', '1002');
+    expect(screen.queryByText('Tokyo lights')).toBeNull();
+  });
+
+  it('refuses to delete when signed out', async () => {
+    await start();
+    const tokyo = screen.getByText('Tokyo lights').closest('div')!.parentElement!;
+    fireEvent.click(Array.from(tokyo.querySelectorAll('button')).find(b => b.textContent === 'Delete my video')!);
+    await waitFor(() => expect(screen.getByText('Please login first')).toBeInTheDocument());
     expect(storageRemove).not.toHaveBeenCalled();
   });
 });
