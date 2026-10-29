@@ -2,9 +2,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-export const Route = createFileRoute('/')({ component: VibraAds })
+export const Route = createFileRoute('/')({ component: VibraFinal })
 
-function VibraAds() {
+function VibraFinal() {
   const [clips, setClips] = useState([])
   const [likesMap, setLikesMap] = useState({})
   const [myLikes, setMyLikes] = useState(new Set())
@@ -27,9 +27,16 @@ function VibraAds() {
   const [isFollowingMe, setIsFollowingMe] = useState(false)
   const [isLive, setIsLive] = useState(false)
   const [showAdContact, setShowAdContact] = useState(false)
+  const [showWithdraw, setShowWithdraw] = useState(false)
   const fileRef = useRef(null)
   const videoRefs = useRef(new Map())
   const meVideoRef = useRef(null)
+
+  // VIBRA STAR - 100K LOGIC
+  const myFollowers = 250800 // @vibra-boy followers
+  const isVerified = myFollowers >= 100000
+  const myEarnings = 4850 // KES earned
+  const MY_MPESA = "0740805970"
 
   useEffect(()=>{
     const stopAll = () => { videoRefs.current.forEach(v=>{ try{ v.pause(); }catch{} }); if(meVideoRef.current) try{ meVideoRef.current.pause() }catch{} }
@@ -89,20 +96,19 @@ function VibraAds() {
   })
   const fmt = (n)=> n>=1000000 ? (n/1000000).toFixed(1)+'M' : n>=1000 ? (n/1000).toFixed(1)+'K' : n.toString()
 
-  // AD COMPONENT - PESA YA KENYA!
   const AdCard = ({index}:{index:number}) => (
     <div data-id={`ad-${index}`} className="h-screen w-full snap-start relative bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center p-6">
       <div className="bg-white rounded-[24px] p-6 w-full max-w-[320px] text-black text-center shadow-2xl">
-        <p className="bg-black text-white text-[10px] font-bold px-2 py-1 rounded-full inline-block mb-3">📢 ADVERTISEMENT • AD</p>
+        <p className="bg-black text-white text-[10px] font-bold px-2 py-1 rounded-full inline-block mb-3">📢 ADVERTISEMENT</p>
         <p className="text-[24px] font-black">🔥 BIASHARA YAKO HAPA! 🔥</p>
         <p className="text-[13px] mt-2 font-bold text-zinc-600">Watu 784K+ wanaona Vibra kila siku!</p>
         <div className="bg-zinc-100 rounded-xl p-3 mt-4 text-left">
           <p className="text-[12px]">✅ Video Ad - 1K KES / day</p>
-          <p className="text-[12px]">✅ Banner Ad - 500 KES / day</p>
-          <p className="text-[12px]">✅ Pinned Video - 2K KES / week</p>
+          <p className="text-[12px]">✅ Banner - 500 KES / day</p>
+          <p className="text-[12px]">✅ Pinned - 2K KES / week</p>
         </div>
         <button onClick={()=>setShowAdContact(true)} className="w-full bg-[#FE2C55] text-white py-3.5 rounded-full font-black mt-4 text-[14px]">TANGAZA SASA - LIPA M-PESA 📲</button>
-        <p className="text-[10px] text-zinc-400 mt-2">M-Pesa: 07XX XXX XXX • WhatsApp</p>
+        <p className="text-[10px] text-zinc-400 mt-2">M-Pesa: {MY_MPESA} • Kenya</p>
       </div>
       <button onClick={()=>{ const el=document.querySelector(`[data-id="${filtered[index+1]?.id}"]`); el?.scrollIntoView({behavior:'smooth'}) }} className="absolute bottom-24 bg-black/60 text-white px-4 py-2 rounded-full text-[11px] font-bold">Skip Ad ⏭️</button>
     </div>
@@ -120,14 +126,34 @@ function VibraAds() {
         <div className="absolute inset-0 bg-black/90 z-[100] flex items-center justify-center p-6">
           <div className="bg-white rounded-[24px] p-6 w-full max-w-[340px] text-black">
             <p className="font-black text-[18px]">Tangaza Biashara Yako! 🇰🇪</p>
-            <p className="text-[13px] text-zinc-600 mt-2">Lipa na M-Pesa Kenya na video yako itaonekana kwa watu 784K+</p>
+            <p className="text-[13px] text-zinc-600 mt-2">Watu 784K+ wataiona - Lipa M-Pesa</p>
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 mt-4">
-              <p className="font-bold text-[13px]">M-Pesa Paybill:</p>
-              <p className="text-[20px] font-black">07XX XXX XXX</p>
-              <p className="text-[11px] text-zinc-500">Jina: VIBRA ADS</p>
+              <p className="font-bold text-[13px]">M-Pesa Kenya:</p>
+              <p className="text-[22px] font-black text-green-600">{MY_MPESA}</p>
+              <p className="text-[11px] text-zinc-500">Jina: VIBRA ADS - Lipa Na M-Pesa</p>
             </div>
-            <a href="https://wa.me/2547XXXXXXXX?text=Nataka%20kutangaza%20kwa%20Vibra%20App" className="block w-full bg-green-500 text-white py-3.5 rounded-full font-bold mt-4 text-center text-[14px]">WhatsApp Sasa 💬</a>
+            <a href={`https://wa.me/254${MY_MPESA.substring(1)}?text=Nataka%20kutangaza%20kwa%20Vibra%20App`} className="block w-full bg-green-500 text-white py-3.5 rounded-full font-bold mt-4 text-center text-[14px]">WhatsApp Sasa 💬</a>
             <button onClick={()=>setShowAdContact(false)} className="w-full bg-zinc-100 py-3 rounded-full font-bold mt-2">Funga</button>
+          </div>
+        </div>
+      )}
+
+      {showWithdraw && (
+        <div className="absolute inset-0 bg-black/90 z-[100] flex items-center justify-center p-6">
+          <div className="bg-white rounded-[24px] p-6 w-full max-w-[340px] text-black">
+            <p className="font-black text-[18px]">Withdraw Pesa! 💰🇰🇪</p>
+            <p className="text-[13px] text-zinc-600 mt-1">@vibra-boy • 250.8K Followers ✅ Verified</p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-4">
+              <p className="text-[12px] text-zinc-500">Balance Yako</p>
+              <p className="text-[28px] font-black">KES {myEarnings.toLocaleString()}</p>
+              <p className="text-[11px] text-green-600 font-bold">✓ 100K+ Followers - Unalipwa!</p>
+            </div>
+            <div className="bg-zinc-100 rounded-xl p-3 mt-3">
+              <p className="text-[12px] font-bold">M-Pesa: {MY_MPESA}</p>
+              <p className="text-[11px]">2 KES per 1000 views • Auto payout</p>
+            </div>
+            <button onClick={()=>{alert(`KES ${myEarnings} imetumwa kwa M-Pesa ${MY_MPESA} ✅`); setShowWithdraw(false)}} className="w-full bg-black text-white py-3.5 rounded-full font-bold mt-4">Withdraw kwa M-Pesa 📲</button>
+            <button onClick={()=>setShowWithdraw(false)} className="w-full bg-zinc-100 py-3 rounded-full font-bold mt-2">Funga</button>
           </div>
         </div>
       )}
@@ -153,7 +179,8 @@ function VibraAds() {
             <span className="text-white">⋮</span>
           </div>
           <div className="flex-1 bg-zinc-900 flex items-center justify-center flex-col">
-            <p className="text-6xl">🔴</p><p className="text-white font-bold mt-4 text-xl">@vibra-boy LIVE</p><p className="text-zinc-400 text-sm mt-2">Familia yangu 😂 - Live now!</p>
+            <p className="text-6xl">🔴</p><p className="text-white font-bold mt-4 text-xl">@vibra-boy LIVE {isVerified && '✅'}</p><p className="text-zinc-400 text-sm mt-2">250.8K Followers - Live!</p>
+            <div className="mt-4 bg-yellow-500 text-black px-4 py-2 rounded-full font-bold text-[12px]">🎁 Gifts: KES {myEarnings} leo!</div>
             <button onClick={()=>setIsLive(false)} className="mt-8 bg-white text-black px-8 py-3 rounded-full font-bold">End LIVE</button>
           </div>
         </div>
@@ -174,7 +201,7 @@ function VibraAds() {
               <div key={c.id} data-id={c.id} className="h-screen w-full snap-start relative bg-black">
                 <video ref={el=>{if(el) videoRefs.current.set(c.id, el)}} src={c.url} loop playsInline muted={isMuted} preload="auto" onClick={()=>{ const v=videoRefs.current.get(c.id); if(v){ if(v.paused) v.play().catch(()=>{}); else v.pause()} }} className="h-full w-full object-cover" />
                 <button onClick={()=>setIsMuted(!isMuted)} className="absolute top-[95px] left-3 bg-black/60 px-3 py-1 rounded-full text-[11px] border border-white/20 font-bold z-20 text-white">{isMuted?'🔇 Muted':'🔊 Sound'}</button>
-                <div className="absolute bottom-24 left-3 right-20 z-20"><p className="font-bold text-[15px] text-white">@vibra_boy</p><p className="text-[13px] mt-1 text-white">{c.caption}</p></div>
+                <div className="absolute bottom-24 left-3 right-20 z-20"><p className="font-bold text-[15px] text-white">@vibra_boy {isVerified && '✅'}</p><p className="text-[13px] mt-1 text-white">{c.caption}</p>{isVerified && <p className="text-[10px] bg-blue-500 px-2 py-0.5 rounded-full inline-block mt-1 font-bold">VIBRA STAR • 100K+ 🌟</p>}</div>
                 <div className="absolute bottom-20 right-3 flex flex-col items-center gap-3 z-20">
                   <button onClick={()=>toggleFollow(c.username)} className="w-11 h-11 rounded-full bg-zinc-800 border-2 border-white flex items-center justify-center font-bold text-[12px] text-white">{following.has(c.username)?'✓':'+'}</button>
                   <button onClick={()=>toggleLike(c.id)} className="flex flex-col items-center"><div className={`w-11 h-11 rounded-full flex items-center justify-center text-xl ${myLikes.has(c.id)?'bg-[#FE2C55]':'bg-zinc-700/80'}`}>❤️</div><span className="text-[10px] font-bold mt-1 text-white">{fmt(likesMap[c.id]||c.views)}</span></button>
@@ -202,16 +229,25 @@ function VibraAds() {
           <div className="p-4 border-b border-zinc-800"><p className="font-black text-[20px] text-white">Inbox 📩</p></div>
           <div className="p-3 space-y-3">
             <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex gap-3"><div className="w-10 h-10 bg-[#FE2C55] rounded-full flex items-center justify-center">❤️</div><div><p className="text-[13px] font-bold text-white">vibra_boy liked your video</p><p className="text-[11px] text-zinc-400">2m ago</p></div></div>
-            <button onClick={()=>setShowAdContact(true)} className="w-full bg-yellow-500 p-4 rounded-xl border border-yellow-300 flex gap-3 text-black"><div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">💰</div><div className="text-left"><p className="text-[13px] font-bold">Pesa ya Ads: 3 Clients wamelipa!</p><p className="text-[11px]">2,500 KES leo - Check M-Pesa</p></div></button>
+            <button onClick={()=>setShowAdContact(true)} className="w-full bg-yellow-500 p-4 rounded-xl border border-yellow-300 flex gap-3 text-black"><div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">💰</div><div className="text-left"><p className="text-[13px] font-bold">Pesa ya Ads: 3 Clients wamelipa!</p><p className="text-[11px]">2,500 KES leo - M-Pesa {MY_MPESA}</p></div></button>
+            <button onClick={()=>setShowWithdraw(true)} className="w-full bg-green-500 p-4 rounded-xl border border-green-300 flex gap-3 text-white"><div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black">💸</div><div className="text-left"><p className="text-[13px] font-bold">Earnings: KES {myEarnings}</p><p className="text-[11px]">Withdraw kwa {MY_MPESA} • 100K Verified ✅</p></div></button>
           </div>
         </div>
       )}
 
       {showPage==='me' && !showCaption && !activeClip && !selectedFromMe && (
         <div className="absolute inset-0 bg-white text-black z-30 overflow-y-auto pb-20">
-          <div className="flex items-center justify-between p-3 pt-2"><button onClick={()=>setShowPage('home')} className="text-2xl">←</button><p className="font-bold text-[16px]">@vibra-boy</p><p className="text-xl">⋮</p></div>
-          <div className="flex justify-center gap-6 mt-1"><button className="text-center"><p className="font-black text-[16px]">10K</p><p className="text-[11px] text-zinc-500">Following</p></button><button className="text-center border-l pl-6"><p className="font-black text-[16px]">250.8K</p><p className="text-[11px] text-zinc-500">Followers</p></button><button className="text-center border-l pl-6"><p className="font-black text-[16px]">2.0M</p><p className="text-[11px] text-zinc-500">Likes</p></button></div>
-          <div className="flex justify-center gap-2 mt-3 px-10"><button onClick={()=>setIsFollowingMe(!isFollowingMe)} className={`flex-1 py-2 rounded-[6px] font-bold text-[14px] ${isFollowingMe?'bg-zinc-200 text-black':'bg-[#FE2C55] text-white'}`}>{isFollowingMe?'Following ✓':'Follow'}</button><button className="bg-zinc-100 px-3 rounded-[6px]">👤+</button></div>
+          <div className="flex items-center justify-between p-3 pt-2"><button onClick={()=>setShowPage('home')} className="text-2xl">←</button><p className="font-bold text-[16px]">@vibra-boy {isVerified && '✅'}</p><p className="text-xl">⋮</p></div>
+          {isVerified && <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-center py-1.5 text-[11px] font-bold">🌟 VIBRA STAR • 100K+ Followers • Verified Creator • Earnings Enabled 💰</div>}
+          <div className="flex justify-center gap-6 mt-2"><button className="text-center"><p className="font-black text-[16px]">10K</p><p className="text-[11px] text-zinc-500">Following</p></button><button className="text-center border-l pl-6"><p className="font-black text-[16px]">{fmt(myFollowers)}</p><p className="text-[11px] text-zinc-500">Followers</p></button><button className="text-center border-l pl-6"><p className="font-black text-[16px]">2.0M</p><p className="text-[11px] text-zinc-500">Likes</p></button></div>
+          <div className="flex justify-center gap-2 mt-3 px-4">
+            <button onClick={()=>setIsFollowingMe(!isFollowingMe)} className={`flex-1 py-2 rounded-[6px] font-bold text-[14px] ${isFollowingMe?'bg-zinc-200 text-black':'bg-[#FE2C55] text-white'}`}>{isFollowingMe?'Following ✓':'Follow'}</button>
+            <button onClick={()=>setShowWithdraw(true)} className="flex-1 bg-black text-white py-2 rounded-[6px] font-bold text-[12px]">💰 KES {myEarnings} - Withdraw</button>
+          </div>
+          <div className="px-4 mt-3 grid grid-cols-2 gap-2">
+            <div className="bg-zinc-100 rounded-xl p-3"><p className="text-[11px] text-zinc-500">M-Pesa Payout</p><p className="font-black text-[13px]">{MY_MPESA}</p></div>
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3"><p className="text-[11px] text-zinc-500">Rate</p><p className="font-black text-[13px] text-green-600">2 KES / 1K views</p></div>
+          </div>
           <div className="flex justify-around mt-3 border-b py-2"><button onClick={()=>setMeTab('videos')} className={`text-[16px] px-6 pb-1 ${meTab==='videos'?'border-b-2 border-black font-bold':''}`}>☰ Videos</button><button onClick={()=>setMeTab('liked')} className={`text-[16px] px-6 pb-1 ${meTab==='liked'?'border-b-2 border-black font-bold':''}`}>♡ {myLikes.size} Liked</button></div>
           <div className="grid grid-cols-3 gap-[1px] bg-white">{(meTab==='videos'?clips:clips.filter(c=>myLikes.has(c.id))).map(c=>(<div key={c.id} onClick={()=>setSelectedFromMe(c)} className="aspect-[4/5] bg-black relative"><video src={c.url} className="w-full h-full object-cover" muted /><div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1"><p className="text-white text-[10px] font-bold">▶ {fmt(c.views)}</p></div></div>))}</div>
         </div>
@@ -219,7 +255,7 @@ function VibraAds() {
 
       {selectedFromMe && (
         <div className="absolute inset-0 bg-black z-[60] flex flex-col">
-          <div className="flex items-center justify-between p-3 pt-2 text-white bg-black/80 absolute top-0 left-0 right-0 z-10"><button onClick={()=>{ try{meVideoRef.current?.pause()}catch{}; setSelectedFromMe(null)}} className="text-xl">←</button><p className="font-bold text-[14px]">@vibra-boy • {fmt(selectedFromMe.views)}</p><p>⋮</p></div>
+          <div className="flex items-center justify-between p-3 pt-2 text-white bg-black/80 absolute top-0 left-0 right-0 z-10"><button onClick={()=>{ try{meVideoRef.current?.pause()}catch{}; setSelectedFromMe(null)}} className="text-xl">←</button><p className="font-bold text-[14px]">@vibra-boy {isVerified && '✅'} • {fmt(selectedFromMe.views)}</p><p>⋮</p></div>
           <div className="flex-1 relative bg-black">
             <video ref={meVideoRef} src={selectedFromMe.url} autoPlay loop playsInline muted={isMuted} className="h-full w-full object-contain bg-black" onClick={()=>{ if(meVideoRef.current){ if(meVideoRef.current.paused) meVideoRef.current.play(); else meVideoRef.current.pause() } }} />
             <div className="absolute bottom-20 right-3 flex flex-col items-center gap-3 z-20">
@@ -228,9 +264,8 @@ function VibraAds() {
               <button onClick={()=>{setActiveClip(selectedFromMe);}} className="flex flex-col items-center"><div className="w-11 h-11 rounded-full bg-zinc-700/80 flex items-center justify-center text-lg">💬</div><span className="text-[10px] font-bold mt-1 text-white">12</span></button>
               <button onClick={()=>toggleSave(selectedFromMe.id)} className="flex flex-col items-center"><div className={`w-11 h-11 rounded-full flex items-center justify-center text-lg border ${mySaves.has(selectedFromMe.id)?'bg-yellow-500 border-yellow-300':'bg-zinc-700/80 border-zinc-600'}`}>🔖</div><span className="text-[9px] font-bold mt-1 text-white">{mySaves.has(selectedFromMe.id)?'Saved':'Save'}</span></button>
               <button onClick={()=>handleShare(selectedFromMe)} className="flex flex-col items-center"><div className="w-11 h-11 rounded-full bg-zinc-700/80 flex items-center justify-center text-lg border border-zinc-600">↗️</div><span className="text-[10px] font-bold mt-1 text-white">Share</span></button>
-              <button onClick={()=>setShowLyrics(!showLyrics)} className={`w-10 h-10 rounded-full flex items-center justify-center text-[16px] border-2 ${showLyrics?'bg-[#FE2C55] border-white':'bg-zinc-800 border-zinc-600'}`}>🎤</button>
             </div>
-            <div className="absolute bottom-24 left-3 right-20 z-20"><p className="font-bold text-[15px] text-white">@vibra-boy</p><p className="text-[13px] mt-1 text-white">{selectedFromMe.caption}</p></div>
+            <div className="absolute bottom-24 left-3 right-20 z-20"><p className="font-bold text-[15px] text-white">@vibra-boy {isVerified && '✅ Verified'}</p><p className="text-[13px] mt-1 text-white">{selectedFromMe.caption}</p></div>
           </div>
         </div>
       )}
