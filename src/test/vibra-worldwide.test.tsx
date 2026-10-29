@@ -15,9 +15,10 @@ let currentUser: { id: string; email: string } | null = null;
 
 function thenable(result: unknown) {
   const builder: any = new Promise((resolve) => resolve(result));
-  for (const m of ['select', 'eq', 'order', 'range', 'insert', 'delete', 'single']) {
-    builder[m] = vi.fn(() => (m === 'insert' ? tableInsert() : m === 'delete' ? { eq: deleteEq } : builder));
+  for (const m of ['select', 'eq', 'order', 'range', 'delete', 'single']) {
+    builder[m] = vi.fn(() => (m === 'delete' ? { eq: deleteEq } : builder));
   }
+  builder.insert = vi.fn((row: unknown) => { tableInsert(row); return tableInsert.mock.results.length ? Promise.resolve({ error: null }) : Promise.resolve({ error: null }); });
   return builder;
 }
 
