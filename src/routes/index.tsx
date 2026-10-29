@@ -30,32 +30,23 @@ function VibraFinal() {
   const videoRefs = useRef(new Map())
   const meVideoRef = useRef(null)
 
-  // FIX 1: UKITOKA APP SAUTI INAKATA PAP! - FIX KALI SANA!
+  // SAUTI INAKATA UKITOKA APP!
   useEffect(()=>{
     const stopAll = () => { 
       videoRefs.current.forEach(v=>{ try{ v.pause(); }catch{} }); 
       if(meVideoRef.current) try{ meVideoRef.current.pause() }catch{}
     }
     const handleVis = () => { if(document.hidden) stopAll() }
-    const handleBlur = () => { stopAll() }
-    const handlePageHide = () => { stopAll() }
-    
     document.addEventListener('visibilitychange', handleVis)
-    window.addEventListener('blur', handleBlur)
-    window.addEventListener('pagehide', handlePageHide)
-    window.addEventListener('beforeunload', handlePageHide)
-    document.addEventListener('visibilitychange', handleVis)
-    
+    window.addEventListener('blur', ()=>stopAll())
+    window.addEventListener('pagehide', ()=>stopAll())
+    window.addEventListener('beforeunload', ()=>stopAll())
     return ()=>{ 
       document.removeEventListener('visibilitychange', handleVis)
-      window.removeEventListener('blur', handleBlur)
-      window.removeEventListener('pagehide', handlePageHide)
-      window.removeEventListener('beforeunload', handlePageHide)
       stopAll()
     }
   }, [])
 
-  // STOP VIDEO UKIBADILISHA PAGE
   useEffect(()=>{
     videoRefs.current.forEach(v=>{ try{ v.pause(); }catch{} })
     if(meVideoRef.current) try{ meVideoRef.current.pause() }catch{}
@@ -68,8 +59,8 @@ function VibraFinal() {
       setClips(data.map(x=>({id:x.id, url:x.url||x.video_url, username:'vibra_boy', caption:x.caption||'Familia yangu 😂', views: Math.floor(Math.random()*800000+100000), pinned:false})))
     } else {
       setClips([
-        {id:'1', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', caption:'Familia yangu 😂', views:699300, pinned:true},
-        {id:'2', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', caption:'Togethar forever ❤️', views:707600, pinned:true},
+        {id:'1', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', caption:'Familia yangu 😂', views:254100, pinned:true},
+        {id:'2', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', caption:'Togethar forever ❤️', views:412800, pinned:true},
         {id:'3', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', caption:'SHOUT OUT TO MY BABY', views:756800, pinned:true},
         {id:'4', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', caption:'2025 challenge', views:554900},
         {id:'5', url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', caption:'IMEMRCHS FEAT. D VOICE', views:451100},
@@ -113,7 +104,6 @@ function VibraFinal() {
   const toggleLike = (id)=>{ setMyLikes(s=>{ const n=new Set(s); if(n.has(id)) n.delete(id); else n.add(id); return n }); setLikesMap(m=>({...m, [id]:(m[id]||0)+(myLikes.has(id)?-1:1)})) }
   const toggleFollow = (user)=>{ setFollowing(s=>{ const n=new Set(s); if(n.has(user)) n.delete(user); else n.add(user); return n }) }
   const toggleSave = (id)=>{ setMySaves(s=>{ const n=new Set(s); if(n.has(id)) n.delete(id); else n.add(id); return n }) }
-  
   const handleShare = async (clip) => {
     if(navigator.share){
       try{ await navigator.share({title:'Vibra', text:clip.caption, url:window.location.href}) }catch{}
@@ -121,7 +111,6 @@ function VibraFinal() {
       navigator.clipboard.writeText(window.location.href); alert('Link copied! 🔗')
     }
   }
-
   const filtered = clips.filter(c=>{
     if(searchQ) return c.caption.toLowerCase().includes(searchQ.toLowerCase()) || c.username.toLowerCase().includes(searchQ.toLowerCase())
     if(tab==='following') return following.has(c.username)
@@ -196,40 +185,25 @@ function VibraFinal() {
                 <p className="font-bold text-[15px] text-white">@vibra_boy</p>
                 <p className="text-[13px] mt-1 text-white">{c.caption}</p>
               </div>
-
-              {/* FIX 2: BUTTONS ZOTE SASA ZIKO - SHARE SAVE LYRICS! */}
               <div className="absolute bottom-20 right-3 flex flex-col items-center gap-3 z-20">
                 <button onClick={()=>toggleFollow(c.username)} className="w-11 h-11 rounded-full bg-zinc-800 border-2 border-white flex items-center justify-center font-bold text-[12px] text-white">{following.has(c.username)?'✓':'+'}</button>
-                
                 <button onClick={()=>toggleLike(c.id)} className="flex flex-col items-center">
                   <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xl ${myLikes.has(c.id)?'bg-[#FE2C55]':'bg-zinc-700/80'}`}>❤️</div>
                   <span className="text-[10px] font-bold mt-1 text-white">{fmt(likesMap[c.id]||c.views)}</span>
                 </button>
-                
                 <button onClick={()=>{setActiveClip(c);}} className="flex flex-col items-center">
                   <div className="w-11 h-11 rounded-full bg-zinc-700/80 flex items-center justify-center text-lg">💬</div>
                   <span className="text-[10px] font-bold mt-1 text-white">12</span>
                 </button>
-
-                {/* SAVE BUTTON - MPYA! */}
                 <button onClick={()=>toggleSave(c.id)} className="flex flex-col items-center">
                   <div className={`w-11 h-11 rounded-full flex items-center justify-center text-lg border ${mySaves.has(c.id)?'bg-yellow-500 border-yellow-300':'bg-zinc-700/80 border-zinc-600'}`}>🔖</div>
                   <span className="text-[9px] font-bold mt-1 text-white">{mySaves.has(c.id)?'Saved':'Save'}</span>
                 </button>
-
-                {/* SHARE BUTTON - MPYA! */}
                 <button onClick={()=>handleShare(c)} className="flex flex-col items-center">
                   <div className="w-11 h-11 rounded-full bg-zinc-700/80 flex items-center justify-center text-lg border border-zinc-600">↗️</div>
                   <span className="text-[10px] font-bold mt-1 text-white">Share</span>
                 </button>
-
-                {/* LYRICS BUTTON - MPYA! ICON! */}
                 <button onClick={()=>setShowLyrics(!showLyrics)} className={`w-10 h-10 rounded-full flex items-center justify-center text-[16px] border-2 ${showLyrics?'bg-[#FE2C55] border-white':'bg-zinc-800 border-zinc-600'}`}>🎤</button>
-                {showLyrics && (
-                  <div className="bg-black/80 border border-pink-500 rounded-full px-2 py-1 max-w-[90px] -mt-1">
-                    <p className="text-[8px] font-bold text-center text-white leading-tight">🎵 {c.caption.slice(0,20)}</p>
-                  </div>
-                )}
               </div>
             </div>
           ))}
@@ -270,10 +244,6 @@ function VibraFinal() {
               <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">💬</div>
               <div><p className="text-[13px] font-bold text-white">mama commented: 😂😂</p><p className="text-[11px] text-zinc-400">5m ago</p></div>
             </div>
-            <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex gap-3">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">👤</div>
-              <div><p className="text-[13px] font-bold text-white">New follower: @vibra_fan</p><p className="text-[11px] text-zinc-400">250.8K followers now!</p></div>
-            </div>
           </div>
         </div>
       )}
@@ -309,15 +279,45 @@ function VibraFinal() {
         </div>
       )}
 
+      {/* FIX KUBWA HAPA - ME VIDEO SASA NA BUTTONS ZOTE 6! */}
       {selectedFromMe && (
         <div className="absolute inset-0 bg-black z-[60] flex flex-col">
-          <div className="flex items-center justify-between p-3 pt-2 text-white">
+          <div className="flex items-center justify-between p-3 pt-2 text-white bg-black/80 absolute top-0 left-0 right-0 z-10">
             <button onClick={()=>{ try{meVideoRef.current?.pause()}catch{}; setSelectedFromMe(null)}} className="text-xl">←</button>
             <p className="font-bold text-[14px]">@vibra-boy • {fmt(selectedFromMe.views)}</p>
             <p>⋮</p>
           </div>
-          <div className="flex-1 relative">
-            <video ref={meVideoRef} src={selectedFromMe.url} autoPlay loop playsInline muted={isMuted} className="h-full w-full object-contain bg-black" />
+          <div className="flex-1 relative bg-black">
+            <video ref={meVideoRef} src={selectedFromMe.url} autoPlay loop playsInline muted={isMuted} className="h-full w-full object-contain bg-black" onClick={()=>{ if(meVideoRef.current){ if(meVideoRef.current.paused) meVideoRef.current.play(); else meVideoRef.current.pause() } }} />
+            <div className="absolute bottom-20 right-3 flex flex-col items-center gap-3 z-20">
+              <button onClick={()=>toggleFollow(selectedFromMe.username)} className="w-11 h-11 rounded-full bg-zinc-800 border-2 border-white flex items-center justify-center font-bold text-[12px] text-white">{following.has(selectedFromMe.username)?'✓':'+'}</button>
+              <button onClick={()=>toggleLike(selectedFromMe.id)} className="flex flex-col items-center">
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xl ${myLikes.has(selectedFromMe.id)?'bg-[#FE2C55]':'bg-zinc-700/80'}`}>❤️</div>
+                <span className="text-[10px] font-bold mt-1 text-white">{fmt(likesMap[selectedFromMe.id]||selectedFromMe.views)}</span>
+              </button>
+              <button onClick={()=>{setActiveClip(selectedFromMe);}} className="flex flex-col items-center">
+                <div className="w-11 h-11 rounded-full bg-zinc-700/80 flex items-center justify-center text-lg">💬</div>
+                <span className="text-[10px] font-bold mt-1 text-white">12</span>
+              </button>
+              <button onClick={()=>toggleSave(selectedFromMe.id)} className="flex flex-col items-center">
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center text-lg border ${mySaves.has(selectedFromMe.id)?'bg-yellow-500 border-yellow-300':'bg-zinc-700/80 border-zinc-600'}`}>🔖</div>
+                <span className="text-[9px] font-bold mt-1 text-white">{mySaves.has(selectedFromMe.id)?'Saved':'Save'}</span>
+              </button>
+              <button onClick={()=>handleShare(selectedFromMe)} className="flex flex-col items-center">
+                <div className="w-11 h-11 rounded-full bg-zinc-700/80 flex items-center justify-center text-lg border border-zinc-600">↗️</div>
+                <span className="text-[10px] font-bold mt-1 text-white">Share</span>
+              </button>
+              <button onClick={()=>setShowLyrics(!showLyrics)} className={`w-10 h-10 rounded-full flex items-center justify-center text-[16px] border-2 ${showLyrics?'bg-[#FE2C55] border-white':'bg-zinc-800 border-zinc-600'}`}>🎤</button>
+              {showLyrics && (
+                <div className="bg-black/80 border border-pink-500 rounded-full px-2 py-1 max-w-[90px] -mt-1">
+                  <p className="text-[8px] font-bold text-center text-white leading-tight">🎵 {selectedFromMe.caption.slice(0,20)}</p>
+                </div>
+              )}
+            </div>
+            <div className="absolute bottom-24 left-3 right-20 z-20">
+              <p className="font-bold text-[15px] text-white">@vibra_boy</p>
+              <p className="text-[13px] mt-1 text-white">{selectedFromMe.caption}</p>
+            </div>
           </div>
         </div>
       )}
