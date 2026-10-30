@@ -71,6 +71,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#140c18" },
+      { name: "monetag", content: "70d452a2e002b3e5f4e39b401c50ca91" },
       { title: "Vibra Worldwide – Your daily frequency" },
       {
         name: "description",
