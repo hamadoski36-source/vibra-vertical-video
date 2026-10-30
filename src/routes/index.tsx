@@ -14,7 +14,7 @@ const realAds=[
 {id:3,title:'iPhone 15 Pro - Lipa Pole Pole!',sub:'Safaricom',link:'https://www.apple.com',color:'bg-zinc-800'},
 {id:4,title:'Binance - Trade & Earn $100!',sub:'200M Users',link:'https://www.binance.com',color:'bg-yellow-500'},
 {id:5,title:'Adidas - 40% OFF!',sub:'City Mall',link:'https://www.adidas.com',color:'bg-black'},
-{id:6,title:'🔥 Advertise Here - 250K Views!',sub:'DM @vibra-boy',link:'https://wa.me/254700000000',color:'bg-pink-600'},
+{id:6,title:'🔥 Advertise Here - 250K Views!',sub:'DM @vibra-boy',link:'https://instagram.com'},
 ]
 const [all,setAll]=useState(()=>{try{const s=localStorage.getItem('vibra_final_v8'); if(s){const p=JSON.parse(s); if(p.length>0) return [...p.map(x=>({...x,views:x.views||Math.floor(Math.random()*400)+'K',time:x.time||'Just now',lyrics:x.lyrics||'My Vibra Worldwide'})),...defaultVideos]}}catch{} return defaultVideos})
 const [tab,setTab]=useState('foryou')
