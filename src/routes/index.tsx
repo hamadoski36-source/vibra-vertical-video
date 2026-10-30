@@ -183,7 +183,7 @@ function Vibra() {
   }
   function thumbnail(clip: Clip) {
     return <article className="profile-tile bg-video" key={clip.id} aria-label={`Video ${clip.c}`}>
-      {clip.k === 'image' ? <img src={clip.u} alt={clip.c} className="w-full h-full object-cover" /> : <video ref={mediaRef('profile', clip.id)} src={clip.u} loop muted playsInline className="w-full h-full object-cover" onPlay={event => { if (context.current.page !== 'me' || context.current.suspended || context.current.overlay || document.hidden) silenceVideo(event.currentTarget); else event.currentTarget.muted = true; }} />}
+      {clip.k === 'image' ? <img src={clip.u} alt={clip.c} className="w-full h-full object-cover" /> : <video ref={mediaRef('profile', clip.id)} src={clip.u} loop muted autoPlay playsInline onLoadedData={event => { const video = event.currentTarget; void startActiveVideo(video, false, () => context.current.page === 'me' && !context.current.suspended && !context.current.overlay && !document.hidden); }} className="w-full h-full object-cover" onPlay={event => { if (context.current.page !== 'me' || context.current.suspended || context.current.overlay || document.hidden) silenceVideo(event.currentTarget); else event.currentTarget.muted = true; }} />}
       <div className="absolute inset-0 video-shade" /><p className="mini-caption">{clip.c}</p>{actions(clip, true)}
     </article>;
   }
