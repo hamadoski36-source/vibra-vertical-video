@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { Route } from '@/routes/index';
 const FIRST = 'Watu wa Mombasa 🔥 Vibra Familia!';
@@ -28,7 +28,7 @@ function start() {
 function intersect(index: number) {
   const target = observed[index];
   if (!target) throw new Error('Missing feed clip');
-  observeCallback([{ target, isIntersecting: true, intersectionRatio: 0.6 } as IntersectionObserverEntry], {} as IntersectionObserver);
+  act(() => observeCallback([{ target, isIntersecting: true, intersectionRatio: 0.6 } as IntersectionObserverEntry], {} as IntersectionObserver));
 }
 it('profile likes, saves and comments apply to the selected clip', async () => {
   start();
