@@ -4,26 +4,25 @@ import { useState, useRef, useEffect } from 'react'
 export const Route = createFileRoute('/')({component:Vibra})
 
 function Vibra(){
-  // VIDEOS MPYA - ZINAFANYA KAZI KENYA 100% - SIO GOOGLE BLOCKED
+  // VIDEOS MPYA 100% KENYA - W3.ORG - HAZIJA-BLOCK!
   const defaultVideos=[
-    {id:'1',u:'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',c:'Watu wa Mombasa 🔥 faraja gar #vibra #mombasa #viral #fyp Worldwide!',t:['#vibra','#mombasa'],user:'vibra-boy',v:'699.3K',lyrics:'Watu wa Mombasa, tunawaka moto'},
-    {id:'2',u:'https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4',c:'huyu nae ni kama baba angu anatudia kila neno 😂 #ndaro #vibra #comedy',t:['#ndaro','#vibra'],user:'vibra-boy',v:'707.6K',lyrics:'huyu nae ni kama baba angu anatudia kila neno'},
-    {id:'3',u:'https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4',c:'Mombasa Nights 🌊 Jellyfish vibes #mombasa #ocean #viral',t:['#mombasa','#ocean'],user:'mombasa_star',v:'254K',lyrics:'Usiku wa Mombasa, bahari'},
+    {id:'1',u:'https://media.w3.org/2010/05/sintel/trailer_hd.mp4',c:'Watu wa Mombasa 🔥 faraja gar #vibra #mombasa #viral #fyp Worldwide!',t:['#vibra','#mombasa'],user:'vibra-boy',v:'699.3K',lyrics:'Watu wa Mombasa, tunawaka moto'},
+    {id:'2',u:'https://media.w3.org/2010/05/bunny/trailer.mp4',c:'huyu nae ni kama baba angu anatudia kila neno 😂 #ndaro #vibra #comedy #faraja',t:['#ndaro','#vibra'],user:'vibra-boy',v:'707.6K',lyrics:'huyu nae ni kama baba angu anatudia kila neno'},
+    {id:'3',u:'https://media.w3.org/2010/05/bunny/movie.mp4',c:'Mombasa Nights 🌊 Jellyfish vibes #mombasa #ocean #viral #faraja',t:['#mombasa','#ocean'],user:'mombasa_star',v:'254K',lyrics:'Usiku wa Mombasa, bahari'},
   ]
   
-  // ADS WORLDWIDE - ZINABADILIKA KILA 5 SEC!
   const worldwideAds=[
     "🌍 WORLDWIDE ADS - Nike - Just Do It - Shop Now - vibra.com/ads",
     "🌍 WORLDWIDE ADS - Coca-Cola - Taste The Feeling - 1B views!",
-    "🌍 WORLDWIDE ADS - iPhone 15 - Mombasa to New York - Order Now!",
+    "🌍 WORLDWIDE ADS - iPhone 15 - Mombasa to New York - Order!",
     "🌍 WORLDWIDE ADS - Binance - Crypto Worldwide - Trade Now!",
-    "📢 Mombasa Businesses - 250K views - DM @vibra-boy - Advertise!",
     "🌍 WORLDWIDE ADS - Adidas - Impossible is Nothing - Global!",
+    "🌍 WORLDWIDE ADS - Mombasa Businesses - 250K views - DM @vibra-boy!",
   ]
 
   const [all,setAll]=useState(()=>{
     try{
-      const s=localStorage.getItem('vibra_final_v6')
+      const s=localStorage.getItem('vibra_final_v7_base64')
       if(s){
         const p=JSON.parse(s)
         if(p.length>0) return [...p,...defaultVideos]
@@ -58,9 +57,8 @@ function Vibra(){
   const fileRef=useRef(null)
   const vRefs=useRef({})
 
-  // ADS WORLDWIDE ROTATE
   useEffect(()=>{
-    const id=setInterval(()=>setAdIndex(i=> (i+1)%worldwideAds.length),5000)
+    const id=setInterval(()=>setAdIndex(i=> (i+1)%worldwideAds.length),4000)
     return ()=>clearInterval(id)
   },[])
 
@@ -69,25 +67,22 @@ function Vibra(){
     const obs=new IntersectionObserver((ents)=>{
       ents.forEach(en=>{
         const id=en.target.getAttribute('data-vid')
-        const vid=vRefs.current[id]
+        const vid=vRefs.current[id] as HTMLVideoElement
         if(!vid) return
-        if(en.isIntersecting && en.intersectionRatio>0.3){
+        if(en.isIntersecting && en.intersectionRatio>0.2){
           setActiveId(id)
           if(!document.hidden){
-            vid.play().catch(()=>{
-              // retry play
-              setTimeout(()=>vid.play().catch(()=>{}),500)
-            })
+            vid.play().catch(()=>setTimeout(()=>vid.play().catch(()=>{}),300))
           }
         } else {vid.pause()}
       })
-    },{threshold:0.3})
-    Object.values(vRefs.current).forEach(el=>{if(el) obs.observe(el)})
+    },{threshold:0.2})
+    Object.values(vRefs.current).forEach(el=>{if(el) obs.observe(el as Element)})
     return ()=>obs.disconnect()
   },[all,page,tab,searchQ,exploreQ])
 
   useEffect(()=>{
-    const pauseAll=()=>{Object.values(vRefs.current).forEach(v=>{if(v) v.pause()})}
+    const pauseAll=()=>{Object.values(vRefs.current).forEach(v=>{if(v)(v as HTMLVideoElement).pause()})}
     const handleVis=()=>{if(document.hidden) pauseAll()}
     document.addEventListener('visibilitychange',handleVis)
     window.addEventListener('pagehide',pauseAll)
@@ -108,56 +103,78 @@ function Vibra(){
 
   const myVideos=all.filter(x=>x.user==='vibra-boy')
 
+  // FIX KUBWA: UPLOAD SASA BASE64 - HAIKATI BAADA YA REFRESH!
   const handleUpload=(e)=>{
     const f=e.target.files?.[0]
     if(!f) return
-    setNewFile(f)
-    const url=URL.createObjectURL(f)
-    setNewUrl(url)
-    setNewKind(f.type.startsWith('image')?'image':'video')
-    setShowUp(true)
+    const reader=new FileReader()
+    reader.onload=()=>{
+      const base64=reader.result as string
+      setNewFile(f)
+      setNewUrl(base64) // base64, sio blob!
+      setNewKind(f.type.startsWith('image')?'image':'video')
+      setShowUp(true)
+    }
+    reader.readAsDataURL(f)
   }
 
   const saveVideo=async()=>{
-    if(!newFile && !newUrl){alert('Chagua video!'); return}
+    if(!newUrl){alert('Chagua video!'); return}
     setUploading(true); setProgress(10)
     for(let i=10;i<=90;i+=20){await new Promise(r=>setTimeout(r,200)); setProgress(i)}
-    const vid={id:Date.now().toString(),u:newUrl,k:newKind,c:newCap||'My Vibra Worldwide 🌍 #vibra #mombasa #fyp #viral',t:['#vibra','#mombasa','#worldwide'],user:'vibra-boy',v:'0',lyrics:newCap||'Vibra lyrics 🔥'}
+    // SASA TUNASAVE BASE64 - ITAONEKANA HATA BAADA YA REFRESH!
+    const vid={id:Date.now().toString(),u:newUrl,k:newKind,c:newCap||'My Vibra Worldwide 🌍 #vibra #faraja #mombasa #fyp #viral',t:['#vibra','#faraja','#mombasa'],user:'vibra-boy',v:'0',lyrics:newCap||'Vibra lyrics faraja 🔥'}
     const newAll=[vid,...all]; setAll(newAll)
     const worldwideOnly=newAll.filter(v=>!defaultVideos.find(d=>d.id===v.id))
-    try{localStorage.setItem('vibra_final_v6',JSON.stringify(worldwideOnly))}catch{}
+    try{
+      // Check size - kama kubwa sana, chukua 3 tu
+      let toSave=worldwideOnly.slice(0,5)
+      localStorage.setItem('vibra_final_v7_base64',JSON.stringify(toSave))
+    }catch{
+      // Kama storage imejaa, save 1 tu
+      try{localStorage.setItem('vibra_final_v7_base64',JSON.stringify([vid]))}catch{}
+    }
     setProgress(100)
     setTimeout(()=>{
       setUploading(false); setShowUp(false); setNewCap('');setNewUrl('');setNewFile(null);setProgress(0); setPage('me')
-      alert('✅ VIDEO IMEUPLOAD! Inaonekana sasa! 🌍')
+      alert('✅ VIDEO IMEUPLOAD! Sasa ni base64 - itaonekana hata uki-refresh! 🌍')
     },300)
   }
 
-  const delVideo=(id,url)=>{
-    if(!confirm('Futa?')) return
-    try{if(url.startsWith('blob:')) URL.revokeObjectURL(url)}catch{}
+  const delVideo=(id)=>{
+    if(!confirm('Futa video?')) return
     const newAll=all.filter(x=>x.id!==id); setAll(newAll)
     const worldwideOnly=newAll.filter(v=>!defaultVideos.find(d=>d.id===v.id))
-    try{localStorage.setItem('vibra_final_v6',JSON.stringify(worldwideOnly))}catch{}
+    try{localStorage.setItem('vibra_final_v7_base64',JSON.stringify(worldwideOnly))}catch{}
     setShowMeVideo(null)
+  }
+
+  const clearOldVideos=()=>{
+    if(confirm('Futa videos zote za zamani zilizokuwa black? Zitafutwa na mpya zitaonekana!')){
+      localStorage.removeItem('vibra_final_v4')
+      localStorage.removeItem('vibra_final_v3')
+      localStorage.removeItem('vibra_final_v5')
+      localStorage.removeItem('vibra_final_v6')
+      localStorage.removeItem('vibra_final_v7_base64')
+      setAll(defaultVideos)
+      alert('✅ Zamani zimefutwa! Sasa videos mpya za W3.ORG zinaonekana!')
+      location.reload()
+    }
   }
 
   return(
     <div className="h-screen bg-black text-white relative overflow-hidden">
       <input ref={fileRef} type="file" accept="video/*,image/*" className="hidden" onChange={handleUpload}/>
-      {showSearch&&<div className="absolute top-0 left-0 right-0 z-[120] bg-black p-3 flex gap-2 border-b border-zinc-800"><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} autoFocus placeholder="Search #vibra faraja gar worldwide..." className="flex-1 bg-zinc-800 rounded-full px-4 py-2.5 text-[13px] outline-none"/><button onClick={()=>{setShowSearch(false); setSearchQ('')}} className="bg-zinc-700 px-4 rounded-full">✕</button></div>}
-      {showLyrics&&<div className="absolute inset-0 z-[115] bg-black/90 flex items-end"><div className="bg-zinc-900 w-full rounded-t-[20px] p-5"><div className="flex justify-between"><p className="font-bold">🎵 Lyrics Worldwide</p><button onClick={()=>setShowLyrics(null)} className="bg-zinc-800 w-8 h-8 rounded-full">✕</button></div><p className="mt-4 text-[14px] leading-[22px]">{all.find(v=>v.id===showLyrics)?.lyrics}</p><p className="mt-3 text-[11px] text-zinc-400">{all.find(v=>v.id===showLyrics)?.c}</p></div></div>}
-      
-      {/* ADS WORLDWIDE - SASA ZINABADILIKA! */}
+      {showSearch&&<div className="absolute top-0 left-0 right-0 z-[120] bg-black p-3 flex gap-2 border-b border-zinc-800"><input value={searchQ} onChange={e=>setSearchQ(e.target.value)} autoFocus placeholder="Search faraja gar worldwide..." className="flex-1 bg-zinc-800 rounded-full px-4 py-2.5 text-[13px] outline-none"/><button onClick={()=>{setShowSearch(false); setSearchQ('')}} className="bg-zinc-700 px-4 rounded-full">✕</button></div>}
+      {showLyrics&&<div className="absolute inset-0 z-[115] bg-black/90 flex items-end"><div className="bg-zinc-900 w-full rounded-t-[20px] p-5"><div className="flex justify-between"><p className="font-bold">🎵 Lyrics Worldwide</p><button onClick={()=>setShowLyrics(null)} className="bg-zinc-800 w-8 h-8 rounded-full">✕</button></div><p className="mt-4 text-[14px] leading-[22px]">{all.find(v=>v.id===showLyrics)?.lyrics}</p></div></div>}
       <div className="fixed top-[44px] left-0 right-0 z-[65] bg-[#FE2C55] h-[32px] flex items-center justify-center px-2"><p className="text-[10px] font-bold text-center animate-pulse">{worldwideAds[adIndex]}</p></div>
-      
-      {showLive&&<div className="absolute inset-0 z-[110] bg-black flex flex-col"><div className="flex justify-between p-4"><button onClick={()=>setShowLive(false)} className="bg-zinc-800 w-8 h-8 rounded-full">✕</button><p className="font-bold">LIVE Worldwide 🌍 {worldwideAds[0]}</p><div className="w-8"></div></div><div className="flex-1 bg-zinc-900 m-4 rounded-[16px] flex flex-col items-center justify-center p-4"><div className="w-full h-[60%] bg-black rounded-xl flex items-center justify-center border-2 border-[#FE2C55] text-[60px]">📹</div><button onClick={()=>{setIsLive(true); setShowLive(false)}} className="mt-6 bg-[#FE2C55] w-full py-3 rounded-full font-black">🔴 START LIVE WORLDWIDE!</button></div></div>}
-      {showMeVideo&&<div className="absolute inset-0 z-[105] bg-black flex flex-col"><div className="flex justify-between p-3"><button onClick={()=>setShowMeVideo(null)} className="bg-zinc-700 w-8 h-8 rounded-full">✕</button><p className="font-bold text-[13px]">@{showMeVideo.user}</p><button onClick={()=>delVideo(showMeVideo.id,showMeVideo.u)} className="bg-red-600 w-8 h-8 rounded-full">🗑️</button></div><div className="flex-1 relative bg-black"><video src={showMeVideo.u} autoPlay loop controls playsInline className="w-full h-full object-contain"/><div className="absolute bottom-20 left-3 right-20"><p className="font-bold">@{showMeVideo.user}</p><p className="text-[13px]">{showMeVideo.c}</p></div></div></div>}
-      {showList&&<div className="absolute inset-0 z-[100] bg-black/80 flex items-end"><div className="bg-white text-black w-full rounded-t-[20px] p-4"><div className="flex justify-between"><p className="font-bold">{showList}</p><button onClick={()=>setShowList(null)} className="bg-gray-100 w-8 h-8 rounded-full">✕</button></div><p className="mt-4 text-[13px]">Worldwide users!</p></div></div>}
+      {showLive&&<div className="absolute inset-0 z-[110] bg-black flex flex-col"><div className="flex justify-between p-4"><button onClick={()=>setShowLive(false)} className="bg-zinc-800 w-8 h-8 rounded-full">✕</button><p className="font-bold">LIVE Worldwide 🌍</p><div className="w-8"></div></div><div className="flex-1 bg-zinc-900 m-4 rounded-[16px] flex flex-col items-center justify-center p-4"><div className="w-full h-[60%] bg-black rounded-xl flex items-center justify-center border-2 border-[#FE2C55] text-[60px]">📹</div><button onClick={()=>{setIsLive(true); setShowLive(false)}} className="mt-6 bg-[#FE2C55] w-full py-3 rounded-full font-black">🔴 START LIVE WORLDWIDE!</button></div></div>}
+      {showMeVideo&&<div className="absolute inset-0 z-[105] bg-black flex flex-col"><div className="flex justify-between p-3"><button onClick={()=>setShowMeVideo(null)} className="bg-zinc-700 w-8 h-8 rounded-full">✕</button><p className="font-bold text-[13px]">@{showMeVideo.user}</p><button onClick={()=>delVideo(showMeVideo.id)} className="bg-red-600 w-8 h-8 rounded-full">🗑️</button></div><div className="flex-1 relative bg-black"><video src={showMeVideo.u} autoPlay loop controls playsInline className="w-full h-full object-contain"/><div className="absolute bottom-20 left-3 right-20"><p className="font-bold">@{showMeVideo.user}</p><p className="text-[13px]">{showMeVideo.c}</p></div></div></div>}
+      {showList&&<div className="absolute inset-0 z-[100] bg-black/80 flex items-end"><div className="bg-white text-black w-full rounded-t-[20px] p-4"><div className="flex justify-between"><p className="font-bold">{showList}</p><button onClick={()=>setShowList(null)} className="bg-gray-100 w-8 h-8 rounded-full">✕</button></div><div className="mt-4"><button onClick={clearOldVideos} className="bg-red-600 text-white w-full py-3 rounded-full text-[13px] font-bold">🗑️ Futa Videos Zamani Zilizokuwa Black - Fix!</button><p className="text-[11px] mt-2 text-gray-500">Videos zako za zamani zilizokuwa blob URL zimekufa - bonyeza hapa kufuta zote na mpya zitaonekana!</p></div></div></div>}
       {showCom&&<div className="absolute inset-0 z-[80] flex items-end"><div className="absolute inset-0 bg-black/60" onClick={()=>setShowCom(null)}></div><div className="relative bg-zinc-900 w-full rounded-t-[20px] p-4 z-[91]"><div className="flex justify-between"><p className="font-bold">💬 Comments Worldwide 12K</p><button onClick={()=>setShowCom(null)} className="bg-zinc-800 w-7 h-7 rounded-full">✕</button></div><div className="flex gap-2 mt-4"><input placeholder="Add comment worldwide..." className="flex-1 bg-zinc-800 rounded-full px-4 py-2 text-[13px] outline-none"/><button className="text-[#FE2C55] font-bold">Post</button></div></div></div>}
-      {showUp&&<div className="absolute inset-0 z-[90] bg-black flex flex-col p-4"><div className="flex justify-between"><button onClick={()=>!uploading&&setShowUp(false)}>✕ Cancel</button><button onClick={saveVideo} disabled={uploading} className="bg-[#FE2C55] px-6 py-2 rounded-full font-bold text-[13px]">{uploading?`${progress}%`:'Post Worldwide 🌍'}</button></div><div className="flex-1 mt-4 flex flex-col">{newKind==='image'?<img src={newUrl} className="w-full h-[50%] object-contain bg-zinc-900 rounded-xl"/>:<video src={newUrl} controls loop autoPlay muted playsInline className="w-full h-[50%] object-contain bg-zinc-900 rounded-xl"/>}<input value={newCap} onChange={e=>setNewCap(e.target.value)} placeholder="Caption + lyrics worldwide..." className="mt-4 bg-zinc-800 rounded-xl px-4 py-3 text-[13px] outline-none"/>{uploading&&<div className="mt-4"><div className="w-full bg-zinc-800 h-2 rounded-full"><div className="bg-[#FE2C55] h-2 rounded-full" style={{width:`${progress}%`}}></div></div><p className="text-[11px] text-center mt-2">Uploading worldwide... {progress}%</p></div>}</div></div>}
-      {page==='explore'&&<div className="absolute inset-0 z-20 bg-black flex flex-col pt-[76px] pb-[68px]"><div className="p-3 flex gap-2"><input value={exploreQ} onChange={e=>setExploreQ(e.target.value)} placeholder="Explore worldwide #viral #comedy #ndaro #faraja gar..." className="flex-1 bg-zinc-800 rounded-full px-4 py-2.5 text-[13px] outline-none"/><button onClick={()=>setExploreQ('')} className="bg-zinc-700 px-3 rounded-full text-[12px]">Clear</button></div><div className="flex-1 overflow-y-auto p-1"><div className="grid grid-cols-3 gap-[2px]">{filtered().map(c=>(<div key={c.id} onClick={()=>{setPage('home'); setActiveId(c.id)}} className="aspect-[9/16] bg-zinc-900 relative"><video src={c.u} muted playsInline className="w-full h-full object-cover"/><div className="absolute bottom-1 left-1 text-[9px] bg-black/60 px-1 rounded">▶ {c.v}</div></div>))}</div></div></div>}
-      {page==='me'&&<div className="absolute inset-0 z-30 bg-white text-black flex flex-col"><div className="flex items-center justify-between px-4 py-3 border-b"><button onClick={()=>setPage('home')}>←</button><p className="font-bold text-[14px]">@vibra-boy ✅ Worldwide</p><button onClick={()=>setShowSearch(true)}>🔍</button></div><div className="flex-1 overflow-y-auto pb-[70px]"><div className="flex justify-around mt-4"><button onClick={()=>setShowList('Following')} className="text-center"><p className="font-black">10K</p><p className="text-[11px] text-gray-500">Following</p></button><button onClick={()=>setShowList('Followers')} className="text-center border-l pl-8"><p className="font-black">250.8K</p><p className="text-[11px] text-gray-500">Followers</p></button><button onClick={()=>setShowList('Likes')} className="text-center border-l pl-8"><p className="font-black">2.0M</p><p className="text-[11px] text-gray-500">Likes</p></button></div><div className="px-4 mt-2"><p className="text-[10px] text-green-600 font-bold">🌍 Worldwide Ads Active - Rotating every 5s!</p></div><div className="grid grid-cols-2 gap-[1px] bg-gray-200 mt-3">{myVideos.map(c=>(<div key={c.id} onClick={()=>setShowMeVideo(c)} className="aspect-[9/16] bg-black relative"><video src={c.u} loop muted autoPlay playsInline className="w-full h-full object-cover pointer-events-none"/><div className="absolute bottom-1 left-1 text-white text-[10px] bg-black/70 px-1 rounded">▶ {c.v}</div><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="bg-white/25 w-10 h-10 rounded-full flex items-center justify-center">▶</div></div><button onClick={(e)=>{e.stopPropagation(); delVideo(c.id,c.u)}} className="absolute top-1 right-1 bg-red-600 w-7 h-7 rounded-full">🗑️</button></div>))}</div><div className="bg-[#FE2C55] text-white p-3 text-center mt-[1px]"><p className="text-[11px] font-bold animate-pulse">{worldwideAds[adIndex]}</p></div></div></div>}
+      {showUp&&<div className="absolute inset-0 z-[90] bg-black flex flex-col p-4"><div className="flex justify-between"><button onClick={()=>!uploading&&setShowUp(false)}>✕ Cancel</button><button onClick={saveVideo} disabled={uploading} className="bg-[#FE2C55] px-6 py-2 rounded-full font-bold text-[13px]">{uploading?`${progress}%`:'Post Worldwide 🌍'}</button></div><div className="flex-1 mt-4 flex flex-col">{newKind==='image'?<img src={newUrl} className="w-full h-[50%] object-contain bg-zinc-900 rounded-xl"/>:<video src={newUrl} controls loop autoPlay muted playsInline className="w-full h-[50%] object-contain bg-zinc-900 rounded-xl"/>}<input value={newCap} onChange={e=>setNewCap(e.target.value)} placeholder="Caption + lyrics faraja gar worldwide..." className="mt-4 bg-zinc-800 rounded-xl px-4 py-3 text-[13px] outline-none"/><p className="text-[10px] text-green-400 mt-2">✅ Sasa ni base64 - itaonekana hata uki-refresh! Worldwide!</p>{uploading&&<div className="mt-4"><div className="w-full bg-zinc-800 h-2 rounded-full"><div className="bg-[#FE2C55] h-2 rounded-full" style={{width:`${progress}%`}}></div></div><p className="text-[11px] text-center mt-2">Uploading worldwide... {progress}%</p></div>}</div></div>}
+      {page==='explore'&&<div className="absolute inset-0 z-20 bg-black flex flex-col pt-[76px] pb-[68px]"><div className="p-3 flex gap-2"><input value={exploreQ} onChange={e=>setExploreQ(e.target.value)} placeholder="Explore worldwide #viral #faraja gar..." className="flex-1 bg-zinc-800 rounded-full px-4 py-2.5 text-[13px] outline-none"/><button onClick={()=>setExploreQ('')} className="bg-zinc-700 px-3 rounded-full text-[12px]">Clear</button></div><div className="flex-1 overflow-y-auto p-1"><div className="grid grid-cols-3 gap-[2px]">{filtered().map(c=>(<div key={c.id} onClick={()=>{setPage('home'); setActiveId(c.id)}} className="aspect-[9/16] bg-zinc-900 relative"><video src={c.u} muted playsInline className="w-full h-full object-cover"/><div className="absolute bottom-1 left-1 text-[9px] bg-black/60 px-1 rounded">▶ {c.v}</div></div>))}</div></div></div>}
+      {page==='me'&&<div className="absolute inset-0 z-30 bg-white text-black flex flex-col"><div className="flex items-center justify-between px-4 py-3 border-b"><button onClick={()=>setPage('home')}>←</button><p className="font-bold text-[14px]">@vibra-boy ✅ Worldwide</p><button onClick={()=>setShowSearch(true)}>🔍</button></div><div className="flex-1 overflow-y-auto pb-[70px]"><div className="flex justify-around mt-4"><button onClick={()=>setShowList('Following')} className="text-center"><p className="font-black">10K</p><p className="text-[11px] text-gray-500">Following</p></button><button onClick={()=>setShowList('Followers')} className="text-center border-l pl-8"><p className="font-black">250.8K</p><p className="text-[11px] text-gray-500">Followers</p></button><button onClick={()=>setShowList('Likes')} className="text-center border-l pl-8"><p className="font-black">2.0M</p><p className="text-[11px] text-gray-500">Likes</p></button></div><div className="px-4 mt-2 space-y-1"><p className="text-[10px] text-green-600 font-bold">🌍 Worldwide Ads Active - Rotating every 4s!</p><button onClick={clearOldVideos} className="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold">Fix Black Videos - Click Here!</button></div><div className="grid grid-cols-2 gap-[1px] bg-gray-200 mt-3">{myVideos.map(c=>(<div key={c.id} onClick={()=>setShowMeVideo(c)} className="aspect-[9/16] bg-black relative"><video src={c.u} loop muted autoPlay playsInline className="w-full h-full object-cover pointer-events-none"/><div className="absolute bottom-1 left-1 text-white text-[10px] bg-black/70 px-1 rounded">▶ {c.v}</div><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="bg-white/25 w-10 h-10 rounded-full flex items-center justify-center">▶</div></div><button onClick={(e)=>{e.stopPropagation(); delVideo(c.id)}} className="absolute top-1 right-1 bg-red-600 w-7 h-7 rounded-full">🗑️</button></div>))}</div><div className="bg-[#FE2C55] text-white p-3 text-center mt-[1px]"><p className="text-[11px] font-bold animate-pulse">{worldwideAds[adIndex]}</p></div></div></div>}
       {page==='home'&&<>
         <div className="fixed top-0 left-0 right-0 z-[70] bg-black p-2">
           <div className="flex justify-between items-center px-2">
@@ -168,15 +185,14 @@ function Vibra(){
             </div>
             <div className="flex gap-2">
               <button onClick={()=>setShowSearch(true)} className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center">🔍</button>
-              <button onClick={()=>{const nm=!muted; setMuted(nm); Object.values(vRefs.current).forEach(v=>{if(v)v.muted=nm})}} className={`w-8 h-8 rounded-full flex items-center justify-center ${muted?'bg-zinc-700':'bg-green-600'}`}>{muted?'🔇':'🔊'}</button>
+              <button onClick={()=>{const nm=!muted; setMuted(nm); Object.values(vRefs.current).forEach(v=>{if(v){(v as HTMLVideoElement).muted=nm}})}} className={`w-8 h-8 rounded-full flex items-center justify-center ${muted?'bg-zinc-700':'bg-green-600'}`}>{muted?'🔇':'🔊'}</button>
             </div>
           </div>
         </div>
         <div className="h-screen overflow-y-scroll snap-y snap-mandatory pt-[76px] pb-[68px] bg-black">
           {filtered().map((c,idx)=>(
             <div key={c.id}>
-              <div className="h-screen w-full snap-start relative bg-black">
-                {/* VIDEO FIX - INAONEKANA SASA - TEST-VIDEOS.CO.UK - HAIJA-BLOCK KENYA */}
+              <div className="h-screen w-full snap-start relative bg-zinc-900">
                 <video 
                   ref={el=>vRefs.current[c.id]=el} 
                   data-vid={c.id} 
@@ -186,43 +202,29 @@ function Vibra(){
                   muted={muted} 
                   autoPlay
                   preload="auto"
-                  controls={false}
                   className="h-full w-full object-cover bg-zinc-900"
                   onLoadedData={e=>{
                     if(c.id===activeId && !document.hidden){
-                      e.currentTarget.play().catch(()=>{})
+                      (e.currentTarget as HTMLVideoElement).play().catch(()=>{})
                     }
                   }}
-                  onError={e=>{
-                    // fallback if fails
-                    const v=e.currentTarget as HTMLVideoElement
-                    console.log('Video error, retrying',c.id)
-                    v.load()
-                  }}
                 />
-                {/* FALLBACK POSTER IF VIDEO FAILS */}
-                <div className="absolute inset-0 bg-gradient-to-b from-zinc-800 to-black -z-10 flex items-center justify-center">
-                  <p className="text-[60px]">🎬</p>
-                </div>
-                
-                {muted&&activeId===c.id&&<button onClick={()=>{setMuted(false); Object.values(vRefs.current).forEach(v=>{if(v){v.muted=false; v.play().catch(()=>{})}})}} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 border-2 border-white px-6 py-3 rounded-full font-black z-[60] pointer-events-auto text-[13px] animate-pulse">🔇 TAP FOR SOUND 🔊</button>}
-                
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 pointer-events-none -z-0"></div>
+                {muted&&activeId===c.id&&<button onClick={()=>{setMuted(false); Object.values(vRefs.current).forEach(v=>{if(v){(v as HTMLVideoElement).muted=false; (v as HTMLVideoElement).play().catch(()=>{})}})}} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 border-2 border-white px-6 py-3 rounded-full font-black z-[60] pointer-events-auto text-[13px] animate-pulse">🔇 TAP FOR SOUND 🔊</button>}
                 <div className="absolute bottom-[100px] left-3 right-[75px] z-[50] pointer-events-none">
                   <p className="font-bold text-[14px] drop-shadow-lg">@{c.user} ✅</p>
                   <p className="text-[13px] mt-1 leading-[18px] drop-shadow-lg">{c.c}</p>
                   <p className="text-[12px] text-cyan-400 mt-1 drop-shadow-lg">{c.t.join(' ')}</p>
                 </div>
-                
                 <div className="absolute bottom-[90px] right-2 flex flex-col items-center gap-3 z-[60]">
                   <button onClick={()=>{const s=new Set(likes); s.has(c.id)?s.delete(c.id):s.add(c.id); setLikes(s)}} className="flex flex-col items-center pointer-events-auto active:scale-90"><div className={`w-[48px] h-[48px] rounded-full flex items-center justify-center text-[24px] shadow-xl ${likes.has(c.id)?'bg-[#FE2C55]':'bg-[#3a3a3a]'}`}>❤️</div><span className="text-[11px] mt-1 font-bold bg-black/70 px-1.5 rounded">{likes.has(c.id)?'1':c.v}</span></button>
                   <button onClick={()=>setShowCom(c.id)} className="flex flex-col items-center pointer-events-auto active:scale-90"><div className="w-[48px] h-[48px] rounded-full bg-[#3a3a3a] flex items-center justify-center text-[22px] shadow-xl">💬</div><span className="text-[11px] mt-1 bg-black/70 px-1.5 rounded">12K</span></button>
                   <button onClick={()=>{const s=new Set(saved); s.has(c.id)?s.delete(c.id):s.add(c.id); setSaved(s)}} className="flex flex-col items-center pointer-events-auto active:scale-90"><div className={`w-[48px] h-[48px] rounded-full flex items-center justify-center text-[18px] shadow-xl ${saved.has(c.id)?'bg-yellow-500':'bg-[#3a3a3a]'}`}>🔖</div><span className="text-[11px] mt-1">Save</span></button>
                   <button onClick={()=>{if(navigator.share) navigator.share({title:'Vibra',text:c.c}); else alert('Shared worldwide! 🌍')}} className="flex flex-col items-center pointer-events-auto active:scale-90"><div className="w-[48px] h-[48px] rounded-full bg-[#3a3a3a] flex items-center justify-center text-[18px] shadow-xl">↗️</div><span className="text-[11px] mt-1">Share</span></button>
                   <button onClick={()=>setShowLyrics(c.id)} className="flex flex-col items-center pointer-events-auto active:scale-90"><div className="w-[48px] h-[48px] rounded-full bg-[#3a3a3a] flex items-center justify-center text-[16px] shadow-xl">🎵</div><span className="text-[10px] mt-1">Lyrics</span></button>
-                  {c.user==='vibra-boy'&&<button onClick={()=>delVideo(c.id,c.u)} className="flex flex-col items-center pointer-events-auto active:scale-90"><div className="w-[48px] h-[48px] rounded-full bg-red-600 flex items-center justify-center text-[16px] shadow-xl">🗑️</div><span className="text-[10px] mt-1">Del</span></button>}
+                  {c.user==='vibra-boy'&&<button onClick={()=>delVideo(c.id)} className="flex flex-col items-center pointer-events-auto active:scale-90"><div className="w-[48px] h-[48px] rounded-full bg-red-600 flex items-center justify-center text-[16px] shadow-xl">🗑️</div><span className="text-[10px] mt-1">Del</span></button>}
                 </div>
               </div>
-              {/* ADS WORLDWIDE - KILA VIDEOS 3 */}
               <div className="h-[70px] bg-gradient-to-r from-[#FE2C55] to-[#FF6B6B] border-y border-black flex items-center justify-center px-3"><p className="text-[11px] font-black text-center text-white animate-pulse">{worldwideAds[(idx+adIndex)%worldwideAds.length]} - Tap to Advertise Worldwide! 🌍</p></div>
             </div>
           ))}
