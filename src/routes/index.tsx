@@ -26,6 +26,7 @@ const DEFAULTS: Clip[] = [
 ];
 function Vibra() {
   const [all, setAll] = useState(DEFAULTS);
+  const [ready, setReady] = useState(false);
   const [tab, setTab] = useState('foryou');
   const [muted, setMuted] = useState(true);
   const [likes, setLikes] = useState(new Set<string>());
@@ -89,6 +90,7 @@ function Vibra() {
       if (result === 'blocked' && stillActive()) setNotice('Your browser blocked autoplay. Tap Play.');
     });
   }
+  useEffect(() => { setReady(true); }, []);
   useEffect(() => watchPlaybackLifecycle(
     () => { context.current.suspended = true; },
     () => {
@@ -187,7 +189,7 @@ function Vibra() {
   }
   const lyricsClip = all.find(clip => clip.id === lyricsId);
   const collection = showList === 'Saved' ? all.filter(clip => saved.has(clip.id)) : showList === 'Liked' ? all.filter(clip => likes.has(clip.id)) : myVideos;
-  return <div className="vibra-app bg-video text-video-text relative overflow-hidden">
+  return <div data-ready={ready} className="vibra-app bg-video text-video-text relative overflow-hidden">
     <input ref={fileRef} type="file" accept="video/*,image/*" className="hidden" aria-label="Upload file" onChange={upload} />
     {notice && <div className="vibra-notice" role="status">{notice}</div>}
     {page === 'me' && <section className="absolute inset-0 bg-panel text-panel-text flex flex-col">
