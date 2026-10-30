@@ -132,7 +132,24 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   return (
     <QueryClientProvider client={Route.useRouteContext().queryClient}>
-      <Outlet />
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1">
+          <Outlet />
+        </div>
+        <footer className="bg-black border-t border-zinc-800 text-gray-400 text-xs p-4 text-center">
+          <div className="flex gap-4 justify-center mb-2">
+            <Link to="/about" className="hover:text-white">About</Link>
+            <Link to="/privacy" className="hover:text-white">Privacy</Link>
+            <Link to="/contact" className="hover:text-white">Contact</Link>
+          </div>
+          <p>© 2026 Vibra Worldwide • Built in Faraja, Bamburi - Mombasa, Kenya by Hamadoski 🌍</p>
+          <p className="mt-1">Email: vibra@hamadoski.com</p>
+        </footer>
+      </div>
     </QueryClientProvider>
   );
 }
+  
+ 
+      
+    
