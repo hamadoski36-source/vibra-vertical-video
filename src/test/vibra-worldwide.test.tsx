@@ -54,7 +54,7 @@ it('cancel keeps all clips and confirmed deletion removes only the selected owne
   fireEvent.click(screen.getByRole('button', { name: 'Delete video' }));
   expect(screen.queryByRole('article', { name: `Video ${FIRST}` })).toBeNull();
   expect(screen.getByRole('article', { name: `Video ${SECOND}` })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Home', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Home' }));
   expect(screen.queryByRole('button', { name: 'Delete Vibra Familia Worldwide' })).toBeNull();
 });
 it('stats dialogs use actual session relationships and unfollow updates the counter', () => {
@@ -69,7 +69,7 @@ it('stats dialogs use actual session relationships and unfollow updates the coun
 });
 it('only the 0.6-visible Home video gets sound and the previous element is silenced', async () => {
   start();
-  fireEvent.click(screen.getByRole('button', { name: 'Home', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Home' }));
   intersect(0);
   const first = within(screen.getByRole('article', { name: `Video ${FIRST}` })).getByRole('button', { name: `Like ${FIRST}` }).closest('article')?.querySelector('video');
   const second = screen.getByRole('article', { name: `Video ${SECOND}` }).querySelector('video');
@@ -81,7 +81,7 @@ it('only the 0.6-visible Home video gets sound and the previous element is silen
   await waitFor(() => expect(second.muted).toBe(false));
   expect(first.muted).toBe(true);
   expect(first.pause).toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'Me', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Me' }));
   expect(first.muted).toBe(true);
   expect(second.muted).toBe(true);
 });
@@ -100,7 +100,7 @@ it('preserves local upload composer and adds the selected file to the profile', 
   fireEvent.change(screen.getByLabelText('Upload file'), { target: { files: [new File(['video'], 'clip.webm', { type: 'video/webm' })] } });
   expect(screen.getByRole('dialog', { name: 'Upload' })).toBeInTheDocument();
   fireEvent.change(screen.getByRole('textbox', { name: 'Caption' }), { target: { value: 'Fresh upload' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Post', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Post' }));
   expect(screen.getByRole('article', { name: 'Video Fresh upload' }).querySelector('video')).toHaveAttribute('src', 'blob:upload');
   expect(screen.getByRole('article', { name: `Video ${FIRST}` })).toBeInTheDocument();
 });

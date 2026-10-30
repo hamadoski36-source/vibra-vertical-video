@@ -53,6 +53,20 @@ function Vibra() {
   const feedRef = useRef<HTMLDivElement>(null);
   const vRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const meVRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const mediaCallbacks = useRef<Record<string, (el: HTMLVideoElement | null) => void>>({});
+  function mediaRef(kind: 'feed' | 'profile', id: string) {
+    const key = `${kind}:${id}`;
+    const existing = mediaCallbacks.current[key];
+    if (existing) return existing;
+    const refs = kind === 'feed' ? vRefs : meVRefs;
+    const callback = (el: HTMLVideoElement | null) => {
+      const previous = refs.current[id];
+      if (previous && previous !== el) silenceVideo(previous);
+      refs.current[id] = el;
+    };
+    mediaCallbacks.current[key] = callback;
+    return callback;
+  }
   const uploadedUrls = useRef(new Set<string>());
   const requestedId = useRef<string | null>(null);
   const context = useRef({ page, activeId, suspended: false, overlay: false, muted });
@@ -167,7 +181,7 @@ function Vibra() {
   }
   function thumbnail(clip: Clip) {
     return <article className="profile-tile bg-video" key={clip.id} aria-label={`Video ${clip.c}`}>
-      {clip.k === 'image' ? <img src={clip.u} alt={clip.c} className="w-full h-full object-cover" /> : <video ref={el => { const previous = meVRefs.current[clip.id]; if (previous && previous !== el) silenceVideo(previous); meVRefs.current[clip.id] = el; }} src={clip.u} loop muted playsInline className="w-full h-full object-cover" onPlay={event => { if (context.current.page !== 'me' || context.current.suspended || context.current.overlay || document.hidden) silenceVideo(event.currentTarget); else event.currentTarget.muted = true; }} />}
+      {clip.k === 'image' ? <img src={clip.u} alt={clip.c} className="w-full h-full object-cover" /> : <video ref={mediaRef('profile', clip.id)} src={clip.u} loop muted playsInline className="w-full h-full object-cover" onPlay={event => { if (context.current.page !== 'me' || context.current.suspended || context.current.overlay || document.hidden) silenceVideo(event.currentTarget); else event.currentTarget.muted = true; }} />}
       <div className="absolute inset-0 video-shade" /><p className="mini-caption">{clip.c}</p>{actions(clip, true)}
     </article>;
   }
@@ -190,7 +204,7 @@ function Vibra() {
     {page === 'home' && <>
       <header className="top-nav absolute top-0 left-0 right-0 bg-video-glass p-2"><div className="flex justify-between items-center gap-1"><Button className="bg-brand text-video-text px-2 text-xs" onClick={() => setShowList('LIVE')}>LIVE</Button><div className="flex gap-1"><Button variant="ghost" className="text-xs px-2" aria-pressed={tab === 'following'} onClick={() => setTab('following')}>Following</Button><Button variant="ghost" className="text-xs px-2" aria-pressed={tab === 'foryou'} onClick={() => setTab('foryou')}>For You</Button></div><Button variant="ghost" size="icon" aria-label="Upload a video" onClick={() => fileRef.current?.click()}><Plus /></Button><Button variant="ghost" size="icon" aria-label={muted ? 'Sound off' : 'Sound on'} aria-pressed={!muted} onClick={toggleMute}>{muted ? <VolumeX /> : <Volume2 />}</Button></div><p className="text-[10px] text-center">Vibra Worldwide</p></header>
       <div ref={feedRef} className="feed-viewport" aria-label="Video feed">{filtered.map(clip => <article key={clip.id} data-vid={clip.id} aria-label={`Video ${clip.c}`} className="feed-clip relative bg-video">
-        {clip.k === 'image' ? <img src={clip.u} alt={clip.c} className="feed-video" /> : <video ref={el => { const previous = vRefs.current[clip.id]; if (previous && previous !== el) silenceVideo(previous); vRefs.current[clip.id] = el; }} src={clip.u} loop muted playsInline className="feed-video" onClick={toggleMute} onPlay={event => { if (context.current.activeId !== clip.id || context.current.page !== 'home' || context.current.suspended || context.current.overlay || document.hidden) silenceVideo(event.currentTarget); else setPaused(false); }} onPause={() => { if (context.current.activeId === clip.id) setPaused(true); }} />}
+        {clip.k === 'image' ? <img src={clip.u} alt={clip.c} className="feed-video" /> : <video ref={mediaRef('feed', clip.id)} src={clip.u} loop muted playsInline className="feed-video" onClick={toggleMute} onPlay={event => { if (context.current.activeId !== clip.id || context.current.page !== 'home' || context.current.suspended || context.current.overlay || document.hidden) silenceVideo(event.currentTarget); else setPaused(false); }} onPause={() => { if (context.current.activeId === clip.id) setPaused(true); }} />}
         <div className="absolute inset-0 video-shade" />
         {activeId === clip.id && clip.k === 'video' && <Button variant="ghost" size="icon" className="absolute top-[90px] left-3 z-[60] bg-video-glass" aria-label={paused ? 'Play video' : 'Pause video'} onClick={() => { const video = vRefs.current[clip.id]; if (!video) return; if (video.paused) activate(clip.id); else video.pause(); }}>{paused ? <Play /> : <Pause />}</Button>}
         <div className="feed-caption absolute left-3 right-[78px]"><strong className="text-sm">@{clip.user}</strong>{clip.user !== SELF && <Button className="ml-2 bg-brand text-video-text text-xs px-2" onClick={() => toggle(setFollowing, clip.user)}>{following.has(clip.user) ? 'Following' : 'Follow'}</Button>}<p className="text-sm mt-1">{clip.c}</p><p className="text-xs text-video-link mt-1">{clip.t.join(' ')}</p></div>
