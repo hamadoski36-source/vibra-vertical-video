@@ -131,19 +131,31 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    // MONETAG DIRECT LINK YA VIBRA
+    (window as any).openMonetag = () => {
+      const last = localStorage.getItem('vibra_ad');
+      const now = Date.now();
+      if (!last || now - parseInt(last) > 30 * 60 * 1000) {
+        window.open("https://uplcm.com/4/12154689", "_blank");
+        localStorage.setItem('vibra_ad', now.toString());
+      }
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={Route.useRouteContext().queryClient}>
       <div className="min-h-screen flex flex-col">
         <div className="flex-1">
           <Outlet />
         </div>
-        <footer className="bg-black border-t border-zinc-800 text-gray-400 text-xs p-4 text-center">
+        <footer className="bg-black border-t border-zinc-800 text-gray-500 text-xs text-center py-6">
           <div className="flex gap-4 justify-center mb-2">
             <Link to="/about" className="hover:text-white">About</Link>
             <Link to="/privacy" className="hover:text-white">Privacy</Link>
             <Link to="/contact" className="hover:text-white">Contact</Link>
           </div>
-          <p>© 2026 Vibra Worldwide • Built in Faraja, Bamburi - Mombasa, Kenya by Hamadoski 🌍</p>
+          <p>© 2026 Vibra Worldwide • Built in Faraja, Bamburi - Mombasa</p>
           <p className="mt-1">Email: vibra@hamadoski.com</p>
         </footer>
       </div>
