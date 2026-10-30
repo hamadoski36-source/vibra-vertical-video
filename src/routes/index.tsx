@@ -14,7 +14,7 @@ const realAds=[
 {id:3,title:'iPhone 15 Pro - Lipa Pole Pole!',sub:'Safaricom',link:'https://safaricom.co.ke'},
 {id:4,title:'Binance - Trade & Earn $100!',sub:'200M Users',link:'https://binance.com'},
 {id:5,title:'Adidas - 40% OFF!',sub:'City Mall',link:'https://adidas.com'},
-{id:6,title:'🔥 Advertise Here - 250K Views!',sub:'DM @vibra-boy',link:'https://wa.me/254700000000'},
+{id:6,title:'🔥 Advertise Here - 250K Views!',sub:'DM @vibra-boy',link:'https://instagram.com/'},  
 ]
 const [all,setAll]=useState(()=>{try{const s=localStorage.getItem('vibra_final_v2');return s?JSON.parse(s):defaultVideos}catch{return defaultVideos}})
 const [tab,setTab]=useState('foryou')
