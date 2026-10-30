@@ -54,7 +54,7 @@ useEffect(()=>{if(showCom || showLive || showLyrics || showAuth){Object.values(v
 
 const filtered=()=>{let f=tab==='following'?all.filter(x=>following.has(x.user)):all; const q=page==='explore'?exploreQ:searchQ; if(q) f=f.filter(x=>x.c.toLowerCase().includes(q.toLowerCase()) || x.user.toLowerCase().includes(q.toLowerCase())); return f}
 const myVideos=all.filter(x=>x.user===username || x.user==='vibra-boy')
-const totalEarnings=Object.values(adClicks).reduce((a:any,b:any)=>a+b,0)*0.02
+const totalEarnings=Object.values(adClicks).reduce((a:any,b:any)=>a+b,0)*0.06+0.06
 const handleLogin=()=>{if(!loginName.trim()) return; setUsername(loginName); setIsLogged(true); localStorage.setItem('vibra_logged','1'); localStorage.setItem('vibra_user',loginName); setShowAuth(false)}
 const handleLogout=()=>{setIsLogged(false); localStorage.removeItem('vibra_logged'); setShowAuth(false)}
 const handleUpload=(e)=>{const f=e.target.files?.[0]; if(!f) return; const reader=new FileReader(); reader.onload=()=>{setNewUrl(reader.result as string); setNewKind(f.type.startsWith('image')?'image':'video')}; reader.readAsDataURL(f); setShowUp(true)}
