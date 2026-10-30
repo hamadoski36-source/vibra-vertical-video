@@ -3,6 +3,29 @@ export function silenceVideo(video: HTMLVideoElement) {
   video.pause();
 }
 
+/** Suspend every media element, including previews and profile thumbnails. */
+export function watchPlaybackLifecycle(onSuspend: () => void, onResume: () => void) {
+  const suspend = () => {
+    onSuspend();
+    document.querySelectorAll('video').forEach(silenceVideo);
+  };
+  const resume = () => { if (!document.hidden) onResume(); };
+  const visibility = () => { if (document.hidden) suspend(); else resume(); };
+  document.addEventListener('visibilitychange', visibility);
+  window.addEventListener('pagehide', suspend);
+  window.addEventListener('blur', suspend);
+  window.addEventListener('focus', resume);
+  window.addEventListener('pageshow', resume);
+  return () => {
+    document.removeEventListener('visibilitychange', visibility);
+    window.removeEventListener('pagehide', suspend);
+    window.removeEventListener('blur', suspend);
+    window.removeEventListener('focus', resume);
+    window.removeEventListener('pageshow', resume);
+    suspend();
+  };
+}
+
 /** Only a still-active element may finish a pending playback request. */
 export async function startActiveVideo(
   video: HTMLVideoElement,

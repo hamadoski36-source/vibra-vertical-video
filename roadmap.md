@@ -1,5 +1,13 @@
 # Vibra migration roadmap
 
+## Current interface repairs — October 30, 2026
+- [ ] Restore clickable right-side and two-column Profile actions; controlled stats/comments/lyrics/delete panels
+- [ ] Stop and mute all media on hidden/pagehide/blur; only active Home video gets sound; verify seeking
+- [ ] Test existing local uploads and profile thumbnails on phone-sized previews
+- [ ] Ads blocked pending approved advertising account, consent/privacy setup and real placement configuration; no live ads or purchases
+- [ ] Current source no longer matches earlier cloud/auth completion claims; worldwide storage and secure account restoration need a separate verified step, without replacing the existing backend
+
+
 ## Worldwide cloud feed — October 29, 2026 (done)
 - [x] Feed now reads from the cloud clips table (newest first, paginated), not localStorage; localStorage clip logic removed
 - [x] Uploads go to the public 'Vibra clips' storage bucket, then a row is inserted with the public URL; success message is exactly "Uploaded worldwide!"
