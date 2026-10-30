@@ -1,170 +1,233 @@
-// @ts-nocheck
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useRef, useEffect } from 'react'
-export const Route=createFileRoute('/')({component:Vibra})
-function Vibra(){
-  // DEFAULT VIDEOS - hazitapotea tena!
-  const defaultVideos=[
-    {id:'1',u:'https://www.w3schools.com/html/mov_bbb.mp4',k:'video',c:'Watu wa Mombasa 🔥 Vibra Familia!',t:['#vibra','#mombasa','#worldwide'],user:'vibra-boy',v:'699.3K',likes:699300},
-    {id:'2',u:'https://www.w3schools.com/html/movie.mp4',k:'video',c:'Bear Love Story 🐻❤️',t:['#love','#viral'],user:'vibra-boy',v:'707.6K',likes:707600},
-    {id:'3',u:'https://www.w3schools.com/html/mov_bbb.mp4',k:'video',c:'Data Saver ON - Save 80% data!',t:['#vibra','#datasaver'],user:'mombasa_star',v:'254K',likes:254000},
-  ]
-  const [all,setAll]=useState(defaultVideos)
-  const [tab,setTab]=useState('foryou')
-  const [muted,setMuted]=useState(true)
-  const [likes,setLikes]=useState(new Set())
-  const [page,setPage]=useState('me')
-  const [activeId,setActiveId]=useState('1')
-  const [showCom,setShowCom]=useState(null)
-  const [showUp,setShowUp]=useState(false)
-  const [showList,setShowList]=useState(null) // AI: Following/Followers/Likes modal
-  const [newCap,setNewCap]=useState('')
-  const [newUrl,setNewUrl]=useState('')
-  const [newKind,setNewKind]=useState('video')
-  const [following,setFollowing]=useState(new Set(['mombasa_star']))
-  const [followers,setFollowers]=useState(250800)
-  const fileRef=useRef(null)
-  const vRefs=useRef({})
-  const meVRefs=useRef({})
+import { createFileRoute } from '@tanstack/react-router';
+import { useState, useRef, useEffect } from 'react';
+import { Heart, MessageCircle, Bookmark, Share2, Trash2, Play, Pause, Music, Volume2, VolumeX, Plus, Home, Search, Inbox, User, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { VibraSheet } from '@/components/vibra-sheet';
+import { VideoProgress } from '@/components/video-progress';
+import { silenceVideo, startActiveVideo, watchPlaybackLifecycle } from '@/lib/vibra-playback';
+import { followGraph, followStats, SOCIAL_PLATFORMS, socialUrl, type SocialLinks } from '@/lib/vibra-social';
+import '../interface.css';
 
-  // AI: Auto play one video at a time
-  useEffect(()=>{
-    if(page!=='home')return
-    const obs=new IntersectionObserver((ents)=>{
-      ents.forEach(en=>{
-        const id=en.target.getAttribute('data-vid')
-        const vid=vRefs.current[id]
-        if(!vid)return
-        if(en.isIntersecting && en.intersectionRatio>0.6){
-          setActiveId(id)
-          vid.play().catch(()=>{})
-        } else {vid.pause()}
-      })
-    },{threshold:0.6})
-    Object.values(vRefs.current).forEach(el=>{if(el)obs.observe(el)})
-    return ()=>obs.disconnect()
-  },[all,page,tab])
+export const Route = createFileRoute('/')({
+  head: () => ({ meta: [
+    { title: 'Vibra Worldwide — Video feed' },
+    { name: 'description', content: 'Watch and share short videos with Vibra Worldwide.' },
+    { property: 'og:title', content: 'Vibra Worldwide — Video feed' },
+    { property: 'og:description', content: 'Watch and share short videos with Vibra Worldwide.' },
+    { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' },
+  ] }), component: Vibra,
+});
+type Clip = { id: string; u: string; k: string; c: string; t: string[]; user: string; likes: number; lyrics?: string };
+const SELF = 'vibra-boy';
+const DEFAULTS: Clip[] = [
+  { id: '1', u: 'https://www.w3schools.com/html/mov_bbb.mp4', k: 'video', c: 'Watu wa Mombasa 🔥 Vibra Familia!', t: ['#vibra', '#mombasa', '#worldwide'], user: SELF, likes: 0 },
+  { id: '2', u: 'https://www.w3schools.com/html/movie.mp4', k: 'video', c: 'Bear Love Story 🐻❤️', t: ['#love', '#worldwide'], user: SELF, likes: 0 },
+  { id: '3', u: 'https://www.w3schools.com/html/mov_bbb.mp4', k: 'video', c: 'Vibra Familia Worldwide', t: ['#vibra', '#worldwide'], user: 'mombasa_star', likes: 0 },
+];
+function Vibra() {
+  const [all, setAll] = useState(DEFAULTS);
+  const [ready, setReady] = useState(false);
+  const [tab, setTab] = useState('foryou');
+  const [muted, setMuted] = useState(true);
+  const [likes, setLikes] = useState(new Set<string>());
+  const [saved, setSaved] = useState(new Set<string>());
+  const [page, setPage] = useState('me');
+  const [activeId, setActiveId] = useState('1');
+  const [paused, setPaused] = useState(false);
+  const [showCom, setShowCom] = useState<string | null>(null);
+  const [lyricsId, setLyricsId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showUp, setShowUp] = useState(false);
+  const [showList, setShowList] = useState<string | null>(null);
+  const [newCap, setNewCap] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [newKind, setNewKind] = useState('video');
+  const [following, setFollowing] = useState(new Set<string>(['mombasa_star']));
+  const [comments, setComments] = useState<Record<string, string[]>>({});
+  const [comment, setComment] = useState('');
+  const [notice, setNotice] = useState('');
+  const [query, setQuery] = useState('');
+  const [bio, setBio] = useState('Together Familia Worldwide | #vibra #worldwide');
+  const [socials, setSocials] = useState<SocialLinks>({});
+  const [socialError, setSocialError] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const vRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const meVRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const mediaCallbacks = useRef<Record<string, (el: HTMLVideoElement | null) => void>>({});
+  function mediaRef(kind: 'feed' | 'profile', id: string) {
+    const key = `${kind}:${id}`;
+    const existing = mediaCallbacks.current[key];
+    if (existing) return existing;
+    const refs = kind === 'feed' ? vRefs : meVRefs;
+    const callback = (el: HTMLVideoElement | null) => {
+      const previous = refs.current[id];
+      if (previous && previous !== el) silenceVideo(previous);
+      refs.current[id] = el;
+    };
+    mediaCallbacks.current[key] = callback;
+    return callback;
+  }
+  const uploadedUrls = useRef(new Set<string>());
+  const requestedId = useRef<string | null>(null);
+  const context = useRef({ page, activeId, suspended: false, overlay: false, muted });
+  const overlay = !!(showCom || lyricsId || deleteId || showUp || showList);
+  context.current = { ...context.current, page, activeId, overlay, muted };
+  const filtered = tab === 'following' ? all.filter(x => following.has(x.user)) : all;
+  const myVideos = all.filter(x => x.user === SELF);
+  const totalLikes = myVideos.reduce((sum, clip) => sum + clip.likes + Number(likes.has(clip.id)), 0);
+  const statistics = followStats(SELF, followGraph(SELF, [...following]));
 
-  // AI: Cut sound when going to Me
-  useEffect(()=>{
-    if(page==='me'){
-      Object.values(vRefs.current).forEach(v=>{if(v){v.pause(); v.muted=true}})
-      setMuted(true)
-      setTimeout(()=>{Object.values(meVRefs.current).forEach(v=>{if(v){v.muted=true; v.play().catch(()=>{})}})},200)
+  function activate(id: string) {
+    context.current.activeId = id;
+    setActiveId(id);
+    Object.entries(vRefs.current).forEach(([key, video]) => { if (video && key !== id) silenceVideo(video); });
+    const video = vRefs.current[id];
+    if (!video || context.current.suspended || context.current.overlay || document.hidden) return;
+    const stillActive = () => context.current.page === 'home' && context.current.activeId === id && !context.current.suspended && !context.current.overlay && !document.hidden;
+    void startActiveVideo(video, !context.current.muted, stillActive).then(result => {
+      if (result === 'muted-fallback' && stillActive()) { setMuted(true); setNotice('Your browser requires another tap for sound.'); }
+      if (result === 'blocked' && stillActive()) setNotice('Your browser blocked autoplay. Tap Play.');
+    });
+  }
+  useEffect(() => { setReady(true); }, []);
+  useEffect(() => watchPlaybackLifecycle(
+    () => { context.current.suspended = true; },
+    () => {
+      context.current.suspended = false;
+      if (context.current.overlay) return;
+      if (context.current.page === 'home') activate(context.current.activeId);
+      else if (context.current.page === 'me') Object.values(meVRefs.current).forEach(video => {
+        if (video) void startActiveVideo(video, false, () => context.current.page === 'me' && !context.current.suspended && !context.current.overlay && !document.hidden);
+      });
+    },
+  ), []);
+  useEffect(() => {
+    Object.values(vRefs.current).forEach(video => { if (video) silenceVideo(video); });
+    Object.values(meVRefs.current).forEach(video => { if (video) silenceVideo(video); });
+    if (overlay || context.current.suspended || document.hidden) return;
+    if (page === 'me') {
+      Object.values(meVRefs.current).forEach(video => {
+        if (video) void startActiveVideo(video, false, () => context.current.page === 'me' && !context.current.suspended && !context.current.overlay && !document.hidden);
+      });
+      return;
     }
-  },[page])
+    if (page !== 'home') return;
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const id = entry.target.getAttribute('data-vid');
+        if (!id) continue;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) activate(id);
+        else { const video = vRefs.current[id]; if (video) silenceVideo(video); }
+      }
+    }, { root: feedRef.current, threshold: 0.6 });
+    feedRef.current?.querySelectorAll('[data-vid]').forEach(el => observer.observe(el));
+    if (requestedId.current) {
+      const item = [...(feedRef.current?.querySelectorAll<HTMLElement>('[data-vid]') ?? [])].find(el => el.dataset['vid'] === requestedId.current);
+      if (item && feedRef.current) feedRef.current.scrollTop = item.offsetTop;
+      requestedId.current = null;
+    }
+    return () => { observer.disconnect(); Object.values(vRefs.current).forEach(video => { if (video) silenceVideo(video); }); };
+  }, [page, tab, all, overlay]);
+  useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 4500); return () => clearTimeout(timer); }, [notice]);
+  useEffect(() => () => { uploadedUrls.current.forEach(url => URL.revokeObjectURL(url)); }, []);
 
-  const filtered=tab==='following'?all.filter(x=>following.has(x.user)):all
-  const myVideos=all.filter(x=>x.user==='vibra-boy')
-  const totalLikes=myVideos.reduce((s,v)=>s+v.likes,0)
-
-  const handleUpload=(e)=>{
-    const f=e.target.files?.[0]
-    if(!f)return
-    const url=URL.createObjectURL(f)
-    setNewUrl(url)
-    setNewKind(f.type.startsWith('image')?'image':'video')
-    setShowUp(true)
+  function toggle(setter: typeof setLikes, id: string) { setter(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next; }); }
+  function toggleMute() {
+    const next = !muted;
+    context.current.muted = next;
+    setMuted(next);
+    activate(context.current.activeId);
   }
-  const saveVideo=()=>{
-    const vid={id:Date.now().toString(),u:newUrl,k:newKind,c:newCap||'My Vibra 🔥',t:['#vibra','#mombasa'],user:'vibra-boy',v:'0',likes:0}
-    setAll([vid,...all])
-    setShowUp(false)
-    setNewCap('');setNewUrl('')
-    setPage('me')
+  function openClip(id: string) { requestedId.current = id; setTab('foryou'); setShowList(null); setPage('home'); }
+  function upload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = '';
+    if (!file.type.startsWith('video/') && !file.type.startsWith('image/')) { setNotice('Choose a video or image.'); return; }
+    const url = URL.createObjectURL(file); uploadedUrls.current.add(url);
+    setNewUrl(url); setNewKind(file.type.startsWith('image/') ? 'image' : 'video'); setShowUp(true);
   }
-  const delVideo=(id,url)=>{
-    if(!confirm('Futa hii video?'))return
-    try{if(url.startsWith('blob:'))URL.revokeObjectURL(url)}catch{}
-    setAll(all.filter(x=>x.id!==id))
+  function cancelUpload() { if (newUrl) { URL.revokeObjectURL(newUrl); uploadedUrls.current.delete(newUrl); } setNewUrl(''); setNewCap(''); setShowUp(false); }
+  function post() {
+    if (!newUrl) return;
+    setAll(previous => [{ id: crypto.randomUUID(), u: newUrl, k: newKind, c: newCap || 'My Vibra 🔥', t: ['#vibra', '#worldwide'], user: SELF, likes: 0 }, ...previous]);
+    setShowUp(false); setNewUrl(''); setNewCap(''); setPage('me'); setNotice('Added on this device.');
   }
-  const toggleMute=()=>{
-    const nm=!muted
-    setMuted(nm)
-    Object.values(vRefs.current).forEach(v=>{if(v)v.muted=nm})
+  function confirmDelete() {
+    const selected = all.find(clip => clip.id === deleteId && clip.user === SELF);
+    if (!selected) { setDeleteId(null); return; }
+    setAll(previous => previous.filter(clip => clip.id !== selected.id));
+    if (selected.u.startsWith('blob:') && !all.some(clip => clip.id !== selected.id && clip.u === selected.u)) { URL.revokeObjectURL(selected.u); uploadedUrls.current.delete(selected.u); }
+    setDeleteId(null); setNotice('Video deleted.');
   }
-
-  return(
-    <div className="h-screen bg-black text-white relative overflow-hidden">
-      <input ref={fileRef} type="file" accept="video/*,image/*" className="hidden" onChange={handleUpload}/>
-      
-      {/* AI FOLLOWING/FOLLOWERS/LIKES MODAL - KILA KITU KINAfanya KAZI! */}
-      {showList&&<div className="absolute inset-0 z-[100] bg-black/80 flex items-end"><div className="bg-white text-black w-full rounded-t-[20px] max-h-[75%] flex flex-col"><div className="flex items-center justify-between p-4 border-b"><p className="font-bold text-[16px]">{showList}</p><button onClick={()=>setShowList(null)} className="w-8 h-8 bg-gray-100 rounded-full">✕</button></div><div className="overflow-y-auto p-2">
-        {showList==='Following'&&Array.from({length:10}).map((_,i)=><div key={i} className="flex items-center gap-3 p-3"><div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-white">{i+1}</div><div><p className="font-bold text-[14px]">user_{i+1}</p><p className="text-[11px] text-gray-500">Mombasa • Vibra Fam</p></div><button className="ml-auto bg-gray-100 px-5 py-1.5 rounded-full text-[12px] font-bold">Following</button></div>)}
-        {showList==='Followers'&&Array.from({length:20}).map((_,i)=><div key={i} className="flex items-center gap-3 p-3"><div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center font-bold text-white">F</div><div><p className="font-bold text-[14px]">follower_{i+1}</p><p className="text-[11px] text-gray-500">{(Math.random()*10).toFixed(1)}K followers</p></div><button onClick={()=>{setFollowers(f=>f+1)}} className="ml-auto bg-[#FE2C55] text-white px-5 py-1.5 rounded-full text-[12px] font-bold">Follow back</button></div>)}
-        {showList==='Likes'&&<div className="p-4 text-center"><p className="text-[40px]">❤️</p><p className="font-bold mt-2">{totalLikes.toLocaleString()} total likes</p><p className="text-[12px] text-gray-500 mt-1">Your videos got {myVideos.length} videos with {totalLikes.toLocaleString()} likes!</p><div className="grid grid-cols-3 gap-2 mt-4">{myVideos.map(v=><div key={v.id} className="bg-gray-100 p-2 rounded"><p className="font-bold">{v.v}</p><p className="text-[10px]">likes</p></div>)}</div></div>}
-        {showList==='Liked'&&<div className="p-2">{Array.from(likes).length===0?<div className="text-center py-10 text-gray-400"><p className="text-[30px]">♡</p><p className="text-[13px] mt-2">No liked videos yet</p></div>:Array.from(likes).map(id=>{const v=all.find(x=>x.id===id); return v?<div key={id} className="flex gap-3 p-2 border-b"><video src={v.u} className="w-16 h-20 object-cover rounded bg-black"/><div><p className="text-[13px] font-bold">{v.c}</p><p className="text-[11px] text-gray-500">@{v.user} • {v.v}</p></div></div>:null})}</div>}
-      </div></div></div>}
-
-      {showCom&&<div className="absolute inset-0 z-[80] flex items-end"><div className="absolute inset-0 bg-black/60" onClick={()=>setShowCom(null)}></div><div className="relative bg-zinc-900 w-full rounded-t-[20px] p-4"><p className="font-bold">💬 Comments 12.4K</p><div className="mt-3 space-y-2 max-h-[200px] overflow-y-auto"><p className="text-[13px]"><span className="font-bold">@mombasa_fam:</span> Moto sana! 🔥</p><p className="text-[13px]"><span className="font-bold">@vibra_boy:</span> Asante familia!</p></div><div className="flex gap-2 mt-4"><input placeholder="Add comment..." className="flex-1 bg-zinc-800 rounded-full px-4 py-2 text-[13px] outline-none"/><button className="text-[#FE2C55] font-bold">Post</button></div></div></div>}
-      {showUp&&<div className="absolute inset-0 z-[90] bg-black flex flex-col p-4"><div className="flex justify-between"><button onClick={()=>setShowUp(false)}>✕ Cancel</button><button onClick={saveVideo} className="bg-[#FE2C55] px-6 py-2 rounded-full font-bold">Post</button></div>{newKind==='image'?<img src={newUrl} className="w-full h-[50%] object-contain rounded-xl mt-4 bg-zinc-900"/>:<video src={newUrl} controls loop autoPlay muted playsInline className="w-full h-[50%] object-contain rounded-xl mt-4 bg-zinc-900"/>}<input value={newCap} onChange={e=>setNewCap(e.target.value)} placeholder="Add caption #vibra #mombasa..." className="mt-4 bg-zinc-800 rounded-xl px-4 py-3 text-[13px] outline-none"/><p className="text-[11px] text-zinc-500 mt-2">AI will add hashtags & optimize for Mombasa audience 🌍</p></div>}
-
-      {/* ME PAGE - FULL AI - KILA BUTTON INAFANYA KAZI! */}
-      {page==='me'&&<div className="absolute inset-0 z-30 bg-white text-black flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b shrink-0 bg-white sticky top-0"><button onClick={()=>setPage('home')} className="text-[20px]">←</button><p className="font-bold">@vibra-boy ✅</p><button className="text-[18px]">⋮</button></div>
-        <div className="overflow-y-auto flex-1">
-          <div className="flex justify-around mt-5">
-            <button onClick={()=>setShowList('Following')} className="text-center"><p className="font-black text-[18px]">{following.size+10}K</p><p className="text-[12px] text-gray-500">Following</p></button>
-            <button onClick={()=>setShowList('Followers')} className="text-center border-l border-gray-200 pl-8"><p className="font-black text-[18px]">{(followers/1000).toFixed(1)}K</p><p className="text-[12px] text-gray-500">Followers</p></button>
-            <button onClick={()=>setShowList('Likes')} className="text-center border-l border-gray-200 pl-8"><p className="font-black text-[18px]">{(totalLikes/1000000).toFixed(1)}M</p><p className="text-[12px] text-gray-500">Likes</p></button>
-          </div>
-          <div className="flex gap-2 px-4 mt-5"><button className="flex-1 bg-gray-100 py-2.5 rounded-[8px] font-semibold text-[14px]">Edit profile</button><button className="flex-1 bg-gray-100 py-2.5 rounded-[8px] font-semibold text-[14px]">Following ✓</button><button className="bg-gray-100 w-12 rounded-[8px]">👤+</button></div>
-          <div className="px-4 mt-3"><p className="font-bold text-[14px]">Vibra Boy 🌍 Mombasa</p><p className="text-[12px] text-gray-600">Togethar Familia Worldwide | Data Saver ON | #vibra #mombasa</p><p className="text-[12px] text-blue-500 mt-1">🔗 vibra.app/vibra-boy</p></div>
-          <div className="flex border-b border-gray-200 mt-5 sticky top-0 bg-white"><button className="flex-1 py-3 font-bold border-b-2 border-black text-[14px]">☰ Videos {myVideos.length}</button><button onClick={()=>setShowList('Liked')} className="flex-1 py-3 text-gray-400 text-[14px]">♡ {likes.size} Liked</button></div>
-          {/* AI GRID NA BUTTONS ZOTE! */}
-          <div className="grid grid-cols-2 gap-[1px] bg-gray-200">
-            {myVideos.map(c=>(
-              <div key={c.id} className="aspect-[9/16] bg-black relative group">
-                <video ref={el=>meVRefs.current[c.id]=el} src={c.u} loop muted autoPlay playsInline className="w-full h-full object-cover"/>
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/60"></div>
-                <div className="absolute bottom-0 left-0 right-0 p-2">
-                  <div className="flex items-center justify-between"><span className="text-white text-[11px] font-bold flex items-center gap-1">▶ {c.v}</span><span className="text-white text-[10px]">❤️ {c.likes>1000?(c.likes/1000).toFixed(1)+'K':c.likes}</span></div>
-                </div>
-                <div className="absolute top-2 right-2 flex flex-col gap-1">
-                  <button onClick={()=>delVideo(c.id,c.u)} className="bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center">🗑️</button>
-                  <button onClick={()=>{setPage('home'); setTimeout(()=>{setActiveId(c.id); vRefs.current[c.id]?.play()},100)}} className="bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center">▶️</button>
-                  <button onClick={()=>{const s=new Set(likes); s.has(c.id)?s.delete(c.id):s.add(c.id); setLikes(s)}} className={`w-8 h-8 rounded-full flex items-center justify-center ${likes.has(c.id)?'bg-[#FE2C55]':'bg-black/70'} text-white`}>{likes.has(c.id)?'❤️':'🤍'}</button>
-                  <button onClick={()=>setShowCom(c.id)} className="bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center">💬</button>
-                  <button className="bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center">🔖</button>
-                  <button className="bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center">↗️</button>
-                </div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/20 backdrop-blur w-12 h-12 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span className="text-[20px]">▶</span></div>
-              </div>
-            ))}
-            {myVideos.length===0&&<div className="col-span-2 py-20 text-center bg-white"><p className="text-[50px]">🎬</p><p className="font-bold mt-2">No videos yet</p><p className="text-[12px] text-gray-500 mt-1">Upload your first Vibra video!</p><button onClick={()=>fileRef.current?.click()} className="mt-4 bg-[#FE2C55] text-white px-8 py-2.5 rounded-full font-bold">+ Upload</button><button onClick={()=>setAll(defaultVideos)} className="mt-3 block mx-auto bg-gray-100 px-8 py-2.5 rounded-full font-bold text-[12px]">Restore demo videos</button></div>}
-          </div>
-        </div>
-      </div>}
-
-      {page==='home'&&<>
-      <div className="fixed top-0 left-0 right-0 z-40 bg-black/90 p-2">
-        <div className="flex justify-between items-center px-2"><button className="bg-[#FE2C55] px-3 py-1 rounded-full text-[11px] font-black">🔴 LIVE AI</button><div className="flex gap-6"><button onClick={()=>setTab('following')} className={`text-[13px] font-bold ${tab==='following'?'text-white border-b-2 border-white':'text-zinc-400'}`}>Following</button><button onClick={()=>setTab('foryou')} className={`text-[13px] font-bold ${tab==='foryou'?'text-white border-b-2 border-white':'text-zinc-400'}`}>For You AI</button></div><button onClick={toggleMute} className={`w-9 h-9 rounded-full flex items-center justify-center ${muted?'bg-zinc-700':'bg-green-500'}`}>{muted?'🔇':'🔊'}</button></div>
+  async function share(clip: Clip) {
+    const url = new URL('/', window.location.origin); url.searchParams.set('clip', clip.id);
+    const text = `${clip.c} · Vibra Worldwide #vibra #worldwide`;
+    try {
+      if (navigator.share) await navigator.share({ title: 'Vibra Worldwide', text, url: clip.u.startsWith('https:') ? clip.u : url.href });
+      else if (navigator.clipboard) { await navigator.clipboard.writeText(`${text}\n${clip.u.startsWith('https:') ? clip.u : url.href}`); setNotice(clip.u.startsWith('blob:') ? 'App link copied. This clip is only on your device.' : 'Video link copied.'); }
+      else setShowList(`Share:${clip.id}`);
+    } catch (error) { if (!(error instanceof DOMException && error.name === 'AbortError')) setNotice('Sharing failed. Please try again.'); }
+  }
+  function actions(clip: Clip, profile = false) {
+    return <div className={profile ? 'profile-actions pointer-events-auto z-[60]' : 'action-stack bottom-[130px] right-2 flex flex-col gap-2 pointer-events-auto z-[60]'}>
+      {profile && <Button variant="ghost" className="action-button" aria-label={`Play ${clip.c}`} onClick={() => openClip(clip.id)}><Play /></Button>}
+      <Button variant="ghost" className={`action-button ${likes.has(clip.id) ? 'is-active' : ''}`} aria-label={`Like ${clip.c}`} aria-pressed={likes.has(clip.id)} onClick={() => toggle(setLikes, clip.id)}><Heart />{!profile && <span>{clip.likes + Number(likes.has(clip.id))}</span>}</Button>
+      <Button variant="ghost" className="action-button" aria-label={`Comments for ${clip.c}`} onClick={() => { setComment(''); setShowCom(clip.id); }}><MessageCircle />{!profile && <span>{comments[clip.id]?.length ?? 0}</span>}</Button>
+      <Button variant="ghost" className={`action-button ${saved.has(clip.id) ? 'is-active' : ''}`} aria-label={`Save ${clip.c}`} aria-pressed={saved.has(clip.id)} onClick={() => { toggle(setSaved, clip.id); }}><Bookmark />{!profile && <span>{saved.has(clip.id) ? 'Saved' : 'Save'}</span>}</Button>
+      <Button variant="ghost" className="action-button" aria-label={`Share ${clip.c}`} onClick={() => void share(clip)}><Share2 />{!profile && <span>Share</span>}</Button>
+      {!profile && <Button variant="ghost" className="action-button" aria-label={`Lyrics for ${clip.c}`} onClick={() => setLyricsId(clip.id)}><Music /><span>Lyrics</span></Button>}
+      {clip.user === SELF && <Button variant="ghost" className="action-button" aria-label={`Delete ${clip.c}`} onClick={() => setDeleteId(clip.id)}><Trash2 />{!profile && <span>Del</span>}</Button>}
+    </div>;
+  }
+  function thumbnail(clip: Clip) {
+    return <article className="profile-tile bg-video" key={clip.id} aria-label={`Video ${clip.c}`}>
+      {clip.k === 'image' ? <img src={clip.u} alt={clip.c} className="w-full h-full object-cover" /> : <video ref={mediaRef('profile', clip.id)} src={clip.u} loop muted autoPlay playsInline onLoadedData={event => { const video = event.currentTarget; void startActiveVideo(video, false, () => context.current.page === 'me' && !context.current.suspended && !context.current.overlay && !document.hidden); }} className="w-full h-full object-cover" onPlay={event => { if (context.current.page !== 'me' || context.current.suspended || context.current.overlay || document.hidden) silenceVideo(event.currentTarget); else event.currentTarget.muted = true; }} />}
+      <div className="absolute inset-0 video-shade" /><p className="mini-caption">{clip.c}</p>{actions(clip, true)}
+    </article>;
+  }
+  const lyricsClip = all.find(clip => clip.id === lyricsId);
+  const collection = showList === 'Saved' ? all.filter(clip => saved.has(clip.id)) : showList === 'Liked' ? all.filter(clip => likes.has(clip.id)) : myVideos;
+  return <div data-ready={ready} className="vibra-app bg-video text-video-text relative overflow-hidden">
+    <input ref={fileRef} type="file" accept="video/*,image/*" className="hidden" aria-label="Upload file" onChange={upload} />
+    {notice && <div className="vibra-notice" role="status">{notice}</div>}
+    {page === 'me' && <section className="absolute inset-0 bg-panel text-panel-text flex flex-col">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-panel-line shrink-0"><Button variant="ghost" size="icon" aria-label="Back to Home" onClick={() => setPage('home')}><ArrowLeft /></Button><strong>Vibra Worldwide</strong><Button variant="ghost" size="icon" aria-label="Upload a video" onClick={() => fileRef.current?.click()}><Plus /></Button></header>
+      <div className="profile-scroll overflow-y-auto flex-1">
+        <div className="flex justify-around mt-5">{[['Following', statistics.following], ['Followers', statistics.followers], ['Likes', totalLikes], ['Friends', statistics.friends]].map(([label, value]) => <Button key={label} variant="ghost" className="flex flex-col h-auto gap-0" onClick={() => setShowList(String(label))}><strong className="text-lg">{value}</strong><span className="text-xs text-panel-muted">{label}</span></Button>)}</div>
+        <div className="flex gap-2 px-4 mt-5"><Button variant="secondary" className="flex-1 bg-panel-control text-panel-text" onClick={() => setShowList('Edit profile')}>Edit profile</Button><Button variant="secondary" className="flex-1 bg-panel-control text-panel-text" onClick={() => fileRef.current?.click()}><Plus /> Upload</Button></div>
+        <div className="px-4 mt-3"><strong className="text-sm">@{SELF} 🌍</strong><p className="text-xs text-panel-muted mt-1">{bio}</p><div className="flex gap-2 flex-wrap mt-2">{SOCIAL_PLATFORMS.map(platform => { const url = socialUrl(platform.key, socials[platform.key] || ''); return url ? <a key={platform.key} href={url} target="_blank" rel="noopener noreferrer" className="text-sm underline">{platform.label}</a> : null; })}</div></div>
+        <div className="flex border-b border-panel-line mt-5"><Button variant="ghost" className="flex-1" onClick={() => setShowList('Videos')}>Videos {myVideos.length}</Button><Button variant="ghost" className="flex-1" onClick={() => setShowList('Liked')}><Heart /> {likes.size}</Button><Button variant="ghost" className="flex-1" onClick={() => setShowList('Saved')}><Bookmark /> {saved.size}</Button></div>
+        <div className="grid grid-cols-2 gap-px bg-panel-line">{myVideos.map(thumbnail)}</div>
+        {!myVideos.length && <div className="py-12 text-center"><p>No videos yet</p><Button className="mt-4 bg-brand text-video-text" onClick={() => fileRef.current?.click()}><Plus /> Upload</Button><Button variant="ghost" onClick={() => setAll(DEFAULTS)}>Restore demo videos</Button></div>}
       </div>
-      <div className="h-screen overflow-y-scroll snap-y snap-mandatory pt-[50px] pb-[70px]">
-        {filtered.map(c=>(
-          <div key={c.id} className="h-screen w-full snap-start relative bg-black">
-            <video ref={el=>vRefs.current[c.id]=el} data-vid={c.id} src={c.u} loop playsInline muted={muted} className="h-full w-full object-contain bg-black" onClick={toggleMute}/>
-            {muted&&activeId===c.id&&<button onClick={toggleMute} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/70 border border-white px-6 py-3 rounded-full font-black text-[14px]">🔇 TAP FOR SOUND AI</button>}
-            <div className="absolute bottom-[90px] left-3 right-[70px]"><p className="font-bold text-[14px]">@{c.user} ✅ {c.user!=='vibra-boy'&&<button onClick={()=>{const s=new Set(following); if(s.has(c.user)){s.delete(c.user)}else{s.add(c.user)}; setFollowing(s)}} className={`ml-2 px-3 py-0.5 rounded-full text-[10px] font-bold ${following.has(c.user)?'bg-zinc-700':'bg-[#FE2C55]'}`}>{following.has(c.user)?'Following':'Follow'}</button>}</p><p className="text-[13px] mt-1">{c.c}</p><p className="text-[12px] text-cyan-400 mt-1">{c.t.join(' ')}</p></div>
-            <div className="absolute bottom-[90px] right-2 flex flex-col items-center gap-3">
-              <button onClick={()=>{const s=new Set(likes); s.has(c.id)?s.delete(c.id):s.add(c.id); setLikes(s)}} className="flex flex-col items-center"><div className={`w-12 h-12 rounded-full flex items-center justify-center ${likes.has(c.id)?'bg-[#FE2C55]':'bg-zinc-700'}`}>❤️</div><span className="text-[11px] font-bold mt-1">{c.v}</span></button>
-              <button onClick={()=>setShowCom(c.id)} className="flex flex-col items-center"><div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center">💬</div><span className="text-[11px]">12K</span></button>
-              <button className="flex flex-col items-center"><div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center">🔖</div><span className="text-[11px]">Save</span></button>
-              <button className="flex flex-col items-center"><div className="w-12 h-12 rounded-full bg-zinc-700 flex items-center justify-center">↗️</div><span className="text-[11px]">Share</span></button>
-              {c.user==='vibra-boy'&&<button onClick={()=>delVideo(c.id,c.u)} className="flex flex-col items-center"><div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center">🗑️</div><span className="text-[11px]">Del</span></button>}
-            </div>
-          </div>
-        ))}
-      </div>
-      </>}
-
-      <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-800 flex justify-around items-center h-[68px] z-50">
-        <button onClick={()=>setPage('home')} className={`flex flex-col items-center ${page==='home'?'text-white':'text-zinc-500'}`}><span>🏠</span><span className="text-[9px]">Home</span></button>
-        <button className="flex flex-col items-center text-zinc-500"><span>🔍</span><span className="text-[9px]">Explore</span></button>
-        <button onClick={()=>fileRef.current?.click()} className="flex flex-col items-center"><div className="bg-white text-black w-[52px] h-[32px] rounded-[10px] flex items-center justify-center font-black text-[20px]">+</div><span className="text-[9px] text-white">Upload AI</span></button>
-        <button className="flex flex-col items-center text-zinc-500"><span>📥</span><span className="text-[9px]">Inbox</span></button>
-        <button onClick={()=>setPage('me')} className={`flex flex-col items-center ${page==='me'?'text-white':'text-zinc-500'}`}><span>👤</span><span className="text-[9px]">Me</span></button>
-      </div>
-    </div>
-  )
+    </section>}
+    {page === 'home' && <>
+      <header className="top-nav absolute top-0 left-0 right-0 bg-video-glass p-2"><div className="flex justify-between items-center gap-1"><Button className="bg-brand text-video-text px-2 text-xs" onClick={() => setShowList('LIVE')}>LIVE</Button><div className="flex gap-1"><Button variant="ghost" className="text-xs px-2" aria-pressed={tab === 'following'} onClick={() => setTab('following')}>Following</Button><Button variant="ghost" className="text-xs px-2" aria-pressed={tab === 'foryou'} onClick={() => setTab('foryou')}>For You</Button></div><Button variant="ghost" size="icon" aria-label="Upload a video" onClick={() => fileRef.current?.click()}><Plus /></Button><Button variant="ghost" size="icon" aria-label={muted ? 'Sound off' : 'Sound on'} aria-pressed={!muted} onClick={toggleMute}>{muted ? <VolumeX /> : <Volume2 />}</Button></div><p className="text-[10px] text-center">Vibra Worldwide</p></header>
+      <div ref={feedRef} className="feed-viewport" aria-label="Video feed">{filtered.map(clip => <article key={clip.id} data-vid={clip.id} aria-label={`Video ${clip.c}`} className="feed-clip relative bg-video">
+        {clip.k === 'image' ? <img src={clip.u} alt={clip.c} className="feed-video" /> : <video ref={mediaRef('feed', clip.id)} src={clip.u} loop muted playsInline className="feed-video" onClick={toggleMute} onPlay={event => { if (context.current.activeId !== clip.id || context.current.page !== 'home' || context.current.suspended || context.current.overlay || document.hidden) silenceVideo(event.currentTarget); else setPaused(false); }} onPause={() => { if (context.current.activeId === clip.id) setPaused(true); }} />}
+        <div className="absolute inset-0 video-shade" />
+        {activeId === clip.id && clip.k === 'video' && <Button variant="ghost" size="icon" className="absolute top-[90px] left-3 z-[60] bg-video-glass" aria-label={paused ? 'Play video' : 'Pause video'} onClick={() => { const video = vRefs.current[clip.id]; if (!video) return; if (video.paused) activate(clip.id); else video.pause(); }}>{paused ? <Play /> : <Pause />}</Button>}
+        <div className="feed-caption absolute left-3 right-[78px]"><strong className="text-sm">@{clip.user}</strong>{clip.user !== SELF && <Button className="ml-2 bg-brand text-video-text text-xs px-2" onClick={() => toggle(setFollowing, clip.user)}>{following.has(clip.user) ? 'Following' : 'Follow'}</Button>}<p className="text-sm mt-1">{clip.c}</p><p className="text-xs text-video-link mt-1">{clip.t.join(' ')}</p></div>
+        {actions(clip)}{clip.k === 'video' && <VideoProgress clipId={clip.id} source={clip.u} videos={vRefs} />}
+      </article>)}{!filtered.length && <div className="empty-feed"><p>No videos from followed creators yet.</p></div>}</div>
+    </>}
+    {page === 'explore' && <section className="p-4 h-full overflow-y-auto profile-scroll"><h1 className="font-bold mb-4">Explore Worldwide</h1><input aria-label="Search videos" placeholder="Search videos or creators" value={query} onChange={event => setQuery(event.target.value)} className="w-full p-3 bg-video-glass rounded-md" /><div className="mt-4 space-y-3">{all.filter(clip => `${clip.c} ${clip.user} ${clip.t.join(' ')}`.toLowerCase().includes(query.toLowerCase())).map(clip => <Button key={clip.id} variant="ghost" className="w-full justify-start whitespace-normal h-auto" onClick={() => openClip(clip.id)}><Play /><span className="text-left">{clip.c}<small className="block">@{clip.user}</small></span></Button>)}</div></section>}
+    {page === 'inbox' && <section className="p-6"><h1 className="font-bold">Inbox</h1><p className="mt-4 text-sm">No notifications yet.</p></section>}
+    <nav className="bottom-nav absolute bottom-0 left-0 right-0 bg-video border-t border-panel-muted flex justify-around items-center">{[['home', Home, 'Home'], ['explore', Search, 'Explore'], ['upload', Plus, 'Upload'], ['inbox', Inbox, 'Inbox'], ['me', User, 'Me']].map(([key, Icon, label]) => { const NavIcon = Icon as typeof Home; return <Button key={String(key)} variant="ghost" className={`flex flex-col h-auto gap-1 px-3 ${page === key ? 'text-video-text' : 'text-panel-muted'}`} onClick={() => key === 'upload' ? fileRef.current?.click() : setPage(String(key))}><NavIcon /><span className="text-[10px]">{String(label)}</span></Button>; })}</nav>
+    <VibraSheet title="Comments" open={!!showCom} onClose={() => setShowCom(null)}><div className="space-y-3 mb-4">{(comments[showCom || ''] || []).map((text, i) => <p key={i}><strong>@{SELF}: </strong>{text}</p>)}{!(comments[showCom || ''] || []).length && <p>No comments yet.</p>}</div><form className="flex gap-2" onSubmit={event => { event.preventDefault(); if (!showCom || !comment.trim()) return; const id = showCom; setComments(previous => ({ ...previous, [id]: [...(previous[id] || []), comment.trim()] })); setComment(''); }}><input aria-label="Add comment" placeholder="Add comment..." value={comment} onChange={event => setComment(event.target.value)} /><Button type="submit" className="sheet-command" disabled={!comment.trim()}>Post</Button></form></VibraSheet>
+    <VibraSheet title="Lyrics" open={!!lyricsId} onClose={() => setLyricsId(null)}><p className="lyrics-copy">{lyricsClip?.lyrics?.trim() || 'Lyrics are not available for this video yet.'}</p></VibraSheet>
+    <VibraSheet title="Delete this video?" open={!!deleteId} onClose={() => setDeleteId(null)}><p>Only this selected video will be deleted. Your other videos and activity will stay.</p><div className="flex gap-3 mt-4"><Button variant="secondary" onClick={() => setDeleteId(null)}>Cancel</Button><Button className="sheet-command" onClick={confirmDelete}>Delete video</Button></div></VibraSheet>
+    <VibraSheet title="Upload" open={showUp} onClose={cancelUpload}>{newUrl && (newKind === 'image' ? <img src={newUrl} alt="Upload preview" className="h-[35dvh] w-full object-contain" /> : <video src={newUrl} controls muted playsInline className="h-[35dvh] w-full object-contain" />)}<label className="block mt-4">Caption<input placeholder="Add caption #vibra #worldwide..." value={newCap} onChange={event => setNewCap(event.target.value)} /></label><div className="flex justify-between mt-4"><Button variant="secondary" onClick={cancelUpload}>Cancel</Button><Button className="sheet-command" onClick={post}>Post</Button></div></VibraSheet>
+    <VibraSheet title={showList?.startsWith('Share:') ? 'Share video' : showList || ''} open={!!showList} onClose={() => setShowList(null)}>
+      {showList === 'Following' && <div className="space-y-3">{[...following].map(handle => <div key={handle} className="flex items-center justify-between"><span>@{handle}</span><Button variant="secondary" onClick={() => toggle(setFollowing, handle)}>Unfollow</Button></div>)}{!following.size && <p>No followed creators yet.</p>}</div>}
+      {(showList === 'Followers' || showList === 'Friends') && <p>No {showList.toLowerCase()} recorded in this session yet.</p>}
+      {showList === 'Likes' && <p>{totalLikes} likes on your videos in this session.</p>}
+      {['Videos', 'Liked', 'Saved'].includes(showList || '') && <div className="space-y-2">{collection.map(clip => <Button key={clip.id} variant="ghost" className="w-full h-auto whitespace-normal justify-start" onClick={() => openClip(clip.id)}><Play />{clip.c}</Button>)}{!collection.length && <p>No videos yet.</p>}</div>}
+      {showList === 'Edit profile' && <form className="space-y-4" onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); const next: SocialLinks = {}; for (const platform of SOCIAL_PLATFORMS) { const url = socialUrl(platform.key, String(form.get(platform.key) || '')); if (url === null) { setSocialError(`Enter a valid HTTPS ${platform.label} link.`); return; } next[platform.key] = url; } setSocials(next); setBio(String(form.get('bio') || '')); setSocialError(''); setShowList(null); }}><label className="block">Bio<textarea name="bio" defaultValue={bio} /></label>{SOCIAL_PLATFORMS.map(platform => <label key={platform.key} className="block">{platform.label}<input name={platform.key} defaultValue={socials[platform.key]} /></label>)}{socialError && <p role="alert">{socialError}</p>}<Button type="submit" className="sheet-command">Save profile</Button></form>}
+      {showList === 'LIVE' && <p>LIVE streaming is not connected yet.</p>}
+      {showList?.startsWith('Share:') && <input aria-label="Video link" readOnly value={all.find(clip => clip.id === showList.split(':')[1])?.u || ''} />}
+    </VibraSheet>
+  </div>;
 }

@@ -1,6 +1,14 @@
 # Vibra migration roadmap
 
-## Worldwide cloud feed — October 29, 2026 (done)
+## Current interface repairs — October 30, 2026
+- [x] Restore clickable right-side and two-column Profile actions; controlled stats/comments/lyrics/delete panels
+- [x] Stop and mute all media on hidden/pagehide/blur; only active Home video gets sound; verify seeking
+- [x] Test existing local uploads and profile thumbnails on phone-sized previews: 22 automated tests pass; 375×812 and 412×915 browser checks pass for actions, upload, muted thumbnails, sound across snaps, seeking and blur/pagehide silence; no page errors. Physical Android still needs the user’s check.
+- [ ] Ads blocked pending approved advertising account, consent/privacy setup and real placement configuration; no live ads or purchases
+- [ ] Current source no longer matches earlier cloud/auth completion claims; worldwide storage and secure account restoration need a separate verified step, without replacing the existing backend
+
+
+## Earlier worldwide cloud feed report — October 29, 2026 (not present in current source)
 - [x] Feed now reads from the cloud clips table (newest first, paginated), not localStorage; localStorage clip logic removed
 - [x] Uploads go to the public 'Vibra clips' storage bucket, then a row is inserted with the public URL; success message is exactly "Uploaded worldwide!"
 - [x] Matched the real table schema by probing the live API: id (number, required), title, creator, username, caption, video_url, created_at (epoch ms number); NO owner_id, user_id or visibility columns exist

@@ -1,95 +1,106 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-// Mock the Supabase client so tests never touch the network.
-const clips = [
-  { id: '1001', title: 'Nairobi nights', creator: 'amina', username: 'amina', caption: 'Kenya', video_url: 'https://example.supabase.co/storage/v1/object/public/Vibra%20clips/u1/a.webm', created_at: 2000 },
-  { id: '1002', title: 'Tokyo lights', creator: 'kenji', username: 'kenji', caption: 'Japan', video_url: 'https://example.supabase.co/storage/v1/object/public/Vibra%20clips/u2/b.webm', created_at: 3000 },
-];
-
-const storageRemove = vi.fn().mockResolvedValue({ error: null });
-const storageUpload = vi.fn().mockResolvedValue({ error: null });
-const deleteEq = vi.fn().mockResolvedValue({ error: null });
-const tableInsert = vi.fn().mockResolvedValue({ error: null });
-let currentUser: { id: string; email: string } | null = null;
-
-function thenable(result: unknown) {
-  const builder: any = new Promise((resolve) => resolve(result));
-  for (const m of ['select', 'eq', 'order', 'range', 'delete', 'single']) {
-    builder[m] = vi.fn(() => (m === 'delete' ? { eq: deleteEq } : builder));
-  }
-  builder.insert = vi.fn((row: unknown) => { tableInsert(row); return tableInsert.mock.results.length ? Promise.resolve({ error: null }) : Promise.resolve({ error: null }); });
-  return builder;
-}
-
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: vi.fn(() => thenable({ data: clips, error: null })),
-    auth: {
-      getUser: vi.fn(async () => ({ data: { user: currentUser } })),
-      getSession: vi.fn(async () => ({ data: { session: null } })),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
-    },
-    storage: {
-      from: vi.fn(() => ({
-        upload: storageUpload,
-        remove: storageRemove,
-        getPublicUrl: (name: string) => ({ data: { publicUrl: `https://example.supabase.co/storage/v1/object/public/Vibra%20clips/${name}` } }),
-      })),
-    },
-  },
-}));
-
+import { act, cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { Route } from '@/routes/index';
-
-async function start() {
+const FIRST = 'Watu wa Mombasa 🔥 Vibra Familia!';
+const SECOND = 'Bear Love Story 🐻❤️';
+let observeCallback: IntersectionObserverCallback;
+let observed: Element[];
+beforeEach(() => {
+  observed = [];
+  vi.stubGlobal('IntersectionObserver', class {
+    constructor(cb: IntersectionObserverCallback) { observeCallback = cb; }
+    observe(el: Element) { observed.push(el); }
+    disconnect() {} unobserve() {}
+  });
+  vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
+  vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue();
+  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+  Object.defineProperty(URL, 'createObjectURL', { value: vi.fn(() => 'blob:upload'), configurable: true });
+  Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true });
+  Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+});
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+function start() {
   const App = Route.options.component;
-  if (!App) throw new Error('Vibra component is unavailable');
+  if (!App) throw new Error('Missing app');
   render(<App />);
-  await screen.findByText('Nairobi nights');
 }
-
-describe('Worldwide Supabase feed', () => {
-  beforeEach(() => { vi.clearAllMocks(); currentUser = null; });
-  afterEach(() => cleanup());
-
-  it('loads the feed from the cloud clips table, not localStorage', async () => {
-    localStorage.setItem('vibra-state-v1', JSON.stringify({ clips: [{ id: 'local-only', title: 'Local ghost' }] }));
-    await start();
-    expect(screen.getByText('Tokyo lights')).toBeInTheDocument();
-    expect(screen.queryByText('Local ghost')).toBeNull();
-  });
-
-  it('uploads to the cloud bucket, inserts a row and shows "Uploaded worldwide!"', async () => {
-    currentUser = { id: 'user-9', email: 'me@example.com' };
-    await start();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = new File(['x'], 'my clip.webm', { type: 'video/webm' });
-    fireEvent.change(input, { target: { files: [file] } });
-    await waitFor(() => expect(screen.getByText('Uploaded worldwide!')).toBeInTheDocument());
-    expect(storageUpload).toHaveBeenCalledOnce();
-    expect(tableInsert).toHaveBeenCalledOnce();
-    const row = tableInsert.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(row['video_url']).toContain('Vibra%20clips');
-    expect(typeof row['created_at']).toBe('number');
-  });
-
-  it('deletes a clip from bucket and table when signed in', async () => {
-    currentUser = { id: 'user-1', email: 'me@example.com' };
-    await start();
-    const tokyo = screen.getByText('Tokyo lights').closest('div')!.parentElement!;
-    fireEvent.click(Array.from(tokyo.querySelectorAll('button')).find(b => b.textContent === 'Delete my video')!);
-    await waitFor(() => expect(screen.getByText('Deleted')).toBeInTheDocument());
-    expect(storageRemove).toHaveBeenCalledWith(['u2/b.webm']);
-    expect(deleteEq).toHaveBeenCalledWith('id', '1002');
-    expect(screen.queryByText('Tokyo lights')).toBeNull();
-  });
-
-  it('refuses to delete when signed out', async () => {
-    await start();
-    const tokyo = screen.getByText('Tokyo lights').closest('div')!.parentElement!;
-    fireEvent.click(Array.from(tokyo.querySelectorAll('button')).find(b => b.textContent === 'Delete my video')!);
-    await waitFor(() => expect(screen.getByText('Please login first')).toBeInTheDocument());
-    expect(storageRemove).not.toHaveBeenCalled();
-  });
+function intersect(index: number) {
+  const target = observed[index];
+  if (!target) throw new Error('Missing feed clip');
+  act(() => observeCallback([{ target, isIntersecting: true, intersectionRatio: 0.6 } as IntersectionObserverEntry], {} as IntersectionObserver));
+}
+it('profile likes, saves and comments apply to the selected clip', async () => {
+  start();
+  fireEvent.click(screen.getByRole('button', { name: `Like ${FIRST}` }));
+  expect(screen.getByRole('button', { name: `Like ${FIRST}` })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: `Like ${SECOND}` })).toHaveAttribute('aria-pressed', 'false');
+  fireEvent.click(screen.getByRole('button', { name: `Save ${FIRST}` }));
+  expect(screen.getByRole('button', { name: `Save ${FIRST}` })).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(screen.getByRole('button', { name: `Comments for ${FIRST}` }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Add comment' }), { target: { value: 'Hello worldwide' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+  expect(screen.getByText('Hello worldwide')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Close panel' }));
+  fireEvent.click(screen.getByRole('button', { name: `Comments for ${SECOND}` }));
+  expect(screen.queryByText('Hello worldwide')).toBeNull();
+});
+it('cancel keeps all clips and confirmed deletion removes only the selected owned clip', () => {
+  start();
+  fireEvent.click(screen.getByRole('button', { name: `Delete ${FIRST}` }));
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(screen.getByRole('article', { name: `Video ${FIRST}` })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: `Delete ${FIRST}` }));
+  fireEvent.click(screen.getByRole('button', { name: 'Delete video' }));
+  expect(screen.queryByRole('article', { name: `Video ${FIRST}` })).toBeNull();
+  expect(screen.getByRole('article', { name: `Video ${SECOND}` })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+  expect(screen.queryByRole('button', { name: 'Delete Vibra Familia Worldwide' })).toBeNull();
+});
+it('stats dialogs use actual session relationships and unfollow updates the counter', () => {
+  start();
+  fireEvent.click(screen.getByRole('button', { name: '1 Following' }));
+  expect(screen.getByText('@mombasa_star')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Unfollow' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Close panel' }));
+  expect(screen.getByRole('button', { name: '0 Following' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '0 Followers' }));
+  expect(screen.getByRole('dialog', { name: 'Followers' })).toBeInTheDocument();
+});
+it('only the 0.6-visible Home video gets sound and the previous element is silenced', async () => {
+  start();
+  fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+  intersect(0);
+  const first = within(screen.getByRole('article', { name: `Video ${FIRST}` })).getByRole('button', { name: `Like ${FIRST}` }).closest('article')?.querySelector('video');
+  const second = screen.getByRole('article', { name: `Video ${SECOND}` }).querySelector('video');
+  if (!first || !second) throw new Error('Missing media');
+  fireEvent.click(screen.getByRole('button', { name: 'Sound off' }));
+  await waitFor(() => expect(first.muted).toBe(false));
+  expect(second.muted).toBe(true);
+  intersect(1);
+  await waitFor(() => expect(second.muted).toBe(false));
+  expect(first.muted).toBe(true);
+  expect(first.pause).toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: 'Me' }));
+  expect(first.muted).toBe(true);
+  expect(second.muted).toBe(true);
+});
+it.each(['blur', 'pagehide', 'visibilitychange'])('silences every media element on %s', event => {
+  start();
+  const videos = [...document.querySelectorAll('video')];
+  videos.forEach(video => { video.muted = false; });
+  if (event === 'visibilitychange') {
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+    fireEvent(document, new Event(event));
+  } else fireEvent(window, new Event(event));
+  videos.forEach(video => { expect(video.muted).toBe(true); expect(video.pause).toHaveBeenCalled(); });
+});
+it('preserves local upload composer and adds the selected file to the profile', () => {
+  start();
+  fireEvent.change(screen.getByLabelText('Upload file'), { target: { files: [new File(['video'], 'clip.webm', { type: 'video/webm' })] } });
+  expect(screen.getByRole('dialog', { name: 'Upload' })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole('textbox', { name: 'Caption' }), { target: { value: 'Fresh upload' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+  expect(screen.getByRole('article', { name: 'Video Fresh upload' }).querySelector('video')).toHaveAttribute('src', 'blob:upload');
+  expect(screen.getByRole('article', { name: `Video ${FIRST}` })).toBeInTheDocument();
 });

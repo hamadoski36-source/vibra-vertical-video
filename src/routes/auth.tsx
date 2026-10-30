@@ -2,6 +2,13 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/auth')({
+  head: () => ({ meta: [
+    { title: 'Profile name — Vibra Worldwide' },
+    { name: 'description', content: 'Choose your local Vibra Worldwide profile name.' },
+    { property: 'og:title', content: 'Profile name — Vibra Worldwide' },
+    { property: 'og:description', content: 'Choose your local Vibra Worldwide profile name.' },
+    { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary' },
+  ] }),
   component: VibraAuth,
 })
 

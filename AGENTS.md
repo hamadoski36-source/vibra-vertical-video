@@ -16,3 +16,6 @@
 - Keep video seeking in an isolated control subscribed to the actual media element; this avoids rerendering the feed on every playback tick.
 - Centralize playback policy in the browser-safe playback helper and guard asynchronous play completion by active element identity; mute and pause inactive elements to prevent sound leaking across swipes.
 - Validate social profile URLs against each platform's HTTPS hosts before saving or rendering links; this prevents unsafe clickable links.
+
+- Suspend all media through the shared playback lifecycle helper; resume only the current view after visibility/focus returns so pending play requests cannot leak background audio.
+- The current compact feed uses session-only clip/activity state and controlled Radix sheets; do not treat its local identity or demo clips as verified cloud accounts or ownership.
