@@ -1,124 +1,112 @@
 // @ts-nocheck
 import { createFileRoute } from '@tanstack/react-router';
-import { useState, useRef, useEffect } from 'react';
-export const Route = createFileRoute('/')({ component: Vibra });
+import { useState, useRef } from 'react';
+export const Route = createFileRoute('/')({ component: TikTokClone });
 
-function Vibra(){
+function TikTokClone(){
  const fileRef=useRef(null);
- const [page,setPage]=useState('home');
- const [earn,setEarn]=useState(3.18);
+ const [page,setPage]=useState('foryou');
+ const [profileTab,setProfileTab]=useState(false);
  const [muted,setMuted]=useState(false);
- const [liked,setLiked]=useState({});
- const vRefs=useRef({});
+ const [earn,setEarn]=useState(3.18);
+ const [liked,setLiked]=useState(false);
 
- const [vids,setVids]=useState([
-  {id:1, url:'https://www.w3schools.com/html/mov_bbb.mp4', user:'@pizzy_lyricist', desc:'nimazoea. 😔 #badnation', likes:853, comments:12000},
-  {id:2, url:'https://www.w3schools.com/html/movie.mp4', user:'@vibra_boy', desc:'Together Forever ❤️∞ - Original', likes:1200, comments:4500},
-  {id:3, url:'https://www.w3schools.com/html/mov_bbb.mp4', user:'@hamadoski36', desc:'Built in Faraja, Bamburi - Mombasa 🔥', likes:955, comments:3200},
- ]);
+ const videos=[
+   {id:1, url:'https://www.w3schools.com/html/mov_bbb.mp4', user:'MaRavel movie', handle:'@makavelimoviestore', title:'MONALISA#61', views:'1.4K', likes:'1.4K', comments:'25', saves:'201', shares:'12', search:'monalisa episode ya 60'},
+   {id:2, url:'https://www.w3schools.com/html/movie.mp4', user:'MaRavel movie', handle:'@makavelimoviestore', title:'NDOA Episode 405', views:'454.3K', likes:'12K', comments:'890', saves:'2K', shares:'300', search:'ndoa episode 405'},
+ ];
 
- const onUpload=(e)=>{
-   const f=e.target.files?.[0]; if(!f) return;
-   const url=URL.createObjectURL(f);
-   setVids(p=>[{id:Date.now(), url, user:'@you', desc:'My video ❤️ #together', likes:0, comments:0}, ...p]);
-   e.target.value='';
- };
-
- // Auto-play na sauti
- useEffect(()=>{
-   const playAll=()=>{
-     Object.values(vRefs.current).forEach(v=>{
-       if(v){ 
-         v.muted=muted; 
-         v.volume=1; 
-         v.play().catch(()=>{ v.muted=true; v.play(); }); 
-       }
-     });
-   };
-   const t=setTimeout(playAll,300);
-   return()=>clearTimeout(t);
- },[muted,vids]);
-
- const toggleLike=(id)=>{
-   const isLiked=liked[id];
-   setLiked(p=>({...p,[id]:!isLiked}));
-   setVids(p=>p.map(v=> v.id===id ? {...v, likes: isLiked ? v.likes-1 : v.likes+1} : v));
- };
-
- const toggleSound=()=>{
-   const newMuted=!muted;
-   setMuted(newMuted);
-   Object.values(vRefs.current).forEach(v=>{ if(v){ v.muted=newMuted; if(!newMuted) v.play(); }});
- };
+ const cur=videos[0];
 
  return(
-  <div className="w-screen h-screen bg-black overflow-hidden relative">
-   <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={onUpload}/>
+  <div className="w-screen h-screen bg-black text-white overflow-hidden relative font-sans">
+   <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e)=>{const f=e.target.files?.[0]; if(f) alert('Video yako '+f.name+' itaongezwa!'); e.target.value='';}}/>
 
-   {/* TOP BAR */}
-   <div className="fixed top-0 left-0 right-0 z-[100] h-[32px] bg-black/80 backdrop-blur text-white text-[12px] flex items-center justify-between px-3 border-b border-white/10">
-     <b>Vibra</b>
-     <div className="flex gap-4"><span className="opacity-60">Following</span><span className="border-b-2 border-white">For You</span></div>
-     <button onClick={toggleSound} className="bg-white/20 px-2 py-1 rounded-full text-[10px]">{muted ? '🔇 Tap for Sound' : '🔊 Sound ON'}</button>
-   </div>
-   <div className="fixed top-[32px] left-0 right-0 z-[100] h-[24px] bg-[#2b1a0a] text-[#ffd98a] text-[10px] flex items-center justify-center font-bold" onClick={()=>setEarn(v=>+(v+0.06).toFixed(2))}>Nike 50% OFF Mombasa • ${earn.toFixed(2)} Tap +$0.06</div>
+   {!profileTab ? (
+   <>
+     {/* TOP - KAMA TIKTOK */}
+     <div className="fixed top-0 left-0 right-0 z-50 bg-black h-[90px]">
+       <div className="flex items-center justify-between px-3 pt-2">
+         <span className="text-[11px] border border-white rounded px-1">LIVE</span>
+         <div className="flex gap-4 text-[15px] font-bold"><span className="opacity-60">Following</span><span className="opacity-60">Friends</span><span className="border-b-2 border-white pb-1">For You</span></div>
+         <span className="text-[18px]">🔍</span>
+       </div>
+       <div className="mx-3 mt-3 h-[36px] bg-[#2a2a2a] rounded-full flex items-center px-3">
+         <span className="opacity-50 mr-2">🔍</span>
+         <input placeholder="Explore topics you love" className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/50"/>
+         <span className="border-l border-white/20 pl-3 text-[13px] font-bold">Search</span>
+       </div>
+     </div>
+     <div className="fixed top-[90px] left-0 right-0 z-40 h-[20px] bg-[#2b1a0a] text-[#ffd98a] text-[10px] flex items-center justify-center" onClick={()=>setEarn(v=>+(v+0.06).toFixed(2))}>Nike Mombasa • ${earn.toFixed(2)} +$0.06</div>
 
-   {/* HOME - SCROLLABLE NA SAUTI */}
-   {page==='home' && (
-     <div className="absolute top-[56px] bottom-[60px] left-0 right-0 overflow-y-scroll snap-y snap-mandatory" style={{scrollbarWidth:'none'}}>
-       {vids.map(v=>(
-         <div key={v.id} className="w-full h-full snap-start relative flex-shrink-0 bg-black">
-           <video 
-             ref={el=>vRefs.current[v.id]=el}
-             src={v.url} 
-             loop 
-             playsInline 
-             muted={muted}
-             autoPlay
-             onClick={toggleSound}
-             className="w-full h-full object-contain"
-           />
-           {/* CENTER TAP FOR SOUND */}
-           {muted && <div onClick={toggleSound} className="absolute inset-0 flex items-center justify-center"><div className="bg-black/50 px-4 py-2 rounded-full text-white text-sm">🔇 Tap for Sound 🔊</div></div>}
+     {/* VIDEO KATI */}
+     <div className="absolute top-[110px] bottom-[95px] left-0 right-0 bg-[#0a0a0a] flex items-center justify-center">
+       <video 
+         src={cur.url} 
+         loop autoPlay playsInline 
+         muted={muted}
+         onClick={()=>setMuted(!muted)}
+         className="w-full h-full object-contain"
+         onLoadedData={e=>{e.currentTarget.muted=muted; e.currentTarget.play().catch(()=>{});}}
+       />
+       {/* SOUND BUTTON */}
+       <button onClick={()=>setMuted(!muted)} className="absolute top-2 right-2 bg-black/50 px-2 py-1 rounded-full text-[11px]">{muted ? '🔇 Tap for Sound' : '🔊 Sound ON'}</button>
 
-           {/* RIGHT BUTTONS - ZOTE ZINAFANYA */}
-           <div className="absolute right-2 bottom-24 flex flex-col gap-5 items-center text-white z-10">
-             <button onClick={()=>toggleLike(v.id)} className="flex flex-col items-center"><span className={`text-[32px] ${liked[v.id] ? 'text-red-500' : ''}`}>{liked[v.id] ? '❤️' : '🤍'}</span><span className="text-[11px]">{v.likes}</span></button>
-             <button onClick={()=>alert('Comments: '+v.comments+' - Coming soon!')} className="flex flex-col items-center"><span className="text-[28px]">💬</span><span className="text-[11px]">{(v.comments/1000).toFixed(0)}K</span></button>
-             <button onClick={()=>{ if(navigator.share) navigator.share({title:'Vibra', url: location.href}); else alert('Link copied!'); }} className="flex flex-col items-center"><span className="text-[28px]">↗️</span><span className="text-[11px]">Share</span></button>
-             <button onClick={()=>fileRef.current?.click()} className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs border-2 border-white">You</button>
-           </div>
+       {/* RIGHT BUTTONS - KAMA SCREENSHOT */}
+       <div className="absolute right-2 bottom-10 flex flex-col gap-4 items-center">
+         <button onClick={()=>setProfileTab(true)} className="relative"><div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-white flex items-center justify-center font-bold">M</div><div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-[12px] font-bold">+</div></button>
+         <button onClick={()=>setLiked(!liked)} className="flex flex-col items-center"><span className={`text-[28px] ${liked?'':''}`}>❤️</span><span className="text-[11px] font-bold">{liked ? '1.5K' : '1.4K'}</span></button>
+         <button onClick={()=>alert('Comments 25 - Coming soon!')} className="flex flex-col items-center"><span className="text-[26px]">💬</span><span className="text-[11px] font-bold">25</span></button>
+         <button onClick={()=>alert('Saved 201!')} className="flex flex-col items-center"><span className="text-[24px]">🔖</span><span className="text-[11px] font-bold">201</span></button>
+         <button onClick={()=>alert('Shared!')} className="flex flex-col items-center"><span className="text-[26px]">↗️</span><span className="text-[11px] font-bold">12</span></button>
+         <div className="w-8 h-8 rounded-full bg-[#333] animate-spin border-2 border-white/20"></div>
+       </div>
 
-           {/* BOTTOM INFO */}
-           <div className="absolute left-3 bottom-6 right-16 text-white z-10">
-             <b className="text-[15px]">{v.user}</b>
-             <p className="text-[13px] mt-1">{v.desc}</p>
-             <p className="text-[12px] mt-2 opacity-80">🎵 Original sound - {v.user}</p>
-           </div>
+       {/* BOTTOM INFO - KAMA SCREENSHOT */}
+       <div className="absolute left-3 bottom-2 right-20">
+         <b className="text-[14px] font-bold">{cur.user}†</b>
+         <p className="text-[13px] mt-1">{cur.title}</p>
+         <div className="mt-2 h-[32px] bg-[#1a1a1a] rounded-full flex items-center px-3 gap-2">
+           <span className="text-[12px]">🔍</span><span className="text-[12px] flex-1 truncate">Search · {cur.search}</span><span className="text-[14px]">›</span>
          </div>
-       ))}
+       </div>
      </div>
+   </>
+   ) : (
+   /* PROFILE PAGE - KAMA SCREENSHOT YA PILI */
+   <div className="absolute top-0 bottom-[60px] left-0 right-0 bg-white text-black overflow-y-auto">
+     <div className="flex items-center justify-between p-3">
+       <button onClick={()=>setProfileTab(false)} className="text-[22px]">←</button>
+       <button className="text-[20px]">⋮</button>
+     </div>
+     <div className="flex flex-col items-center">
+       <div className="w-20 h-20 rounded-full bg-gray-200"></div>
+       <b className="mt-2 font-bold text-[16px]" style={{fontFamily:'serif'}}>MaRavel movie†</b>
+       <p className="text-[13px] opacity-60">@makavelimoviestore</p>
+       <div className="flex gap-6 mt-3 text-center text-[13px]"><div><b>7</b><p className="opacity-60">Following</p></div><div className="border-l border-r px-6"><b>407.8K</b><p className="opacity-60">Followers</p></div><div><b>3.8M</b><p className="opacity-60">Likes</p></div></div>
+       <div className="flex gap-2 mt-4"><button className="bg-[#fe2c55] text-white px-12 py-2 rounded font-bold">Follow</button><button className="border px-3 rounded">👥+</button></div>
+       <p className="text-[12px] mt-3 text-center px-4">kwa MATANGAZO ni cheki DM +whatsapp 0634548700 🍇🍏📈</p>
+       <div className="w-full flex justify-around mt-4 border-b pb-2"><span className="border-b-2 border-black">☰</span><span className="opacity-30">♡</span></div>
+     </div>
+     {/* GRID - KAMA TIKTOK */}
+     <div className="grid grid-cols-3 gap-[1px] bg-black">
+       {[
+         {p:'Pinned', v:'454.3K', t:'NDOA'}, {p:'Pinned', v:'712.1K', t:'Monalisa'}, {v:'16.6K'},
+         {v:'11.1K'}, {v:'11.7K'}, {v:'9.8K'},
+         {v:'6.7K'}, {v:'7.2K'}, {v:'44.3K'},
+       ].map((x,i)=><div key={i} className="aspect-[3/4] bg-gray-800 relative"><div className="absolute top-1 left-1 bg-red-500 text-white text-[9px] px-1 rounded">{x.p}</div><div className="absolute bottom-1 left-1 text-white text-[11px] flex items-center">▶ {x.v}</div><div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900"></div></div>)}
+     </div>
+     <div className="fixed bottom-[70px] right-3 bg-white text-black px-3 py-1 rounded-full text-[12px] shadow">Just watched ∨</div>
+   </div>
    )}
 
-   {/* ME - IKO CHONJO NA BUTTONS ZOTE */}
-   {page==='me' && (
-     <div className="absolute top-[56px] bottom-[60px] left-0 right-0 bg-white overflow-y-auto p-4 z-30">
-       <div className="flex justify-between items-center"><button onClick={()=>setPage('home')} className="border px-3 py-1 rounded-full">← Home</button><b>Me • ${earn.toFixed(2)}</b><button onClick={()=>fileRef.current?.click()} className="bg-black text-white px-3 py-1 rounded-full">+ Add</button></div>
-       <div className="flex flex-col items-center mt-6"><div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-white text-2xl font-bold">H</div><b className="mt-2">@hamadoski36</b><p className="text-xs opacity-60">Mombasa • 955 Followers</p></div>
-       <div className="grid grid-cols-3 gap-3 mt-5 text-center"><div className="border rounded-xl py-2"><b>1</b><p className="text-xs opacity-60">Following</p></div><div className="border rounded-xl py-2"><b>{vids.length}</b><p className="text-xs opacity-60">Videos</p></div><div className="border rounded-xl py-2"><b className="text-green-600">${earn.toFixed(2)}</b><p className="text-xs opacity-60">Earned</p></div></div>
-       <button onClick={()=>setEarn(v=>+(v+0.06).toFixed(2))} className="w-full mt-4 bg-green-600 text-white py-3 rounded-full font-bold">Bonyeza Ad Pata $0.06</button>
-       <button onClick={()=>fileRef.current?.click()} className="w-full mt-2 border-2 border-dashed py-3 rounded-xl font-bold">+ Weka Together Forever Yako</button>
-       <div className="grid grid-cols-3 gap-1 mt-4">{vids.map(v=><div key={v.id} className="relative aspect-[9/16] bg-black rounded overflow-hidden"><video src={v.url} className="w-full h-full object-cover" muted/><span className="absolute bottom-1 left-1 text-white text-[10px]">▶ {v.likes}</span></div>)}</div>
-     </div>
-   )}
-
-   {/* BOTTOM NAV - BUTTONS ZOTE ZINAFANYA - + INAONEKANA */}
-   <nav className="fixed bottom-0 left-0 right-0 h-[60px] bg-black text-white flex justify-around items-center z-[200] border-t border-white/20">
-     <button onClick={()=>setPage('home')} className="flex flex-col items-center"><span className="text-[20px]">🏠</span><span className="text-[10px]">Home</span></button>
-     <button onClick={()=>setPage('home')} className="flex flex-col items-center opacity-60"><span className="text-[20px]">🔍</span><span className="text-[10px]">Explore</span></button>
-     <button onClick={()=>fileRef.current?.click()} className="bg-white text-black w-[68px] h-[40px] rounded-full font-black text-[30px] flex items-center justify-center shadow-lg">+</button>
-     <button onClick={()=>setPage('home')} className="flex flex-col items-center opacity-60"><span className="text-[11px] font-bold text-red-400">● LIVE</span></button>
-     <button onClick={()=>setPage('me')} className="flex flex-col items-center"><span className="text-[20px]">👤</span><span className="text-[9px]">Me • ${earn.toFixed(2)}</span></button>
+   {/* BOTTOM NAV - KAMA TIKTOK HALISI */}
+   <nav className="fixed bottom-0 left-0 right-0 h-[50px] bg-black text-white flex justify-around items-center z-[200] border-t border-white/10">
+     <button onClick={()=>setProfileTab(false)} className="flex flex-col items-center"><span className="text-[22px]">🏠</span><span className="text-[9px]">Home</span></button>
+     <button onClick={()=>setProfileTab(false)} className="flex flex-col items-center opacity-60"><span className="text-[20px]">⊞</span><span className="text-[9px]">Explore</span></button>
+     <button onClick={()=>fileRef.current?.click()} className="w-[48px] h-[32px] bg-white rounded-lg flex items-center justify-center text-black font-black text-[22px] relative"><span className="absolute -left-1 w-full h-full bg-[#25f4ee] rounded-lg -z-10"></span><span className="absolute -right-1 w-full h-full bg-[#fe2c55] rounded-lg -z-10"></span>+</button>
+     <button className="flex flex-col items-center opacity-60"><span className="text-[20px]">💬</span><span className="text-[9px]">Inbox</span></button>
+     <button onClick={()=>setProfileTab(true)} className={`flex flex-col items-center ${profileTab?'':'opacity-60'}`}><span className="text-[20px]">👤</span><span className="text-[9px]">Me • ${earn.toFixed(2)}</span></button>
    </nav>
   </div>
  );
