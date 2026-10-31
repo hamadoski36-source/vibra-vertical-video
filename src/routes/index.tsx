@@ -47,10 +47,10 @@ function VibraFixedHome(){
     }).catch(()=>{})
   },[])
 
-  const defaultVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Vibra', thumb:'', isAd:false}
+   }
+const defaultVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Vibra', thumb:'', isAd:false}
 const adVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'🔥 TANGAZO - Kaa sec 3 upate KSH 1', thumb:'', isAd:true, likes:999}
 
-// TENGENEZA FEED YENYE ADS KILA VIDEO 3
 const baseFeed=myVideos.length>0?myVideos:[defaultVid]
 const feed:any[]=[]
 baseFeed.forEach((v:any,i:number)=>{
@@ -58,6 +58,15 @@ baseFeed.forEach((v:any,i:number)=>{
   if((i+1)%3===0) feed.push({...adVid, id:`ad-${i}`})
 })
 const current=feed[idx%feed.length]
+
+useEffect(()=>{
+  const pause=()=> videoRef.current?.pause()
+  const onHidden=()=>{ if(document.hidden) pause(); else if(hasInteracted) videoRef.current?.play().catch(()=>{}) }
+  document.addEventListener('visibilitychange', onHidden); window.addEventListener('blur', pause)
+  return ()=>{ document.removeEventListener('visibilitychange', onHidden); window.removeEventListener('blur', pause) }
+},[hasInteracted,isLiveCam,tab])
+
+// HII NDIO YA ADS - KUPATA KSH 1
 useEffect(()=>{
   if(current?.isAd){
     const t=setTimeout(()=>{
@@ -67,22 +76,12 @@ useEffect(()=>{
     },3000)
     return ()=>clearTimeout(t)
   }
-},[idx, current])
-  
-    document.addEventListener('visibilitychange', onHidden); window.addEventListener('blur', pause)
-    return ()=>{ document.removeEventListener('visibilitychange', onHidden); window.removeEventListener('blur', pause) }
-  },[hasInteracted,isLiveCam,tab])
+},[idx, current, totalEarnings])
 
-  useEffect(()=>{
-    if(isLiveCam || tab!=='home' || !current?.url) return
-    const v=videoRef.current; if(!v) return; v.src=current.url; v.muted=!hasInteracted; v.playsInline=true; v.loop=true; v.load(); v.play().catch(()=>{})
-  },[idx,current,isLiveCam,hasInteracted,tab])
-
-  useEffect(()=>{
-    if(!isLiveCam) return
-    const a=setInterval(()=> setLiveViewers(x=>x+Math.floor(Math.random()*3+1)),3000)
-    const b=setInterval(()=>{ const add=Math.random()*1.5+0.3; setLiveEarnings(e=>{ const n=e+add; localStorage.setItem('vibra_earn',String(n)); return n }); setTotalEarnings(t=>{ const nt=t+add; localStorage.setItem('vibra_total',String(nt)); return nt }) },2000)
-    return ()=>{ clearInterval(a); clearInterval(b) }
+useEffect(()=>{
+  if(isLiveCam || tab!=='home' || !current?.url) return
+  const v=videoRef.current; if(!v) return; v.src=current.url; v.muted=false; v.play().catch(()=>{})
+},[idx,current,isLiveCam,hasInteracted,tab])
   },[isLiveCam])
 
   const startLive=async(f:'user'|'environment'=facing)=>{
