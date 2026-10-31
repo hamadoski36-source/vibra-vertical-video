@@ -100,17 +100,40 @@ function VibraFixedHome(){
     if(!confirm(`Futa video zote ${myVideos.length} na KSH ${totalEarnings.toFixed(0)}?`)) return
     const db=await new Promise<IDBDatabase>((res,rej)=>{ const r=indexedDB.open('vibra_db',1); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error) })
     const tx=db.transaction('videos','readwrite'); tx.objectStore('videos').clear()
-    tx.oncomplete=()=>{ localStorage.setItem('vibra_total','0'); localStorage.setItem('vibra_earn','0'); setMyVideos([]); setTotalEarnings(0); location.reload() }
+    tx.oncomplete=()=>{ localStorage.setItem('vibra_total','0'); localStorage.setItem('vibra_earn','0'); setMyVideos([]); setTotalEarnings(0); location
+                       
+const withdraw=async()=>{
+  if(totalEarnings<50) return alert(`Fikisha KSH 50. Una KSH ${totalEarnings}`)
+  const phone='254740805970'
+  
+  if(!confirm(`Tuma KSH ${totalEarnings.toFixed(2)} kwenda ${phone} kupitia M-Pesa?`)) return;
+  
+  try{
+    alert('⏳ Inatuma kwa M-Pesa...');
+    
+    const res=await fetch('https://vibra-vertical-video-jhab.vercel.app/api/mpesa/payout',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        amount: Math.floor(totalEarnings),
+        phone: phone,
+        remarks: 'Vibra Payout @MrVibra'
+      })
+    });
+    
+    const data=await res.json();
+    
+    if(data.ResponseCode==='0' || data.ConversationID){
+      alert(`✅ SAFARICOM IMEPOKEA! KSH ${totalEarnings} inaenda kwa ${phone}! Subiri SMS ya M-Pesa`);
+      localStorage.setItem('vibra_total','0');
+      setTotalEarnings(0);
+    }else{
+      alert(`❌ M-Pesa imeshindikana: ${JSON.stringify(data).slice(0,200)}`);
+    }
+  }catch(e:any){
+    alert('Error: '+e.message);
   }
-
-  const withdraw=()=>{
-    if(totalEarnings<50) return alert(`Fikisha KSH 50. Una KSH ${totalEarnings.toFixed(0)}`)
-    const phone='254740805970'
-    const msg=`Habari MrVibra, naomba withdrawal ya KSH ${totalEarnings.toFixed(2)} kutoka VIBRA app. Namba yangu ${phone}.`
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank')
-    alert(`✅ Ombi la KSH ${totalEarnings.toFixed(2)} limetumwa WhatsApp!`)
-  }
-
+}
   if(tab==='me'){
     return(
       <div style={{minHeight:'100dvh', background:'black', color:'white', paddingBottom:80}}>
