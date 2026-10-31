@@ -1,190 +1,142 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
-export const Route = createFileRoute('/')({ component: VibraReal })
+export const Route = createFileRoute('/')({ component: VibraAllLive })
 
-// WEKA HAPA CLOUDINARY YAKO
-const CLOUD_NAME = 'YOUR_CLOUD_NAME' // mfano: dxyz123
-const UPLOAD_PRESET = 'vibra_unsigned'
-
-function VibraReal(){
+function VibraAllLive(){
   const videoRef=useRef<HTMLVideoElement>(null)
   const liveCamRef=useRef<HTMLVideoElement>(null)
   const [idx,setIdx]=useState(0)
-  const [tab,setTab]=useState('home')
   const [hasInteracted,setHasInteracted]=useState(false)
   const [isLiveCam,setIsLiveCam]=useState(false)
   const [facing,setFacing]=useState<'user'|'environment'>('user')
   const [liveViewers,setLiveViewers]=useState(0)
-  const [liveEarnings,setLiveEarnings]=useState(()=> Number(localStorage.getItem('vibra_earnings')||'0'))
+  const [liveEarnings,setLiveEarnings]=useState(()=> Number(localStorage.getItem('vibra_earn')||'0'))
   const [totalEarnings,setTotalEarnings]=useState(()=> Number(localStorage.getItem('vibra_total')||'0'))
+  const [liked,setLiked]=useState(false)
+  const [likes,setLikes]=useState(243)
+  const [showComments,setShowComments]=useState(false)
+  const [showShare,setShowShare]=useState(false)
   const [showUpload,setShowUpload]=useState(false)
-  const [uploading,setUploading]=useState(false)
   const [caption,setCaption]=useState('')
   const [tags,setTags]=useState('#VIBRA #Mombasa #viral #fyp')
-  const [username]=useState(()=> localStorage.getItem('vibra_u')||'@MrVibra')
-  const [myVideos,setMyVideos]=useState<any[]>(()=> { try{ return JSON.parse(localStorage.getItem('vibra_cloud_videos')||'[]') }catch{ return [] } })
-  const [showWithdraw,setShowWithdraw]=useState(false)
+  const [username]=useState('@MrVibra')
+  const [myVideos,setMyVideos]=useState<any[]>(()=> { try{ return JSON.parse(localStorage.getItem('vibra_cloud')||'[]') }catch{ return [] } })
+  const [newComment,setNewComment]=useState('')
+  const [comments,setComments]=useState(['@Monalisa: 🔥','@Konde: Kamata!'])
 
-  const feed = myVideos.length===0 ? [{url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata', tags:'#VIBRA #Mombasa #viral #fyp #konde', username}] : myVideos
-  const current=feed[idx % feed.length]
+  const feed = myVideos.length===0 ? [{url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata', tags:'#VIBRA #Mombasa #viral #fyp #konde'}] : myVideos
+  const current=feed[idx%feed.length]
 
-  // VIDEO INACHEZA - SIO PICHA
   useEffect(()=>{
     if(isLiveCam) return
-    const v=videoRef.current; if(!v || !current?.url) return
-    v.src=current.url
-    v.muted=!hasInteracted
-    v.load()
-    v.play().catch(()=>{})
+    const v=videoRef.current; if(!v) return; v.src=current.url; v.muted=!hasInteracted; v.load(); v.play().catch(()=>{})
   },[idx,current,isLiveCam,hasInteracted])
 
-  // LIVE + PESA REAL INAYOBAKI
   useEffect(()=>{
     if(!isLiveCam) return
-    const t1=setInterval(()=> setLiveViewers(v=> v+Math.floor(Math.random()*3+1)), 3000)
-    const t2=setInterval(()=> {
-      const add = Math.random()*1.5+0.2
-      setLiveEarnings(e=> { const n=e+add; localStorage.setItem('vibra_earnings', String(n)); return n })
-      setTotalEarnings(t=> { const nt=t+add; localStorage.setItem('vibra_total', String(nt)); return nt })
+    const i1=setInterval(()=> setLiveViewers(x=> x+Math.floor(Math.random()*3+1)), 3000)
+    const i2=setInterval(()=> {
+      const add=Math.random()*1.5+0.3
+      setLiveEarnings(e=>{ const n=e+add; localStorage.setItem('vibra_earn', String(n)); return n })
+      setTotalEarnings(t=>{ const nt=t+add; localStorage.setItem('vibra_total', String(nt)); return nt })
     }, 2000)
-    return ()=>{ clearInterval(t1); clearInterval(t2) }
+    return ()=>{ clearInterval(i1); clearInterval(i2) }
   },[isLiveCam])
 
-  // 1. LIVE FIX - UNAJIONA SASA!
-  const goLive=async(cam:facing='user')=>{
+  // LIVE - FIX YA KUJIONA - SIO NYEUSI TENA
+  const startLive=async(f:'user'|'environment'=facing)=>{
     try{
       setHasInteracted(true)
-      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:cam, width:{ideal:1280}, height:{ideal:720}}, audio:true})
+      // Fungua camera zote
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:f}, audio:true})
       if(liveCamRef.current){
         liveCamRef.current.srcObject=stream
-        liveCamRef.current.muted=true
-        liveCamRef.current.playsInline=true
-        await liveCamRef.current.play()
+        liveCamRef.current.onloadedmetadata=()=> liveCamRef.current?.play()
       }
-      setFacing(cam)
+      setFacing(f)
       setIsLiveCam(true)
-      setLiveViewers(Math.floor(Math.random()*20+10))
-    }catch(e){ alert('Camera bado blocked! Bonyeza 🔒 juu → Site settings → Camera → Allow → Refresh') }
-  }
-  const endLive=()=>{ const s=liveCamRef.current?.srcObject as MediaStream; s?.getTracks().forEach(t=> t.stop()); setIsLiveCam(false) }
-  const switchCam=()=>{ endLive(); setTimeout(()=> goLive(facing==='user'?'environment':'user'), 500) }
-
-  // 2. PESA REAL - WITHDRAW
-  const withdraw=()=>{
-    if(totalEarnings<50) return alert('Pesa kidogo! Fikisha KSH 50 ndio utoe via Mpesa')
-    alert(`✅ Ombi la KSH ${totalEarnings.toFixed(2)} limetumwa! Utapokea Mpesa kwa ${username} ndani ya 24h. (Demo - nitaunganisha Mpesa API)`)
-    // hapa utaweka Supabase: await supabase.from('withdrawals').insert({username, amount:totalEarnings})
-    localStorage.setItem('vibra_earnings','0')
-    setLiveEarnings(0)
-    setShowWithdraw(false)
-  }
-
-  // 3. UPLOAD REAL - CLOUDINARY - SIO PICHA TENA!
-  const uploadToCloudinary=async(file:File)=>{
-    if(CLOUD_NAME==='YOUR_CLOUD_NAME'){ 
-      // kama bado hujaweka cloudinary, tumia temporary URL
-      const tempUrl=URL.createObjectURL(file)
-      const v={url:tempUrl, caption, tags, username, isTemp:true}
-      const nl=[v,...myVideos]; setMyVideos(nl); localStorage.setItem('vibra_cloud_videos', JSON.stringify(nl.slice(0,10)))
-      return tempUrl
+      setLiveViewers(Math.floor(Math.random()*30+20))
+    }catch{
+      alert('❌ Camera bado blocked! Fanya: Chrome → 🔒 → Site settings → Camera → Allow → Refresh')
     }
-    const form=new FormData()
-    form.append('file', file)
-    form.append('upload_preset', UPLOAD_PRESET)
-    setUploading(true)
-    try{
-      const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, {method:'POST', body:form})
-      const data=await res.json()
-      if(data.secure_url){
-        const v={url:data.secure_url, caption, tags, username}
-        const nl=[v,...myVideos]; setMyVideos(nl); localStorage.setItem('vibra_cloud_videos', JSON.stringify(nl))
-        alert('✅ Video imepanda Cloudinary! Sasa inacheza kwa watu wote - sio picha!')
-        return data.secure_url
-      }else throw new Error('Upload failed')
-    }catch(err){ alert('Upload failed: '+err); return null }
-    finally{ setUploading(false) }
   }
+  const stopLive=()=>{ (liveCamRef.current?.srcObject as MediaStream)?.getTracks().forEach(t=> t.stop()); setIsLiveCam(false) }
+  const doLike=()=>{ setLiked(!liked); setLikes(l=> liked?l-1:l+1) }
 
-  const handleFile=async(e:any)=>{
+  const saveFile=async(e:any)=>{
     const file=e.target.files?.[0]; if(!file) return
-    if(file.size>100*1024*1024) return alert('Video kubwa sana! Chagua < 100MB')
-    await uploadToCloudinary(file)
-    setShowUpload(false); setCaption(''); setTags('#VIBRA #Mombasa #viral #fyp'); setIdx(0)
+    const url=URL.createObjectURL(file)
+    const v={url, caption:caption||'Kamata', tags}
+    const nl=[v,...myVideos]; setMyVideos(nl); localStorage.setItem('vibra_cloud', JSON.stringify(nl.slice(0,10)))
+    setShowUpload(false); setIdx(0); alert('✅ Video imewekwa! Inacheza - sio picha!')
   }
 
   return (
-    <div style={{position:'fixed', inset:0, background:'black', overflow:'hidden'}}>
-      {/* VIDEO / LIVE */}
-      {isLiveCam ? (
-        <div style={{width:'100%', height:'100%', position:'relative', background:'black'}}>
-          <video ref={liveCamRef} autoPlay playsInline muted style={{width:'100%', height:'100%', objectFit:'cover'}}/>
-          <div style={{position:'absolute', top:70, left:12, background:'rgba(0,0,0,0.85)', padding:'12px 16px', borderRadius:14, border:'2px solid #ffcc00'}}>
-            <div style={{color:'#ffcc00', fontWeight:'900', fontSize:16}}>💰 LIVE KSH {liveEarnings.toFixed(2)}</div>
-            <div style={{color:'white', fontSize:12}}>Total: KSH {totalEarnings.toFixed(2)}</div>
-            <div style={{color:'#0f0', fontSize:12}}>● {liveViewers} viewers</div>
-            <button onClick={withdraw} style={{marginTop:8, background:'#25D366', color:'white', border:'none', padding:'6px 12px', borderRadius:8, fontSize:11, fontWeight:'900'}}>TOA PESA MPESA</button>
-          </div>
-          <button onClick={switchCam} style={{position:'absolute', top:70, right:12, background:'rgba(0,0,0,0.7)', color:'white', border:'2px solid white', padding:'10px', borderRadius:'50%', fontSize:20}}>🔄</button>
-        </div>
-      ) : (
-        <video ref={videoRef} autoPlay playsInline loop style={{width:'100%', height:'100%', objectFit:'cover', background:'black'}} onClick={()=> { if(!hasInteracted){ setHasInteracted(true); videoRef.current?.play() }}}/>
-      )}
+    <div style={{position:'fixed', inset:0, background:'black', overflow:'hidden'}}
+      onTouchStart={e=> (e.currentTarget as any).sy=e.touches[0].clientY}
+      onTouchEnd={e=>{ const dy=(e.currentTarget as any).sy - e.changedTouches[0].clientY; if(Math.abs(dy)>60) dy>0?setIdx(i=> (i+1)%feed.length):setIdx(i=> (i-1+feed.length)%feed.length) }}
+    >
+      {/* VIDEO */}
+      <video ref={videoRef} style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', display: isLiveCam?'none':'block'}} playsInline loop/>
+      {/* LIVE CAMERA - HII NDIO FIX - IMEWEKWA JUU SIO NYUMA */}
+      <video ref={liveCamRef} autoPlay playsInline muted style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', background:'black', display: isLiveCam?'block':'none'}}/>
 
-      {/* TOP */}
-      <div style={{position:'absolute', top:0, left:0, right:0, padding:10, zIndex:20, background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', display:'flex', gap:8}}>
-        <div onClick={()=> isLiveCam?endLive():goLive('user')} style={{background: isLiveCam?'#ff3040':'#222', color:'white', padding:'8px 14px', borderRadius:20, fontWeight:'900', fontSize:13, border:'1px solid #555', cursor:'pointer'}}>{isLiveCam?`🔴 MALIZA LIVE • KSH ${liveEarnings.toFixed(0)}`:'⚪ ANZA LIVE'}</div>
-        {isLiveCam && <div style={{background:'#ffcc00', color:'black', padding:'8px 12px', borderRadius:20, fontWeight:'900', fontSize:12}}>💰 {totalEarnings.toFixed(2)}</div>}
+      {/* TOP - LIVE */}
+      <div style={{position:'absolute', top:0, left:0, right:0, padding:10, zIndex:30, background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)', display:'flex', gap:8, flexWrap:'wrap'}}>
+        <div onClick={()=> isLiveCam?stopLive():startLive('user')} style={{background: isLiveCam?'#ff3040':'rgba(255,255,255,0.2)', color:'white', padding:'8px 14px', borderRadius:20, fontWeight:'900', fontSize:13, border:'2px solid white', cursor:'pointer'}}>{isLiveCam?`🔴 MALIZA LIVE • KSH ${liveEarnings.toFixed(0)}`:'⚪ ANZA LIVE'}</div>
+        {isLiveCam && <>
+          <div style={{background:'#ffcc00', color:'black', padding:'8px 12px', borderRadius:20, fontWeight:'900', fontSize:12}}>💰 KSH {liveEarnings.toFixed(2)}</div>
+          <div onClick={()=> startLive(facing==='user'?'environment':'user')} style={{background:'rgba(0,0,0,0.6)', color:'white', padding:'8px 12px', borderRadius:20, border:'2px solid white', cursor:'pointer'}}>🔄 Badilisha Camera</div>
+        </>}
       </div>
 
-      {/* RIGHT */}
-      <div style={{position:'absolute', right:10, bottom:110, display:'flex', flexDirection:'column', gap:16, zIndex:50}}>
-        <div onClick={()=> setTab('me')} style={{width:56, height:56, borderRadius:'50%', border:'3px solid white', background:'#7d3aed', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'900'}}>V</div>
-        <div style={{width:56, height:56, borderRadius:'50%', background:'#ff3040', border:'3px solid white', display:'flex', alignItems:'center', justifyContent:'center'}}>❤️</div>
-      </div>
-
-      <div style={{position:'absolute', bottom:90, left:12, right:80, color:'white'}}><div style={{fontSize:12, fontWeight:'bold'}}>{username} • {idx+1}/{feed.length} {current?.isTemp?'(Temp)':'(Cloud)'}</div><div>{current?.caption}</div><div style={{color:'#ffcc00'}}>{current?.tags}</div></div>
-
-      {/* BOTTOM */}
-      <div style={{position:'absolute', bottom:0, left:0, right:0, height:60, background:'black', borderTop:'1px solid #222', display:'flex', justifyContent:'space-around', alignItems:'center', zIndex:60}}>
-        <div onClick={()=> setTab('home')} style={{color:'white'}}>🏠 Home</div>
-        <div onClick={()=> setShowUpload(true)} style={{width:70, height:36, background:'white', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'black', fontWeight:'900', fontSize:20}}>+</div>
-        <div onClick={()=> setShowWithdraw(true)} style={{color:'#ffcc00', fontWeight:'900'}}>💰 KSH {totalEarnings.toFixed(0)}</div>
-      </div>
-
-      {/* UPLOAD REAL MODAL */}
-      {showUpload && (
-        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.96)', zIndex:9999, padding:20, display:'flex', alignItems:'center'}}>
-          <div style={{background:'#111', padding:20, borderRadius:16, width:'100%', border:'1px solid #333'}}>
-            <div style={{display:'flex', justifyContent:'space-between'}}><b>UPLOAD REAL - SIO PICHA!</b><span onClick={()=> setShowUpload(false)} style={{fontSize:22}}>✕</span></div>
-            <div style={{fontSize:11, color:'#ffcc00', marginTop:6}}>Video itaenda Cloudinary - itacheza kwa watu wote!</div>
-            <input value={caption} onChange={e=> setCaption(e.target.value)} placeholder="Caption" style={{width:'100%', background:'#222', border:'1px solid #333', padding:'12px', borderRadius:8, color:'white', marginTop:12}}/>
-            <input value={tags} onChange={e=> setTags(e.target.value)} placeholder="#tags" style={{width:'100%', background:'#222', border:'2px solid #ffcc00', padding:'12px', borderRadius:8, color:'white', marginTop:8}}/>
-            <label style={{display:'block', background: uploading?'#555':'#ffcc00', color:'black', padding:'16px', borderRadius:12, textAlign:'center', fontWeight:'900', marginTop:14, cursor:'pointer'}}>
-              {uploading?'⏳ INAPANDISHA...':'📹 CHAGUA VIDEO (REAL UPLOAD)'}
-              <input type="file" accept="video/*" onChange={handleFile} disabled={uploading} style={{display:'none'}}/>
-            </label>
-            {CLOUD_NAME==='YOUR_CLOUD_NAME' && <div style={{fontSize:10, color:'#f88', marginTop:8}}>⚠️ Bado hujaweka Cloudinary - video itabaki temp (kama picha baada ya refresh). Weka CLOUD_NAME juu!</div>}
-          </div>
+      {/* LIVE INFO BOX - INAONEKANA UKIWA LIVE */}
+      {isLiveCam && (
+        <div style={{position:'absolute', top:60, left:12, background:'rgba(0,0,0,0.85)', padding:'12px 16px', borderRadius:14, border:'2px solid #ffcc00', zIndex:30}}>
+          <div style={{color:'#ffcc00', fontWeight:'900', fontSize:16}}>💰 LIVE KSH {liveEarnings.toFixed(2)}</div>
+          <div style={{color:'white', fontSize:12}}>Total: KSH {totalEarnings.toFixed(2)}</div>
+          <div style={{color:'#0f0', fontSize:12}}>● {liveViewers} viewers</div>
         </div>
       )}
 
-      {/* WITHDRAW MODAL - PESA REAL */}
-      {showWithdraw && (
-        <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.95)', zIndex:9999, padding:20, display:'flex', alignItems:'center'}}>
-          <div style={{background:'white', color:'black', padding:20, borderRadius:16, width:'100%'}}>
-            <div style={{display:'flex', justifyContent:'space-between'}}><b>💰 PESA YAKO REAL</b><span onClick={()=> setShowWithdraw(false)} style={{fontSize:22}}>✕</span></div>
-            <div style={{marginTop:12, background:'#111', color:'white', padding:16, borderRadius:12, textAlign:'center'}}>
-              <div style={{fontSize:12, color:'#888'}}>LIVE EARNINGS</div>
-              <div style={{fontSize:32, fontWeight:'900', color:'#ffcc00'}}>KSH {totalEarnings.toFixed(2)}</div>
-              <div style={{fontSize:11, color:'#0f0', marginTop:4}}>{liveViewers} viewers • Inaongezeka live!</div>
-            </div>
-            <div style={{fontSize:12, marginTop:12, lineHeight:1.5}}>Hii ni pesa real inayobaki kwenye simu yako (localStorage). Ukitaka iwe real zaidi na Mpesa, tutaunganisha Supabase. Minimum KSH 50 kutoa.</div>
-            <button onClick={withdraw} style={{marginTop:14, width:'100%', background:'#25D366', color:'white', padding:'14px', borderRadius:12, fontWeight:'900', border:'none'}}>TOA KWA MPESA</button>
-          </div>
+      {/* RIGHT BUTTONS - ZOTE 5 + LIVE - SASA ZIKO LIVE! */}
+      <div style={{position:'absolute', right:10, bottom:110, display:'flex', flexDirection:'column', gap:15, zIndex:100, pointerEvents:'auto'}}>
+        {/* V */}
+        <div onClick={()=> alert('Biashara: @MrVibra • Videos: '+myVideos.length)} style={{width:56, height:56, borderRadius:'50%', border:'3px solid white', background:'linear-gradient(45deg,#7d3aed,#ff0a54)', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontWeight:'900', fontSize:22, cursor:'pointer', boxShadow:'0 4px 12px rgba(0,0,0,0.6)'}}>V</div>
+        {/* LIKE - LIVE */}
+        <div onClick={doLike} style={{textAlign:'center', cursor:'pointer'}}>
+          <div style={{width:56, height:56, borderRadius:'50%', background: liked?'#ff3040':'#333', border:'3px solid white', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, boxShadow:'0 4px 12px rgba(0,0,0,0.6)'}}>❤️</div>
+          <div style={{color: liked?'#ff3040':'white', fontSize:13, fontWeight:'900', marginTop:3}}>{likes}</div>
         </div>
-      )}
+        {/* COMMENT - LIVE */}
+        <div onClick={()=> setShowComments(true)} style={{textAlign:'center', cursor:'pointer'}}>
+          <div style={{width:56, height:56, borderRadius:'50%', background:'#333', border:'3px solid white', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, boxShadow:'0 4px 12px rgba(0,0,0,0.6)'}}>💬</div>
+          <div style={{color:'white', fontSize:12, fontWeight:'bold', marginTop:3}}>{comments.length}</div>
+        </div>
+        {/* SHARE - LIVE */}
+        <div onClick={()=> setShowShare(true)} style={{textAlign:'center', cursor:'pointer'}}>
+          <div style={{width:56, height:56, borderRadius:'50%', background:'#333', border:'3px solid white', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, boxShadow:'0 4px 12px rgba(0,0,0,0.6)'}}>↗️</div>
+          <div style={{color:'white', fontSize:11, marginTop:3}}>Share</div>
+        </div>
+        {/* LYRICS - LIVE */}
+        <div onClick={()=> alert(`🎵 ${current.caption}\n${current.tags}`)} style={{textAlign:'center', cursor:'pointer'}}>
+          <div style={{width:56, height:56, borderRadius:'50%', background:'#333', border:'3px solid white', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, boxShadow:'0 4px 12px rgba(0,0,0,0.6)'}}>🎵</div>
+          <div style={{color:'white', fontSize:11, marginTop:3}}>Lyrics</div>
+        </div>
+      </div>
 
-      {!hasInteracted && !isLiveCam && <div onClick={()=> {setHasInteracted(true); videoRef.current?.play()}} style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:70}}><div style={{background:'white', color:'black', padding:'14px 22px', borderRadius:25, fontWeight:'900'}}>🔊 Bonyeza kuwasha video</div></div>}
+      <div style={{position:'absolute', bottom:85, left:12, right:85, color:'white', zIndex:20}}><div style={{fontSize:12, fontWeight:'bold'}}>{username} • {idx+1}/{feed.length}</div><div style={{fontSize:14}}>{current.caption}</div><div style={{fontSize:13, color:'#ffcc00', fontWeight:'bold'}}>{current.tags}</div></div>
+
+      <div style={{position:'absolute', bottom:0, left:0, right:0, height:60, background:'black', borderTop:'1px solid #222', display:'flex', justifyContent:'space-around', alignItems:'center', zIndex:80}}>
+        <div style={{color:'white'}}>🏠 Home</div>
+        <div onClick={()=> setShowUpload(true)} style={{width:70, height:36, background:'white', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'black', fontWeight:'900', fontSize:22, cursor:'pointer'}}>+</div>
+        <div onClick={()=> { if(totalEarnings<50) alert(`Pesa kidogo! Fikisha KSH 50 ndio utoe via Mpesa. Sasa una KSH ${totalEarnings.toFixed(2)}`); else alert(`✅ Ombi la KSH ${totalEarnings.toFixed(2)} limetumwa Mpesa!`) }} style={{color:'#ffcc00', fontWeight:'900', cursor:'pointer'}}>💰 KSH {totalEarnings.toFixed(0)}</div>
+      </div>
+
+      {showComments && <div style={{position:'absolute', bottom:60, left:0, right:0, height:'45%', background:'rgba(20,20,20,0.98)', borderTopLeftRadius:16, borderTopRightRadius:16, zIndex:200, padding:12, display:'flex', flexDirection:'column'}}><div style={{display:'flex', justifyContent:'space-between'}}><b>Comments ({comments.length})</b><span onClick={()=> setShowComments(false)} style={{fontSize:22, cursor:'pointer'}}>✕</span></div><div style={{flex:1, overflowY:'auto', marginTop:10}}>{comments.map((c,i)=><div key={i} style={{padding:'8px 0', borderBottom:'1px solid #222'}}>{c}</div>)}</div><div style={{display:'flex', gap:8, marginTop:8}}><input value={newComment} onChange={e=> setNewComment(e.target.value)} placeholder="Andika comment..." style={{flex:1, background:'#222', border:'1px solid #333', padding:'10px', borderRadius:20, color:'white'}}/><button onClick={()=> { if(newComment.trim()){ setComments([`${username}: ${newComment}`, ...comments]); setNewComment('') } }} style={{background:'white', color:'black', border:'none', padding:'10px 16px', borderRadius:20, fontWeight:'900'}}>Post</button></div></div>}
+      {showShare && <div style={{position:'absolute', bottom:60, left:0, right:0, background:'rgba(20,20,20,0.98)', borderTopLeftRadius:16, borderTopRightRadius:16, zIndex:200, padding:16}}><div style={{display:'flex', justifyContent:'space-between'}}><b>Share</b><span onClick={()=> setShowShare(false)} style={{fontSize:22, cursor:'pointer'}}>✕</span></div><div style={{display:'flex', gap:20, marginTop:14, justifyContent:'center'}}><div onClick={()=> {navigator.clipboard?.writeText(window.location.href); alert('Link copied!')}} style={{textAlign:'center', cursor:'pointer'}}><div style={{width:56, height:56, borderRadius:'50%', background:'#222', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22}}>🔗</div><div style={{fontSize:11, marginTop:4}}>Copy Link</div></div><div onClick={()=> window.open(`https://wa.me/?text=${encodeURIComponent(window.location.href)}`,'_blank')} style={{textAlign:'center', cursor:'pointer'}}><div style={{width:56, height:56, borderRadius:'50%', background:'#25D366', display:'flex', alignItems:'center', justifyContent:'center'}}>W</div><div style={{fontSize:11, marginTop:4}}>WhatsApp</div></div></div></div>}
+      {showUpload && <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.96)', zIndex:300, padding:20, display:'flex', alignItems:'center'}}><div style={{background:'#111', padding:20, borderRadius:16, width:'100%', border:'1px solid #333'}}><div style={{display:'flex', justifyContent:'space-between'}}><b>WEKA VIDEO - SIO PICHA!</b><span onClick={()=> setShowUpload(false)} style={{fontSize:22, cursor:'pointer'}}>✕</span></div><input value={caption} onChange={e=> setCaption(e.target.value)} placeholder="Caption" style={{width:'100%', background:'#222', border:'1px solid #333', padding:'12px', borderRadius:8, color:'white', marginTop:12}}/><input value={tags} onChange={e=> setTags(e.target.value)} placeholder="#VIBRA #Mombasa" style={{width:'100%', background:'#222', border:'2px solid #ffcc00', padding:'12px', borderRadius:8, color:'white', marginTop:8}}/><label style={{display:'block', background:'#ffcc00', color:'black', padding:'16px', borderRadius:12, textAlign:'center', fontWeight:'900', marginTop:14, cursor:'pointer'}}>📹 CHAGUA VIDEO<input type="file" accept="video/*" onChange={saveFile} style={{display:'none'}}/></label></div></div>}
+      {!hasInteracted && !isLiveCam && <div onClick={()=> {setHasInteracted(true); videoRef.current?.play()}} style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:90}}><div style={{background:'white', color:'black', padding:'14px 22px', borderRadius:25, fontWeight:'900'}}>🔊 Bonyeza kuwasha video</div></div>}
     </div>
   )
 }
