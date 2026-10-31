@@ -1,30 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
-export const Route = createFileRoute('/')({ component: VibraFixedHome })
+export const Route = createFileRoute('/')({ component: VibraTikTok })
 
-function VibraFixedHome(){
+function VibraTikTok(){
   const videoRef=useRef<HTMLVideoElement>(null)
-  const liveCamRef=useRef<HTMLVideoElement>(null)
   const [idx,setIdx]=useState(0)
-  const [tab,setTab]=useState('home')
+  const [tab,setTab]=useState('foryou')
+  const [view,setView]=useState('home') // home, me
+  const [search,setSearch]=useState('')
   const [hasInteracted,setHasInteracted]=useState(false)
-  const [isLiveCam,setIsLiveCam]=useState(false)
-  const [facing,setFacing]=useState<'user'|'environment'>('user')
-  const [liveViewers,setLiveViewers]=useState(0)
-  const [liveEarnings,setLiveEarnings]=useState(()=> Number(localStorage.getItem('vibra_live')||'0'))
-  const [totalEarnings,setTotalEarnings]=useState(()=> Number(localStorage.getItem('vibra_total')||'0'))
   const [dp,setDp]=useState(()=> localStorage.getItem('vibra_dp')||'')
+  const [bio,setBio]=useState(()=> localStorage.getItem('vibra_bio')||'Mombasa Vibes 🌴 | Kamata 🔥')
+  const [name,setName]=useState(()=> localStorage.getItem('vibra_name')||'@MrVibra')
   const [myVideos,setMyVideos]=useState<any[]>([])
-  const [caption,setCaption]=useState('')
-  const [tags,setTags]=useState('#VIBRA #Mombasa #viral #fyp')
-  const [showUpload,setShowUpload]=useState(false)
-  const [uploading,setUploading]=useState(false)
+  const [totalEarnings,setTotalEarnings]=useState(()=> Number(localStorage.getItem('vibra_total')||'0'))
   const [liked,setLiked]=useState(false)
   const [likes,setLikes]=useState(246)
-  const [showComments,setShowComments]=useState(false)
-  const [showShare,setShowShare]=useState(false)
-  const [comments,setComments]=useState(['@Monalisa: 🔥','@Konde: Kamata!'])
-  const [newC,setNewC]=useState('')
+  const [showEdit,setShowEdit]=useState(false)
+  const [followers,setFollowers]=useState(1250)
+  const [following,setFollowing]=useState(342)
   const sy=useRef(0)
 
   useEffect(()=>{
@@ -34,122 +28,132 @@ function VibraFixedHome(){
       r.onsuccess=()=> res(r.result); r.onerror=()=> rej(r.error)
     })
     openDB().then(async db=>{
-      const tx=db.transaction('videos','readonly'); const store=tx.objectStore('videos')
-      const req=store.getAll(); req.onsuccess=()=>{
-        const vids=req.result.map((v:any)=> ({...v, url: URL.createObjectURL(v.blob)}))
-        if(vids.length>0) setMyVideos(vids.reverse())
-      }
+      const tx=db.transaction('videos','readonly'); const req=tx.objectStore('videos').getAll()
+      req.onsuccess=()=>{ const vids=req.result.map((v:any)=> ({...v, url: URL.createObjectURL(v.blob)})); if(vids.length>0) setMyVideos(vids.reverse()) }
     }).catch(()=>{})
   },[])
 
-  const defaultVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata', thumb:'', isAd:false, likes:246}
-  const adVid={url:'https://videos.pexels.com/video-files/5310859/5310859-uhd_1440_1440_25fps.mp4', caption:'TANGAZO', thumb:'', isAd:true, likes:9999}
+  const defaultVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata', thumb:'', isAd:false}
+  const adVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'TANGAZO', thumb:'', isAd:true}
 
   const baseFeed=myVideos.length>0?myVideos:[defaultVid]
+  const filtered=search ? baseFeed.filter((v:any)=> v.caption.toLowerCase().includes(search.toLowerCase())) : baseFeed
   const feed:any[]=[]
-  baseFeed.forEach((v:any,i:number)=>{
+  filtered.forEach((v:any,i:number)=>{
     feed.push({...v, isAd:false})
-    if((i+1)%3===0) feed.push({...adVid, id:`ad-${i}`, isAd:true})
+    if(!search && (i+1)%3===0) feed.push({...adVid, id:`ad-${i}`, isAd:true})
   })
-  const current=feed[idx%feed.length]
+  const current=feed.length>0?feed[idx%feed.length]:defaultVid
 
-  // COUNT KSH FOR ADS
   useEffect(()=>{
     if(current?.isAd){
-      const t=setTimeout(()=>{
-        const nt=totalEarnings+1
-        localStorage.setItem('vibra_total', String(nt))
-        setTotalEarnings(nt)
-        const nl=liveEarnings+1
-        localStorage.setItem('vibra_live', String(nl))
-        setLiveEarnings(nl)
-      },3000)
+      const t=setTimeout(()=>{ const nt=totalEarnings+1; localStorage.setItem('vibra_total', String(nt)); setTotalEarnings(nt) },3000)
       return ()=>clearTimeout(t)
     }
   },[idx,current])
 
   useEffect(()=>{
-    if(isLiveCam || tab!=='home' || !current?.url) return
-    const v=videoRef.current; if(!v) return; v.src=current.url; v.loop=true; v.muted=false; v.play().catch(()=>{})
-  },[idx,current,isLiveCam,tab,hasInteracted])
+    if(view!=='home' || !current?.url) return
+    const v=videoRef.current; if(!v) return; v.src=current.url; v.loop=true; v.play().catch(()=>{})
+  },[idx,current,view,hasInteracted])
 
-  const handleUpload=async(e:any)=>{
-    const file=e.target.files?.[0]; if(!file) return; if(file.size>30*1024*1024) return alert('File kubwa!')
-    setUploading(true); try{
-      const url=URL.createObjectURL(file); const ve=document.createElement('video'); ve.src=url; ve.muted=true
-      await new Promise(res=> ve.onloadeddata=res as any); ve.currentTime=1
-      await new Promise(res=> setTimeout(res,500))
-      const canvas=document.createElement('canvas'); canvas.width=320; canvas.height=400
-      canvas.getContext('2d')?.drawImage(ve,0,0,320,400); const thumb=canvas.toDataURL()
-      const db=await new Promise<IDBDatabase>((res,rej)=>{ const r=indexedDB.open('vibra_db',1); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error) })
-      const id=Date.now(); await new Promise<void>((resolve,reject)=>{ const tx=db.transaction('videos','readwrite'); tx.objectStore('videos').put({id, blob:file, thumb, caption:caption||'Kamata', tags}); tx.oncomplete=()=>resolve(); tx.onerror=()=>reject(tx.error) })
-      const newV={id, url, thumb, caption:caption||'Kamata', tags, likes:0, isAd:false}
-      setMyVideos(v=> [newV, ...v]); setShowUpload(false); setIdx(0)
-    }catch(err){ alert('Error '+err) } finally{ setUploading(false) }
+  const saveProfile=()=>{
+    localStorage.setItem('vibra_dp', dp); localStorage.setItem('vibra_bio', bio); localStorage.setItem('vibra_name', name); setShowEdit(false)
   }
 
-  const withdraw=async()=>{
-    if(totalEarnings<50) return alert(`Fikisha KSH 50. Una KSH ${totalEarnings}`)
-    if(!confirm(`Tuma KSH ${totalEarnings} kwenda 0740805970?`)) return
-    try{
-      alert('⏳ Inatuma kwa M-Pesa...');
-      const res=await fetch('https://vibra-vertical-video-jhab.vercel.app/api/mpesa',{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ amount: Math.floor(totalEarnings), phone: '254740805970', remarks: 'Vibra Payout @MrVibra' })
-      });
-      const data=await res.json();
-      if(data.ResponseCode==='0' || data.ConversationID){
-        alert(`✅ SAFARICOM IMEOPOKEA! KSH ${totalEarnings}`); localStorage.setItem('vibra_total','0'); setTotalEarnings(0)
-      }else{ alert(`❌ M-Pesa imeshindikana: ${JSON.stringify(data).slice(0,200)}`) }
-    }catch(e){ const msg = e instanceof Error ? e.message : String(e); alert('Error: '+msg); }
-  }
-
-  if(tab==='me'){
+  if(view==='me'){
     return(
       <div style={{minHeight:'100dvh', background:'black', color:'white'}}>
-        <div style={{padding:12, display:'flex', justifyContent:'space-between'}}><b>VIBRA</b><b>KSH {totalEarnings.toFixed(2)}</b></div>
-        <div style={{padding:16}}>
-          <div style={{background:'#111', padding:16, borderRadius:16}}>
-            <div style={{display:'flex', justifyContent:'space-between'}}><div style={{width:90,height:90,borderRadius:45,background:'#333', backgroundImage:`url(${dp})`, backgroundSize:'cover'}}></div><div style={{fontWeight:'900', fontSize:20}}>@MrVibra<br/>KSH {totalEarnings.toFixed(2)}<br/><button onClick={withdraw} style={{background:'#0f0', padding:'8px 16px', borderRadius:8, border:0, fontWeight:'900'}}>TOA</button></div></div>
+        {/* TOP SEARCH + TABS */}
+        <div style={{padding:10, borderBottom:'1px solid #222', position:'sticky', top:0, background:'black', zIndex:5}}>
+          <div style={{display:'flex', gap:8, alignItems:'center'}}>
+            <input value={search} onChange={e=> setSearch(e.target.value)} placeholder='🔍 Search videos, users...' style={{flex:1, background:'#1a1a1a', border:'1px solid #333', borderRadius:20, padding:'8px 14px', color:'white'}}/>
+            <b style={{color:'#ff0'}}>KSH {totalEarnings}</b>
           </div>
-          <div style={{marginTop:20}}><b>📼 Videos ({myVideos.length})</b></div>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:12}}>
-            {myVideos.map((v:any,i:number)=><div key={v.id} onClick={()=>{setTab('home'); setIdx(i)}} style={{background:'#111', borderRadius:12, overflow:'hidden'}}><img src={v.thumb} style={{width:'100%', height:160, objectFit:'cover'}}/><div style={{padding:6,fontSize:12}}>{v.caption}</div></div>)}
+          <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:12, fontWeight:'900'}}>
+            <span onClick={()=> {setView('home'); setTab('following')}} style={{opacity: tab==='following'?1:0.5, borderBottom: tab==='following'?'2px solid white':'none'}}>Following</span>
+            <span onClick={()=> {setView('home'); setTab('foryou')}} style={{opacity: tab==='foryou'?1:0.5, borderBottom: tab==='foryou'?'2px solid white':'none'}}>For You</span>
           </div>
         </div>
+
+        <div style={{padding:16, textAlign:'center'}}>
+          <div onClick={()=> setShowEdit(true)} style={{width:96,height:96,borderRadius:48,margin:'0 auto',background:'#333', backgroundImage:`url(${dp})`, backgroundSize:'cover', border:'2px solid #ff0'}}></div>
+          <div style={{marginTop:10, fontWeight:'900', fontSize:18}}>{name}</div>
+          <div style={{marginTop:4, fontSize:13, color:'#aaa'}}>{bio}</div>
+          <button onClick={()=> setShowEdit(true)} style={{marginTop:10, background:'#222', color:'white', border:'1px solid #444', borderRadius:20, padding:'6px 16px'}}>Edit Profile</button>
+          
+          <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:16}}>
+            <div><b>{following}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Following</span></div>
+            <div><b>{followers}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Followers</span></div>
+            <div><b>{myVideos.length*246 + 1250}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Likes</span></div>
+          </div>
+
+          <div style={{display:'flex', gap:8, marginTop:16, justifyContent:'center'}}>
+            <button onClick={()=> { setFollowers(f=>f+1)}} style={{background:'white', color:'black', padding:'8px 20px', borderRadius:6, fontWeight:'900', border:0}}>Follow</button>
+            <button style={{background:'#222', color:'white', padding:'8px 20px', borderRadius:6, border:'1px solid #444'}}>Message</button>
+          </div>
+        </div>
+
+        <div style={{padding:12}}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}><b>📼 Videos ({myVideos.length})</b><b>❤️ Likes</b></div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:4, marginTop:12}}>
+            {myVideos.map((v:any,i:number)=><div key={v.id} onClick={()=>{setView('home'); setIdx(i)}} style={{aspectRatio:'3/4', background:'#111', borderRadius:8, overflow:'hidden'}}><img src={v.thumb} style={{width:'100%', height:'100%', objectFit:'cover'}}/></div>)}
+          </div>
+        </div>
+
+        {showEdit&&<div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:20}}><div style={{background:'#1a1a1a', padding:20, borderRadius:16, width:'90%'}}>
+          <h3>Edit Profile</h3>
+          <input value={name} onChange={e=> setName(e.target.value)} placeholder='@username' style={{width:'100%', padding:10, marginTop:10, borderRadius:8, background:'#222', color:'white', border:'1px solid #444'}}/>
+          <input value={bio} onChange={e=> setBio(e.target.value)} placeholder='Bio' style={{width:'100%', padding:10, marginTop:10, borderRadius:8, background:'#222', color:'white', border:'1px solid #444'}}/>
+          <input placeholder='DP image URL' value={dp} onChange={e=> setDp(e.target.value)} style={{width:'100%', padding:10, marginTop:10, borderRadius:8, background:'#222', color:'white', border:'1px solid #444'}}/>
+          <div style={{display:'flex', gap:10, marginTop:12}}><button onClick={()=> setShowEdit(false)} style={{flex:1, padding:10, borderRadius:8, background:'#333', color:'white', border:0}}>Cancel</button><button onClick={saveProfile} style={{flex:1, padding:10, borderRadius:8, background:'#ff0', color:'black', fontWeight:'900', border:0}}>Save</button></div>
+        </div></div>}
+
+        <div style={{position:'fixed', bottom:0, left:0, right:0, height:60, background:'black', display:'flex', justifyContent:'space-around', alignItems:'center', borderTop:'1px solid #222'}}><div onClick={()=> setView('home')}>🏠 Home</div><div>🔍</div><div style={{width:36,height:24,background:'white',borderRadius:6}}></div><div>💬</div><div onClick={()=> setView('me')} style={{fontWeight:'900', borderBottom:'2px solid white'}}>👤 You</div></div>
       </div>
     )
   }
 
   return(
     <div style={{position:'fixed', inset:0, background:'black', overflow:'hidden'}} onTouchStart={e=> sy.current=e.touches[0].clientY} onTouchEnd={e=>{ const dy=sy.current - e.changedTouches[0].clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
-      <video ref={videoRef} style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover'}} loop playsInline onClick={()=>{setHasInteracted(true); videoRef.current?.play()}}></video>
+      {/* TOP BAR - SEARCH + FOLLOWING/FOR YOU */}
+      <div style={{position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'8px 12px', background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)'}}>
+        <div style={{display:'flex', gap:8, alignItems:'center'}}>
+          <input value={search} onChange={e=> setSearch(e.target.value)} placeholder='🔍 Search' style={{flex:1, background:'rgba(255,255,255,0.15)', border:'none', borderRadius:20, padding:'6px 12px', color:'white', fontSize:13}}/>
+          <span style={{color:'#ff0', fontWeight:'900', fontSize:13}}>KSH {totalEarnings}</span>
+        </div>
+        <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:8, fontWeight:'900', color:'white', fontSize:15}}>
+          <span onClick={()=> setTab('following')} style={{opacity: tab==='following'?1:0.6, borderBottom: tab==='following'?'2px solid white':'none', paddingBottom:2}}>Following</span>
+          <span onClick={()=> setTab('foryou')} style={{opacity: tab==='foryou'?1:0.6, borderBottom: tab==='foryou'?'2px solid white':'none', paddingBottom:2}}>For You</span>
+        </div>
+      </div>
+
+      <video ref={videoRef} style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', filter: current?.isAd ? 'brightness(1.4)' : 'none'}} loop playsInline onClick={()=>{setHasInteracted(true); videoRef.current?.play()}}></video>
       
-      {/* AD BANNER - ITAONEKANA KAMA NI AD */}
-      {current?.isAd && <div style={{position:'absolute', top:0, left:0, right:0, background:'#ffcc00', color:'black', padding:'10px', textAlign:'center', fontWeight:'900', fontSize:18, zIndex:10}}>🔥 TANGAZO! USISWIPE! Kaa 3sec upate KSH 1 - KSH {totalEarnings} 💰</div>}
-      {!current?.isAd && current && <div style={{position:'absolute', top:60, left:12, background:'rgba(0,0,0,0.5)', padding:'4px 8px', borderRadius:20, fontSize:12, color:'white'}}>{idx+1}/{feed.length} • Swipe juu/chini</div>}
+      {current?.isAd && <div style={{position:'absolute', top:70, left:0, right:0, background:'#ffcc00', color:'black', padding:'8px', textAlign:'center', fontWeight:'900', zIndex:9}}>🔥 TANGAZO! USISWIPE! Kaa 3sec upate KSH 1 - KSH {totalEarnings} 💰</div>}
 
       <div style={{position:'absolute', right:10, bottom:110, display:'flex', flexDirection:'column', gap:14, alignItems:'center'}}>
-        <div onClick={()=> setTab('me')} style={{width:56,height:56,borderRadius:28,background:'linear-gradient(45deg,#f0f,#0ff)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'900'}}>V</div>
-        <div onClick={()=>{ setLiked(!liked); setLikes(l=> liked?l-1:l+1)}} style={{textAlign:'center'}}><div style={{width:48,height:48,borderRadius:24,background:liked?'red':'#333',display:'flex',alignItems:'center',justifyContent:'center'}}>❤️</div><div style={{color:'white',fontSize:12}}>{current?.isAd?9999:likes}</div></div>
-        <div onClick={()=> setShowComments(true)} style={{textAlign:'center'}}><div style={{width:48,height:48,borderRadius:24,background:'#333',display:'flex',alignItems:'center',justifyContent:'center'}}>💬</div><div style={{color:'white',fontSize:12}}>2</div></div>
-        <div onClick={()=> setShowShare(true)} style={{textAlign:'center'}}><div style={{width:48,height:48,borderRadius:24,background:'#333',display:'flex',alignItems:'center',justifyContent:'center'}}>↗️</div><div style={{color:'white',fontSize:10}}>Share</div></div>
+        <div onClick={()=> setView('me')} style={{width:52,height:52,borderRadius:26,background:'#333',border:'2px solid white', backgroundImage:`url(${dp})`, backgroundSize:'cover', display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'900'}}>{!dp&&'V'}</div>
+        <div onClick={()=>{ setLiked(!liked); setLikes(l=> liked?l-1:l+1)}} style={{textAlign:'center'}}><div style={{width:48,height:48,borderRadius:24,background:liked?'#ff2a6d':'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center', fontSize:22}}>❤️</div><div style={{color:'white',fontSize:12,fontWeight:'900'}}>{current?.isAd?9999:likes}</div></div>
+        <div style={{textAlign:'center'}}><div style={{width:48,height:48,borderRadius:24,background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center', fontSize:20}}>💬</div><div style={{color:'white',fontSize:11}}>2.1K</div></div>
+        <div style={{textAlign:'center'}}><div style={{width:48,height:48,borderRadius:24,background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center', fontSize:18}}>↗️</div><div style={{color:'white',fontSize:10}}>Share</div></div>
       </div>
 
       <div style={{position:'absolute', bottom:85, left:12, right:80, color:'white'}}>
-        <div style={{fontWeight:'900'}}>@MrVibra • {idx+1}/{feed.length} • {current?.isAd?'💰 TANGAZO':'🎬 Kamata'}</div>
-        <div style={{marginTop:4, background: current?.isAd ? '#ffcc00' : 'transparent', color: current?.isAd ? 'black' : 'white', padding: current?.isAd ? '6px 10px' : 0, borderRadius:8, fontWeight: current?.isAd ? '900' : '400', fontSize: current?.isAd ? 18 : 14}}>{current?.isAd ? '🔥 Kaa hapa sec 3 upate KSH 1! USISWIPE!' : current?.caption}</div>
-        <div style={{fontSize:12, color:'#ff0', marginTop:4}}>#VIBRA #viral #fyp</div>
+        <div style={{fontWeight:'900'}}>{name} • {current?.isAd?'💰 TANGAZO':'✓ Following'}</div>
+        <div style={{marginTop:4, background: current?.isAd ? '#ffcc00' : 'transparent', color: current?.isAd ? 'black' : 'white', padding: current?.isAd ? '6px 10px' : 0, borderRadius:8, fontWeight: current?.isAd ? '900' : '400'}}>{current?.isAd ? 'Kaa hapa sec 3 upate KSH 1! USISWIPE!' : current?.caption}</div>
+        <div style={{fontSize:13, marginTop:4}}>🎵 Original sound - {name} • {bio.slice(0,30)}</div>
       </div>
 
-      <div style={{position:'absolute', bottom:0, left:0, right:0, height:60, background:'black', display:'flex', justifyContent:'space-around', alignItems:'center', borderTop:'1px solid #222'}}>
-        <div onClick={()=> setTab('home')} style={{color:'white'}}>🏠 Home</div>
-        <div onClick={()=> setShowUpload(true)} style={{width:60,height:36,background:'white',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'black',fontWeight:'900'}}>+</div>
-        <div onClick={()=> setTab('me')} style={{color:'#ffcc00', fontWeight:'900'}}>💰 KSH {totalEarnings}</div>
+      <div style={{position:'absolute', bottom:0, left:0, right:0, height:60, background:'black', display:'flex', justifyContent:'space-around', alignItems:'center', borderTop:'1px solid #222', color:'white'}}>
+        <div onClick={()=> setView('home')} style={{fontWeight:'900', borderBottom:'2px solid white'}}>🏠 Home</div>
+        <div>🔍 Discover</div>
+        <div style={{width:40,height:28,background:'white',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',color:'black',fontWeight:'900'}}>+</div>
+        <div>📥 Inbox</div>
+        <div onClick={()=> setView('me')}>👤 You</div>
       </div>
 
-      {showUpload&&<div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:20}}><div style={{background:'#111', padding:20, borderRadius:16, width:'90%'}}><h3 style={{color:'white'}}>Pakia Video</h3><input placeholder='Caption' value={caption} onChange={e=> setCaption(e.target.value)} style={{width:'100%', padding:10, marginTop:10, borderRadius:8}}/><input type='file' accept='video/*' onChange={handleUpload} style={{marginTop:12, color:'white'}}/><div style={{marginTop:12, display:'flex', gap:10}}><button onClick={()=> setShowUpload(false)} style={{flex:1, padding:10, borderRadius:8}}>Funga</button></div>{uploading&&<div style={{color:'white', marginTop:10}}>Inapakia...</div>}</div></div>}
-      {!hasInteracted&&<div onClick={()=>{setHasInteracted(true); videoRef.current?.play()}} style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:20, fontWeight:'900'}}>Bonyeza kucheza ▶️</div>}
+      {!hasInteracted&&<div onClick={()=>{setHasInteracted(true); videoRef.current?.play()}} style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:18, fontWeight:'900'}}>Bonyeza kucheza ▶️</div>}
     </div>
   )
 }
