@@ -47,13 +47,28 @@ function VibraFixedHome(){
     }).catch(()=>{})
   },[])
 
-  const defaultVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Default', tags:'#VIBRA #Mombasa #viral #fyp #konde', thumb:'', isDefault:true}
-  const feed=myVideos.length>0?myVideos:[defaultVid]
-  const current=feed[idx%feed.length]
+  const defaultVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Vibra', thumb:'', isAd:false}
+const adVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'🔥 TANGAZO - Kaa sec 3 upate KSH 1', thumb:'', isAd:true, likes:999}
 
-  useEffect(()=>{
-    const pause=()=> videoRef.current?.pause()
-    const onHidden=()=>{ if(document.hidden) pause(); else if(hasInteracted && !isLiveCam && tab==='home') videoRef.current?.play().catch(()=>{}) }
+// TENGENEZA FEED YENYE ADS KILA VIDEO 3
+const baseFeed=myVideos.length>0?myVideos:[defaultVid]
+const feed:any[]=[]
+baseFeed.forEach((v:any,i:number)=>{
+  feed.push(v)
+  if((i+1)%3===0) feed.push({...adVid, id:`ad-${i}`})
+})
+const current=feed[idx%feed.length]
+useEffect(()=>{
+  if(current?.isAd){
+    const t=setTimeout(()=>{
+      const nt=totalEarnings+1
+      localStorage.setItem('vibra_total', String(nt))
+      setTotalEarnings(nt)
+    },3000)
+    return ()=>clearTimeout(t)
+  }
+},[idx, current])
+  
     document.addEventListener('visibilitychange', onHidden); window.addEventListener('blur', pause)
     return ()=>{ document.removeEventListener('visibilitychange', onHidden); window.removeEventListener('blur', pause) }
   },[hasInteracted,isLiveCam,tab])
