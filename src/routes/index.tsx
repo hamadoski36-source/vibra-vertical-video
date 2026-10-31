@@ -50,10 +50,40 @@ function VibraFixed(){
 
   const feed = myVideos.length===0? [{url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata', tags:'#VIBRA #Mombasa #viral #fyp #konde', username:'@MrVibra'}] : (()=>{ let l:any[]=[]; let a=0; myVideos.forEach((v,i)=>{ l.push(v); if((i+1)%3===0 && myAds[a]){ l.push({...myAds[a], isAd:true}); a++ } }); return l })()
 
-  const current=feed[idx % feed.length]
+   const current=feed[idx % feed.length]
+
+  // FIX YA SAUTI IKATE UKITOKA APP - KAMA TIKTOK HALISI
+  useEffect(()=>{
+    const handleVisibility = () => {
+      const v = videoRef.current
+      const liveV = liveCamRef.current
+      if(document.hidden){
+        v?.pause()
+        if(liveV) (liveV.srcObject as MediaStream)?.getTracks().forEach(t=> t.enabled=false)
+        console.log('🔇 VIBRA: Sauti imekatwa - umetoka app')
+      } else {
+        if(hasInteracted && !isLiveCam && tab==='home'){
+          if(v){ v.muted = muted; v.play().catch(()=>{}) }
+          if(liveV) (liveV.srcObject as MediaStream)?.getTracks().forEach(t=> t.enabled=true)
+        }
+      }
+    }
+    const handlePageHide = () => { videoRef.current?.pause(); liveCamRef.current && ((liveCamRef.current.srcObject as MediaStream)?.getTracks().forEach(t=> t.enabled=false)) }
+    
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('pagehide', handlePageHide)
+    window.addEventListener('blur', handlePageHide)
+    window.addEventListener('beforeunload', handlePageHide)
+    
+    return ()=>{
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('pagehide', handlePageHide)
+      window.removeEventListener('blur', handlePageHide)
+      window.removeEventListener('beforeunload', handlePageHide)
+    }
+  }, [hasInteracted, muted, isLiveCam, tab])
 
   useEffect(()=>{ if(!isLiveCam && tab==='home'){ const v=videoRef.current; if(!v) return; const onTime=()=> setProgress((v.currentTime/(v.duration||1))*100); const onEnd=()=> setIdx(i=> (i+1)%feed.length); v.addEventListener('timeupdate', onTime); v.addEventListener('ended', onEnd); v.muted=!hasInteracted; v.load(); v.play().catch(()=>{}); return ()=>{ v.removeEventListener('timeupdate', onTime); v.removeEventListener('ended', onEnd) } } }, [idx, hasInteracted, isLiveCam, tab, feed.length])
-  useEffect(()=>{ if(document.hidden) videoRef.current?.pause(); }, [])
 
   const goLive=async()=>{
     try{
