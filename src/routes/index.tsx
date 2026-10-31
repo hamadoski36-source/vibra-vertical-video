@@ -1,56 +1,48 @@
 import { createFileRoute } from '@tanstack/react-router'
-export const Route = createFileRoute('/')({ component: VibraFinal })
+export const Route = createFileRoute('/')({ component: Page })
 
-function VibraFinal(){
-  // BADILISHA HIZI LINK 3 NA VIDEO ZAKO ZA MONALISA UKIUPLOAD
-  const monalisaVideos = [
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
-  ]
-
-  return (
-    <div style={{height:'100dvh', background:'black', overflowY:'scroll', scrollSnapType:'y mandatory', fontFamily:'system-ui'}}>
-      
-      {/* TOP */}
-      <div style={{position:'fixed', top:0, left:0, right:0, zIndex:20, color:'white', padding:'14px 12px', display:'flex', justifyContent:'space-between', background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)'}}>
-        <span style={{fontWeight:900, letterSpacing:2, fontSize:18}}>VIBRA</span>
-        <span style={{fontWeight:700, fontSize:18, borderBottom:'2px solid white'}}>For You</span>
-        <span style={{fontSize:18}}>🔍</span>
+function Page(){
+  return(
+    <div style={{height:'100vh', background:'#000', overflowY:'scroll', scrollSnapType:'y mandatory', margin:0}}>
+      {/* HEADER */}
+      <div style={{position:'fixed', top:0, width:'100%', zIndex:10, display:'flex', justifyContent:'space-between', padding:'12px', color:'white', background:'linear-gradient(black, transparent)'}}>
+        <b>VIBRA</b><b style={{borderBottom:'2px solid white'}}>For You</b><span>🔍</span>
       </div>
-      <div style={{position:'fixed', top:60, left:12, zIndex:20, background:'#ff2a4d', color:'white', padding:'2px 8px', borderRadius:4, fontSize:12, fontWeight:700}}>LIVE</div>
+      <div style={{position:'fixed', top:55, left:12, zIndex:10, background:'#ff2d55', color:'white', fontSize:12, padding:'2px 8px', borderRadius:4, fontWeight:700}}>LIVE</div>
 
-      {monalisaVideos.map((src, i)=>(
-        <div key={i} style={{height:'100dvh', width:'100vw', scrollSnapAlign:'start', position:'relative', background:'black'}}>
-          <video src={src} autoPlay muted loop playsInline preload="auto"
-            style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover'}} 
-          />
-          
-          {/* RIGHT */}
-          <div style={{position:'absolute', right:10, bottom:110, color:'white', display:'flex', flexDirection:'column', alignItems:'center', gap:18}}>
-            <div style={{width:52, height:52, borderRadius:26, background:'#7c3aed', border:'2px solid white', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:22}}>M</div>
-            <div style={{textAlign:'center', fontWeight:600}}>🤍<br/><span style={{fontSize:12}}>1.4K</span></div>
-            <div style={{textAlign:'center', fontWeight:600}}>💬<br/><span style={{fontSize:12}}>25</span></div>
-            <div style={{textAlign:'center', fontWeight:600}}>🔖<br/><span style={{fontSize:12}}>201</span></div>
-            <div style={{textAlign:'center', fontWeight:600}}>↗️</div>
-          </div>
-
-          {/* CAPTION */}
-          <div style={{position:'absolute', left:12, bottom:75, right:80, color:'white'}}>
-            <div style={{fontWeight:700, fontSize:15}}>@MaRavel movie MONALISA#62</div>
-            <div style={{fontSize:13, marginTop:4, opacity:0.9}}>Epic scene — destiny awaits in the halls of Monalisa ... more</div>
-            <div style={{fontSize:13, marginTop:4}}>♫ original sound - MaRavel</div>
-          </div>
+      {/* VIDEO 1 - HII NDIO INAONDOA NYEUSI */}
+      <div style={{height:'100vh', scrollSnapAlign:'start', position:'relative', background:'#111'}}>
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline 
+          crossOrigin="anonymous"
+          src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+          style={{width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0}}
+          onError={(e)=>console.log('video error', e)}
+        />
+        {/* RIGHT BUTTONS */}
+        <div style={{position:'absolute', right:10, bottom:120, color:'white', textAlign:'center'}}>
+          <div style={{width:52, height:52, background:'#7c3aed', borderRadius:26, border:'2px solid white', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900, fontSize:20}}>M</div>
+          <div style={{marginTop:14}}>🤍<br/><small>1.4K</small></div>
+          <div style={{marginTop:10}}>💬<br/><small>25</small></div>
+          <div style={{marginTop:10}}>🔖<br/><small>201</small></div>
         </div>
-      ))}
+        <div style={{position:'absolute', left:10, bottom:80, color:'white', fontSize:14}}>
+          <b>@MaRavel movie MONALISA#62</b><br/>
+          Epic scene — destiny awaits in the halls of Monalisa ... more<br/>
+          ♫ original sound - MaRavel
+        </div>
+      </div>
 
-      {/* BOTTOM NAV */}
-      <div style={{position:'fixed', bottom:0, left:0, right:0, height:62, background:'black', borderTop:'1px solid #1f1f1f', display:'flex', justifyContent:'space-around', alignItems:'center', color:'white', zIndex:20}}>
-        <span style={{display:'flex', flexDirection:'column', alignItems:'center', fontSize:11}}><span style={{fontSize:22}}>🏠</span>Home</span>
-        <span style={{display:'flex', flexDirection:'column', alignItems:'center', fontSize:11, opacity:0.6}}><span style={{fontSize:22}}>🔍</span>Discover</span>
-        <span style={{width:52, height:36, background:'white', color:'black', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:900}}>+</span>
-        <span style={{display:'flex', flexDirection:'column', alignItems:'center', fontSize:11, opacity:0.6}}><span style={{fontSize:22}}>📥</span>Inbox</span>
-        <span style={{display:'flex', flexDirection:'column', alignItems:'center', fontSize:11, opacity:0.6}}><span style={{fontSize:22}}>👤</span>Profile</span>
+      {/* BOTTOM */}
+      <div style={{position:'fixed', bottom:0, width:'100%', height:62, background:'black', display:'flex', justifyContent:'space-around', alignItems:'center', color:'white', borderTop:'1px solid #222'}}>
+        <span>🏠<br/><small>Home</small></span>
+        <span>🔍<br/><small>Discover</small></span>
+        <span style={{background:'white', color:'black', padding:'6px 18px', borderRadius:10, fontWeight:900, fontSize:20}}>+</span>
+        <span>📥<br/><small>Inbox</small></span>
+        <span>👤<br/><small>Profile</small></span>
       </div>
     </div>
   )
