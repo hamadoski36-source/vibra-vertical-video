@@ -130,9 +130,10 @@ const withdraw=async()=>{
     }else{
       alert(`❌ M-Pesa imeshindikana: ${JSON.stringify(data).slice(0,200)}`);
     }
-  }catch(e:any){
-    alert('Error: '+e.message);
-  }
+  }catch(e){
+  const msg = e instanceof Error ? e.message : String(e);
+  alert('Error: '+msg);
+}
 }
   if(tab==='me'){
     return(
