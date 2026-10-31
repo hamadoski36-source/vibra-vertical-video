@@ -1,112 +1,71 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState, useRef, useEffect } from 'react';
-import { Heart, MessageCircle, Bookmark, Share2, Plus, Home, Search, Inbox, User, ArrowLeft, Music, Volume2, VolumeX } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, Share2, Plus, Home, Search, User, ArrowLeft, Music, Download, Forward, Mic } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import '../interface.css';
-
 export const Route = createFileRoute('/')({ component: Vibra });
-
-type Clip = { id: string; u: string; c: string; t: string[]; user: string; likes: number };
-
-const SELF='vibra-boy';
+type Clip = { id: string; u: string; c: string; t: string[]; user: string; likes: string; comments: string };
+const SELF='vibra_boy';
 const DEFAULTS:Clip[]=[
- {id:'1',u:'https://www.w3schools.com/html/mov_bbb.mp4',c:'Watu wa Mombasa 🔥 Vibra Familia! #vibra #mombasa',t:['#vibra','#mombasa'],user:SELF,likes:12},
- {id:'2',u:'https://www.w3schools.com/html/movie.mp4',c:'Bear Love Story 🐻❤️ Together Familia',t:['#love','#vibra'],user:SELF,likes:5},
+ {id:'1',u:'https://res.cloudinary.com/dwqkvhqwu/video/upload/v1/vibra/together.mp4',c:'#together #viral #vibra #fyp',t:['#together'],user:SELF,likes:'853',comments:'12K'},
 ];
-
 function Vibra(){
  const [all,setAll]=useState(DEFAULTS);
- const [tab,setTab]=useState('foryou');
  const [page,setPage]=useState('home');
- const [muted,setMuted]=useState(true);
+ const [earnings,setEarnings]=useState(()=>{ const s=typeof window!=='undefined'?localStorage.getItem('vibra_earnings'):null; return s?parseFloat(s):3.18; });
  const [likes,setLikes]=useState(new Set<string>());
- const [saved,setSaved]=useState(new Set<string>());
  const fileRef=useRef<HTMLInputElement>(null);
- const feedRef=useRef<HTMLDivElement>(null);
-
- const myVideos=all.filter(x=>x.user===SELF);
- const toggle=(s:any,id:string)=>s((p:Set<string>)=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n});
-
- useEffect(()=>{
-  const t=setTimeout(()=>{document.querySelectorAll('video').forEach(v=>{(v as HTMLVideoElement).muted=true;(v as HTMLVideoElement).play().catch(()=>{});});},500);
-  return ()=>clearTimeout(t);
- },[page,tab,all]);
-
- function upload(e:React.ChangeEvent<HTMLInputElement>){
-  const f=e.target.files?.[0]; if(!f) return; e.target.value='';
-  const url=URL.createObjectURL(f);
-  setAll(p=>[{id:crypto.randomUUID(),u:url,c:'My Vibra Video 🔥',t:['#vibra'],user:SELF,likes:0},...p]);
-  setPage('me');
- }
-
+ const clickAd=()=>{ const n=Number((earnings+0.06).toFixed(2)); setEarnings(n); localStorage.setItem('vibra_earnings',String(n)); window.open('https://www.nike.com','_blank'); };
+ useEffect(()=>{ const t=setTimeout(()=>{document.querySelectorAll('video').forEach(v=>{(v as HTMLVideoElement).play().catch(()=>{});});},500); return ()=>clearTimeout(t); },[page]);
+ function upload(e:React.ChangeEvent<HTMLInputElement>){ const f=e.target.files?.[0]; if(!f) return; e.target.value=''; const url=URL.createObjectURL(f); setAll(p=>[{id:crypto.randomUUID(),u:url,c:'#together #viral #vibra',t:['#vibra'],user:SELF,likes:'0',comments:'0'},...p]); }
  return(
   <div className="relative w-screen h-screen bg-black text-white overflow-hidden">
    <input ref={fileRef} type="file" accept="video/*,image/*" className="hidden" onChange={upload}/>
-
-   {page==='home'&&<section className="absolute inset-0">
-    <header className="absolute top-0 left-0 right-0 z-20 flex justify-center gap-6 pt-12 pb-2 bg-gradient-to-b from-black/70 to-transparent">
-     <button className={tab==='foryou'?'font-bold text-white border-b-2 border-white':'opacity-60'} onClick={()=>setTab('foryou')}>For You</button>
-     <button className={tab==='following'?'font-bold text-white border-b-2 border-white':'opacity-60'} onClick={()=>setTab('following')}>Following</button>
+   {/* TOP AD BANNER - KAMA KWENYE PICHA YAKO */}
+   <div className="absolute top-0 left-0 right-0 z-30 bg-[#3a2a1a] text-amber-200 text-[11px] py-1 px-2 flex justify-between items-center">
+    <button onClick={clickAd} className="flex-1 text-center font-bold">Nike - Just Do It - 50% OFF Mombasa! - ${earnings.toFixed(2)} earned!</button>
+    <div className="flex gap-3 ml-2"><Download size={16}/><Forward size={16}/><span className="bg-white/20 px-1 rounded text-[9px]">AD</span></div>
+   </div>
+   <section className="absolute inset-0 pt-7 pb-[60px]">
+    <header className="absolute top-7 left-0 right-0 z-20 flex justify-between items-center px-3 py-2 bg-black/80">
+     <strong className="text-[16px]">Vibra</strong>
+     <div className="flex gap-3 text-[12px]"><span className="opacity-60">@@vibra-boy</span><span className="bg-red-600 px-2 rounded text-white">LIVE</span><span className="border-b">For You</span></div>
     </header>
-
-    <div ref={feedRef} className="h-full overflow-y-scroll snap-y snap-mandatory">
+    <div className="h-full w-full relative bg-black">
      {all.map(clip=>(
-      <div key={clip.id} className="relative h-screen w-screen snap-start shrink-0 bg-black" onClick={e=>{const v=e.currentTarget.querySelector('video') as HTMLVideoElement; if(v){v.play().catch(()=>{});}}}>
-       <video src={clip.u} loop muted={muted} autoPlay playsInline preload="auto" onLoadedData={e=>e.currentTarget.play().catch(()=>{})} className="w-full h-full object-cover"/>
-       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 pointer-events-none"/>
-       
-       <div className="absolute bottom-[100px] left-3 right-20">
-        <p className="font-bold">@{clip.user} 🌍</p>
-        <p className="text-sm mt-1">{clip.c}</p>
+      <div key={clip.id} className="relative h-full w-full">
+       <img src="https://i.pinimg.com/originals/5a/8a/7b/5a8a7b9f5c1d2e3f4a5b6c7d8e9f0a1b.jpg" alt="" className="w-full h-full object-contain bg-[#e9e6d6] hidden"/>
+       {/* Badala ya image, tunatumia video ya picha yako ya Together Forever */}
+       <div className="w-full h-full bg-[#f5f1e8] flex flex-col items-center justify-center p-4">
+        <h1 className="text-4xl font-bold text-[#ff3b6e] italic" style={{fontFamily:'cursive'}}>Together Forever ❤️♾️</h1>
+        <div className="mt-4 w-full bg-white p-2 shadow-lg">
+         <p className="text-center text-black/40 text-xs">Hapa video yako ya Together Forever itaonekana kama picha yako</p>
+         <video src={clip.u} poster="https://i.ibb.co/5X8d6pZ/together.jpg" loop autoPlay muted playsInline preload="auto" onLoadedData={e=>e.currentTarget.play().catch(()=>{})} className="w-full h-[70vh] object-contain bg-white" />
+        </div>
        </div>
-
-       <div className="absolute bottom-[130px] right-3 flex flex-col gap-5 z-30">
-        <button onClick={()=>toggle(setLikes,clip.id)} className="flex flex-col items-center"><Heart className={likes.has(clip.id)?'fill-red-500 text-red-500':''} size={28}/><span className="text-xs mt-1">{clip.likes+Number(likes.has(clip.id))}</span></button>
-        <button className="flex flex-col items-center"><MessageCircle size={28}/><span className="text-xs mt-1">Comment</span></button>
-        <button className="flex flex-col items-center"><Music size={28}/><span className="text-xs mt-1">Lyrics</span></button>
-        <button onClick={()=>toggle(setSaved,clip.id)} className="flex flex-col items-center"><Bookmark className={saved.has(clip.id)?'fill-white':''} size={28}/><span className="text-xs mt-1">Save</span></button>
-        <button className="flex flex-col items-center"><Share2 size={28}/><span className="text-xs mt-1">Share</span></button>
+       <div className="absolute bottom-20 left-3">
+        <p className="font-bold text-sm">@{clip.user}</p>
+        <p className="text-xs mt-1">{clip.c}</p>
+        <p className="text-[11px] mt-2 bg-white/20 rounded-full px-2 py-1">🎵 Lyrics - #together #viral #vi...</p>
        </div>
-
-       <button onClick={()=>setMuted(!muted)} className="absolute top-20 right-3 z-20 bg-black/40 p-2 rounded-full">{muted?<VolumeX size={18}/>:<Volume2 size={18}/>}</button>
+       <div className="absolute bottom-24 right-2 flex flex-col gap-5 items-center">
+        <button onClick={()=>setLikes(prev=>{const n=new Set(prev); n.has(clip.id)?n.delete(clip.id):n.add(clip.id); return n;})} className="flex flex-col items-center"><Heart className={likes.has(clip.id)?'fill-red-500 text-red-500':''} size={26}/><span className="text-[11px]">{clip.likes}</span></button>
+        <button className="flex flex-col items-center"><MessageCircle size={24}/><span className="text-[11px]">{clip.comments}</span></button>
+        <button className="flex flex-col items-center"><Mic size={20}/><span className="text-[10px]">Lyrics</span></button>
+        <button className="flex flex-col items-center"><Share2 size={20}/><span className="text-[10px] text-red-400">🚀</span></button>
+       </div>
+       <div className="absolute top-12 left-2 bg-red-600 text-white text-[10px] px-2 py-1 rounded flex items-center gap-1"><span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>LIVE • 0</div>
       </div>
      ))}
     </div>
-
-    <nav className="absolute bottom-0 left-0 right-0 flex justify-around items-center py-3 bg-black border-t border-white/10">
-     <button className="flex flex-col items-center text-white"><Home size={24}/><span className="text-[10px]">Home</span></button>
-     <button onClick={()=>setPage('explore')} className="flex flex-col items-center opacity-60"><Search size={24}/><span className="text-[10px]">Explore</span></button>
-     <button onClick={()=>fileRef.current?.click()} className="flex flex-col items-center"><div className="bg-white text-black px-5 py-2 rounded-lg"><Plus size={20}/></div></button>
-     <button onClick={()=>setPage('inbox')} className="flex flex-col items-center opacity-60"><Inbox size={24}/><span className="text-[10px]">Inbox</span></button>
-     <button onClick={()=>setPage('me')} className="flex flex-col items-center opacity-60"><User size={24}/><span className="text-[10px]">Me</span></button>
-    </nav>
-   </section>}
-
-   {page==='me'&&<section className="absolute inset-0 bg-white text-black flex flex-col">
-    <header className="flex justify-between items-center px-4 py-3 border-b shrink-0"><Button variant="ghost" size="icon" onClick={()=>setPage('home')}><ArrowLeft/></Button><strong>Vibra</strong><Button variant="ghost" size="icon" onClick={()=>fileRef.current?.click()}><Plus/></Button></header>
-    <div className="flex-1 overflow-y-auto">
-     <div className="flex justify-around mt-5 text-black">
-      <div className="text-center"><strong>1</strong><p className="text-xs opacity-60">Following</p></div>
-      <div className="text-center"><strong>0</strong><p className="text-xs opacity-60">Followers</p></div>
-      <div className="text-center"><strong>17</strong><p className="text-xs opacity-60">Likes</p></div>
-      <div className="text-center"><strong>0</strong><p className="text-xs opacity-60">Friends</p></div>
-     </div>
-     <div className="px-4 mt-4"><p className="font-bold text-sm">@vibra-boy 🌍</p><p className="text-xs opacity-60 mt-1">Together Familia Worldwide | #vibra #worldwide | Mombasa, Kenya</p><Button className="mt-3 w-full" variant="outline">Edit profile</Button></div>
-     <div className="grid grid-cols-3 gap-1 mt-4">
-      {myVideos.map(v=><div key={v.id} className="aspect-[9/16] bg-black"><video src={v.u} className="w-full h-full object-cover" muted loop autoPlay playsInline preload="auto" onLoadedData={e=>e.currentTarget.play().catch(()=>{})}/></div>)}
-     </div>
-    </div>
-    <nav className="flex justify-around py-3 border-t bg-white shrink-0">
-     <button onClick={()=>setPage('home')} className="flex flex-col items-center opacity-60"><Home size={22}/><span className="text-[10px]">Home</span></button>
-     <button onClick={()=>setPage('explore')} className="flex flex-col items-center opacity-60"><Search size={22}/><span className="text-[10px]">Explore</span></button>
-     <button onClick={()=>fileRef.current?.click()} className="bg-black text-white px-4 py-1 rounded-md"><Plus/></button>
-     <button onClick={()=>setPage('inbox')} className="flex flex-col items-center opacity-60"><Inbox size={22}/><span className="text-[10px]">Inbox</span></button>
-     <button className="flex flex-col items-center text-black"><User size={22}/><span className="text-[10px]">Me</span></button>
-    </nav>
-   </section>}
-
-   {page==='explore'&&<section className="absolute inset-0 bg-white text-black p-6"><Button variant="ghost" onClick={()=>setPage('home')}><ArrowLeft/> Back</Button><h1 className="text-xl font-bold mt-6">Explore 🔍</h1><p className="opacity-60 mt-2">Search coming soon...</p></section>}
-   {page==='inbox'&&<section className="absolute inset-0 bg-white text-black p-6"><Button variant="ghost" onClick={()=>setPage('home')}><ArrowLeft/> Back</Button><h1 className="text-xl font-bold mt-6">Inbox - Live 🔴</h1><p className="opacity-60 mt-2">Messages here</p></section>}
+   </section>
+   <nav className="absolute bottom-0 left-0 right-0 h-[60px] bg-black border-t border-white/10 flex justify-around items-center z-30">
+    <button onClick={()=>setPage('home')} className="flex flex-col items-center text-white"><div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">😊</div><span className="text-[10px] mt-1">Home</span></button>
+    <button className="flex flex-col items-center opacity-60"><Search size={20}/><span className="text-[10px]">Explore</span></button>
+    <button onClick={()=>fileRef.current?.click()} className="bg-[#3a3a3a] px-6 py-2 rounded-md"><Plus size={18}/></button>
+    <button className="flex flex-col items-center text-red-500"><div className="w-3 h-3 bg-red-500 rounded-full"></div><span className="text-[10px] mt-1">LIVE</span></button>
+    <button className="flex flex-col items-center text-blue-400"><User size={20}/><span className="text-[10px]">Me • ${earnings.toFixed(2)}</span></button>
+   </nav>
   </div>
  );
 }
