@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export const Route = createFileRoute('/')({
   component: VibraFixed,
@@ -7,7 +7,8 @@ export const Route = createFileRoute('/')({
 
 function VibraFixed() {
   const videoRef = useRef<HTMLVideoElement>(null)
-  
+  const [muted, setMuted] = useState(true)
+
   useEffect(() => {
     if(videoRef.current){
       videoRef.current.play().catch(()=>{})
@@ -15,43 +16,48 @@ function VibraFixed() {
   }, [])
 
   return (
-    <div style={{position:'fixed', inset:0, background:'black', overflow:'hidden'}}>
+    <div style={{position:'fixed', inset:0, background:'black', overflow:'hidden', width:'100vw', height:'100vh'}}>
       <video
         ref={videoRef}
         autoPlay
-        muted
+        muted={muted}
         loop
         playsInline
         style={{width:'100%', height:'100%', objectFit:'cover'}}
-        src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        src="https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4"
+        onClick={()=> setMuted(false)}
       />
-      
-      {/* UI JUU */}
-      <div style={{position:'absolute', top:0, left:0, right:0, padding:12, display:'flex', justifyContent:'space-between', color:'white', fontWeight:700, background:'linear-gradient(to bottom, black, transparent)'}}>
+
+      {/* UI TOP */}
+      <div style={{position:'absolute', top:0, left:0, right:0, padding:'10px 12px', display:'flex', justifyContent:'space-between', color:'white', fontWeight:'bold'}}>
         <span>VIBRA</span>
         <span style={{borderBottom:'2px solid white'}}>For You</span>
         <span>🔍</span>
       </div>
 
-      <div style={{position:'absolute', top:55, left:12, background:'#ff2a55', color:'white', fontSize:12, padding:'2px 8px', borderRadius:4}}>LIVE</div>
+      <div style={{position:'absolute', top:55, left:12, background:'#ff0a54', color:'white', padding:'2px 8px', borderRadius:4, fontSize:12, fontWeight:'bold'}}>LIVE</div>
 
-      {/* RIGHT */}
-      <div style={{position:'absolute', right:10, bottom:100, color:'white', textAlign:'center', display:'flex', flexDirection:'column', gap:12}}>
-        <div style={{width:50, height:50, background:'#7d3aed', borderRadius:25, border:'2px solid white', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:900}}>M</div>
+      {/* RIGHT BUTTONS */}
+      <div style={{position:'absolute', right:10, bottom:100, color:'white', display:'flex', flexDirection:'column', gap:18, alignItems:'center'}}>
+        <div style={{width:50, height:50, background:'#7d3aed', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center'}}>M</div>
         <span>🤍<br/>1.4K</span>
         <span>💬<br/>25</span>
-        <span>🔖<br/>201</span>
-      </div>
-
-      {/* CAPTION */}
-      <div style={{position:'absolute', left:12, bottom:75, color:'white', fontSize:14, maxWidth:'70%'}}>
-        <b>@MaRavel movie MONALISA#62</b><br/>Epic scene — destiny awaits in the halls of Monalisa ... more<br/>♫ original sound - MaRavel
+        <span>🚀<br/>201</span>
       </div>
 
       {/* BOTTOM */}
-      <div style={{position:'absolute', bottom:0, left:0, right:0, height:60, background:'black', display:'flex', justifyContent:'space-around', alignItems:'center', color:'white'}}>
-        <span>🏠 Home</span><span>🔍 Discover</span><span style={{background:'white', color:'black', padding:'5px 15px', borderRadius:10, fontWeight:900}}>+</span><span>📥 Inbox</span><span>👤 Profile</span>
+      <div style={{position:'absolute', bottom:20, left:12, right:80, color:'white'}}>
+        <div style={{fontWeight:'bold'}}>@MaRavel movie MONALISA#62</div>
+        <div style={{fontSize:13, marginTop:4}}>Epic scene — destiny awaits in the halls of Monalisa ... more</div>
+        <div style={{fontSize:12, marginTop:4}}>♫ original sound - MaRavel</div>
       </div>
+
+      {/* SOUND BUTTON */}
+      {muted && (
+        <button onClick={()=> {setMuted(false); videoRef.current?.play()}} style={{position:'absolute', bottom:90, left:'50%', transform:'translateX(-50%)', background:'rgba(255,255,255,0.2)', backdropFilter:'blur(10px)', color:'white', border:'none', padding:'8px 16px', borderRadius:20, fontSize:13}}>
+          🔊 Tap for sound
+        </button>
+      )}
     </div>
   )
 }
