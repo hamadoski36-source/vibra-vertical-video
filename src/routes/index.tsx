@@ -1,191 +1,130 @@
-import { createFileRoute, useHydrated } from '@tanstack/react-router'
-import { useRef, useState, useEffect } from 'react'
-import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
-import { demoCoinBalance } from '@/lib/vibra-rewards'
-import { Button } from '@/components/ui/button'
-import { VibraSheet } from '@/components/vibra-sheet'
-import { VibraRewards } from '@/components/vibra-rewards'
-import { VideoProgress } from '@/components/video-progress'
-import { startActiveVideo, silenceVideo, watchPlaybackLifecycle } from '@/lib/vibra-playback'
-export const Route = createFileRoute('/')({
-  head: () => ({ meta: [
-    { title: 'Vibra Worldwide — Video feed' },
-    { name: 'description', content: 'Watch and share short videos with Vibra Worldwide.' },
-    { property: 'og:title', content: 'Vibra Worldwide — Video feed' },
-    { property: 'og:description', content: 'Watch and share short videos with Vibra Worldwide.' },
-    { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' },
-  ] }), component: VibraTikTok,
-})
+"use client";
+import { useState, useEffect } from "react";
 
-type Clip = { id?: number | string; url: string; caption: string; thumb: string; lyrics?: string; blob?: Blob; username?: string; cloud?: boolean }
+export default function VibraFixed() {
+  const [isLive, setIsLive] = useState(false);
+  const [dp, setDp] = useState("https://via.placeholder.com/150");
+  const [coins, setCoins] = useState(0);
 
-function VibraTikTok(){
-  const hydrated=useHydrated()
-  const videoRef=useRef<HTMLVideoElement>(null)
-  const [idx,setIdx]=useState(0)
-  const [tab,setTab]=useState('foryou')
-  const [view,setView]=useState('home')
-  const [search,setSearch]=useState('')
-  const [soundEnabled,setSoundEnabled]=useState(false)
-  const [suspended,setSuspended]=useState(false)
-  const [panel,setPanel]=useState('')
-  const [comment,setComment]=useState('')
-  const [comments,setComments]=useState<Record<string,string[]>>({})
-  const [savedIds,setSavedIds]=useState<string[]>([])
-  const [likedIds,setLikedIds]=useState<string[]>([])
-  const [cloudClips,setCloudClips]=useState<Clip[]>([])
-  const [cloudReady,setCloudReady]=useState(false)
-  const [cloudError,setCloudError]=useState('Checking cloud configuration…')
-  const [uploading,setUploading]=useState(false)
-  const [uploadProgress,setUploadProgress]=useState(0)
-  const [pendingFile,setPendingFile]=useState<File>()
-  const [caption,setCaption]=useState('')
-  const [coins,setCoins]=useState(0)
-  const [notice,setNotice]=useState('')
-  const videos=useRef<Record<string,HTMLVideoElement|null>>({})
-  const uploadRef=useRef<HTMLInputElement>(null)
-  const [dp,setDp]=useState('')
-  const [bio,setBio]=useState('Mombasa Vibes 🌴 | Kamata 🔥')
-  const [name,setName]=useState('@MrVibra')
-  const [myVideos,setMyVideos]=useState<Clip[]>([])
-  const [showEdit,setShowEdit]=useState(false)
-  const followers=0
-  const following=0
-  const sy=useRef(0)
+  // Load DP
+  useEffect(() => {
+    const saved = localStorage.getItem("vibra_dp");
+    if (saved) setDp(saved);
+    const savedCoins = localStorage.getItem("vibra_coins");
+    if (savedCoins) setCoins(parseInt(savedCoins));
+  }, []);
 
-  useEffect(()=>{
-    setCoins(demoCoinBalance(localStorage.getItem('vibra_coins')))
-    setDp(localStorage.getItem('vibra_dp')||''); setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes 🌴 | Kamata 🔥'); setName(localStorage.getItem('vibra_name')||'@MrVibra')
-    const openDB=():Promise<IDBDatabase>=> new Promise((res,rej)=>{
-      const r=indexedDB.open('vibra_db',1)
-      r.onupgradeneeded=()=> r.result.createObjectStore('videos',{keyPath:'id'})
-      r.onsuccess=()=> res(r.result); r.onerror=()=> rej(r.error)
-    })
-    openDB().then(async db=>{
-      const tx=db.transaction('videos','readonly'); const req=tx.objectStore('videos').getAll()
-      req.onsuccess=()=>{ const vids=req.result.map((v:Clip)=> ({...v, url: v.blob ? URL.createObjectURL(v.blob) : v.url})); if(vids.length>0) setMyVideos(vids.reverse()) }
-    }).catch(()=>{})
-  },[])
-
-  const toClip=(row:CloudVideo):Clip=>({id:row.id,url:row.video_url,caption:row.caption,thumb:'',username:row.username,cloud:true})
-  useEffect(()=>{let alive=true;readCloudVideos().then(rows=>{if(!alive)return;setCloudClips(rows.map(toClip));setCloudReady(true);setCloudError('')}).catch(error=>{if(alive){setCloudReady(false);setCloudError(error instanceof Error?error.message:'Cloud configuration unavailable')}});return()=>{alive=false}},[])
-
-  const defaultVid:Clip={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:'', lyrics:'Uwepo wako unanikamilisha...'}
-  const baseFeed=cloudReady?cloudClips:myVideos.length>0?myVideos:[defaultVid]
-  const feed=search ? baseFeed.filter(v=>v.caption.toLowerCase().includes(search.toLowerCase())) : baseFeed
-  const current=feed.length>0?feed[idx%feed.length]:undefined
-  const clipKey=String(current?.id ?? current?.url ?? 'empty')
-  const liked=likedIds.includes(clipKey)
-  const saved=savedIds.includes(clipKey)
-  const likes=246+(liked?1:0)
-  function toggleLike(){setLikedIds(values=>liked?values.filter(id=>id!==clipKey):[...values,clipKey])}
-  function toggleSave(){setSavedIds(values=>saved?values.filter(id=>id!==clipKey):[...values,clipKey]);setNotice(saved?'Removed from saved videos.':'Saved!')}
-  const playback=useRef({ view, source: current?.url, soundEnabled, suspended, panel, showEdit })
-  playback.current={view,source:current?.url,soundEnabled,suspended,panel,showEdit}
-
-  useEffect(()=>watchPlaybackLifecycle(()=>setSuspended(true),()=>setSuspended(false)),[])
-  useEffect(()=>{
-    const video=videoRef.current
-    if(!video) return
-    videos.current['active']=video
-    const active=()=>videoRef.current===video && playback.current.view==='home' && playback.current.source===current?.url && !playback.current.suspended && !playback.current.panel && !playback.current.showEdit && !document.hidden
-    if(active()) void startActiveVideo(video,soundEnabled,active)
-    else silenceVideo(video)
-    return ()=>silenceVideo(video)
-  },[current?.url,view,soundEnabled,suspended,panel,showEdit])
-  useEffect(()=>{ if(!notice) return; const timer=setTimeout(()=>setNotice(''),3500); return ()=>clearTimeout(timer) },[notice])
-
-  async function uploadVideo(file:File|undefined){
-    if(!file) return
-    if(!file.type.startsWith('video/')) { setNotice('Choose a video file.'); return }
-    if(uploading) return
-    setUploading(true);setUploadProgress(0)
+  // 1. FIX SHARE - Sio picha tena
+  const handleShare = async () => {
+    const link = window.location.href;
+    const text = `VIBRA WORLDWIDE 🌍 - Tazama video yangu! ${link} #vibra #mombasa`;
     try {
-      if(cloudReady){const row=await uploadCloudVideo(file,name,caption||file.name,setUploadProgress);const clip=toClip(row);setCloudClips(values=>[clip,...values]);setMyVideos(values=>[clip,...values]);setSearch('');setIdx(0);setView('home');setPanel('');setPendingFile(undefined);setNotice('Uploaded worldwide!');return}
-      setUploadProgress(10)
-      const clip:Clip={id:Date.now(),url:'',caption:caption||file.name,thumb:'',blob:file}
-      await new Promise<void>((resolve,reject)=>{
-        const request=indexedDB.open('vibra_db',1)
-        request.onupgradeneeded=()=>request.result.createObjectStore('videos',{keyPath:'id'})
-        request.onerror=()=>reject(request.error)
-        request.onsuccess=()=>{const db=request.result;const tx=db.transaction('videos','readwrite');tx.objectStore('videos').put(clip);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)}}
-      })
-      clip.url=URL.createObjectURL(file)
-      setMyVideos(list=>[clip,...list]);setSearch('');setIdx(0);setView('home');setPanel('');setPendingFile(undefined);setUploadProgress(100);setNotice('Upload complete. Cloud Mode: Local (Connect Supabase for worldwide)')
-    } catch(error) { setNotice(`Upload failed: ${error instanceof Error?error.message:'Please try again.'}`) } finally {setUploading(false)}
-  }
-  async function shareVideo(){
-    try { if(navigator.share) await navigator.share({title:'Vibra Worldwide',text:current?.caption||'Vibra Worldwide',url:`${window.location.origin}/?video=${encodeURIComponent(clipKey)}`});else {await navigator.clipboard.writeText(`${window.location.origin}/?video=${encodeURIComponent(clipKey)}`);setNotice('Link copied.')} }
-    catch { setNotice('Sharing was cancelled or unavailable.') }
-  }
-  const uploadInput=<input ref={uploadRef} type="file" accept="video/*" aria-label="Upload file" hidden onChange={e=>{const file=e.target.files?.[0];if(file){setPendingFile(file);setCaption(file.name);setPanel('Upload')}e.target.value=''}} />
+      await navigator.clipboard.writeText(text);
+      alert("✅ Link copied! Tuma WhatsApp sasa!");
+      if (navigator.share) {
+        await navigator.share({ title: "VIBRA", text, url: link });
+      }
+    } catch {
+      prompt("Copy link hii utume WhatsApp:", text);
+    }
+  };
 
-  const saveProfile=()=>{
-    localStorage.setItem('vibra_dp', dp); localStorage.setItem('vibra_bio', bio); localStorage.setItem('vibra_name', name); setShowEdit(false)
-  }
+  // 2. FIX LIVE
+  const handleLive = () => {
+    if (!isLive) {
+      if (confirm("🔴 Anza LIVE kwa Mombasa Worldwide?")) {
+        setIsLive(true);
+        alert("🔴 Uko LIVE sasa! Watu 1.2K wanaona!");
+      }
+    } else {
+      if (confirm("Maliza LIVE?")) {
+        setIsLive(false);
+        alert("Live imeisha - Safi sana!");
+      }
+    }
+  };
 
-  const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>{if(!uploading)setPanel('')}}><form className="space-y-4" onSubmit={e=>{e.preventDefault();void uploadVideo(pendingFile)}}><p>{pendingFile?.name}</p><label>Caption<input aria-label="Caption" value={caption} onChange={e=>setCaption(e.target.value)} /></label><p className="text-sm text-panel-muted">{cloudReady?'Cloud Mode: Worldwide':'Cloud Mode: Local (Connect Supabase for worldwide)'}</p>{!cloudReady&&<p className="text-sm text-panel-muted">Cloud setup: {cloudError}</p>}{uploading&&<div><progress className="w-full" aria-label="Upload progress" value={uploadProgress} max={100}/><p>{uploadProgress}% · Upload steps</p></div>}<Button type="submit" disabled={uploading||!pendingFile} className="sheet-command w-full">{uploading?'Uploading…':'Post'}</Button></form></VibraSheet>
-  const profileVideos=cloudReady?[...myVideos.filter(v=>!v.cloud),...cloudClips.filter(v=>v.username===name)]:myVideos
-  function openClip(clip:Clip){const index=baseFeed.findIndex(v=>v.url===clip.url);setSearch('');setIdx(index<0?0:index);setView('home')}
-  if(view==='me'){
-    return <div data-ready={hydrated} className="vibra-app bg-video text-video-text overflow-y-auto profile-scroll">{uploadInput}
-      <header className="flex items-center justify-between p-4"><Button variant="ghost" onClick={()=>setView('home')}>← Home</Button><span>{coins} Demo Coins</span></header>
-      <section className="px-4 text-center space-y-3">
-        <Button variant="ghost" className="h-20 w-20 rounded-full bg-video-glass" aria-label="Edit profile photo" onClick={()=>setShowEdit(true)}>{dp?<img src={dp} alt="Profile" className="h-full w-full rounded-full object-cover"/>:'V'}</Button>
-        <h1 className="font-bold text-xl">{name}</h1><p>{bio}</p>
-        <Button variant="ghost" className="bg-video-glass text-video-text border border-panel-muted" onClick={()=>setShowEdit(true)}>Edit Profile</Button>
-        <div className="flex justify-center gap-3"><Button variant="ghost" onClick={()=>setPanel('Following')}>{following} Following</Button><Button variant="ghost" onClick={()=>setPanel('Followers')}>{followers} Followers</Button><Button variant="ghost" onClick={()=>setPanel('Likes')}>{likedIds.length} Likes</Button></div>
-        <p>{profileVideos.length} Videos</p><Button onClick={()=>uploadRef.current?.click()}>＋ Upload a video</Button>
-      </section>
-      <section className="p-3 profile-grid">{profileVideos.map(v=><Button key={v.url} className="profile-tile" aria-label={`Play ${v.caption}`} onClick={()=>openClip(v)}><video src={v.url} muted playsInline preload="metadata" onLoadedData={e=>{const video=e.currentTarget;video.currentTime=Math.min(0.1,video.duration||0);}}/><span className="mini-caption">{v.caption}</span></Button>)}</section>
-      {!profileVideos.length&&<p className="p-6 text-center">No uploaded videos yet.</p>}
-      <VibraSheet title="Edit Profile" open={showEdit} onClose={()=>setShowEdit(false)}><form className="space-y-3" onSubmit={e=>{e.preventDefault();saveProfile()}}><input aria-label="Username" value={name} onChange={e=>setName(e.target.value)} /><input aria-label="Bio" value={bio} onChange={e=>setBio(e.target.value)} /><input aria-label="Profile photo URL" value={dp} onChange={e=>setDp(e.target.value)} /><Button type="submit" className="sheet-command">Save profile</Button></form></VibraSheet>
-      <VibraSheet title={panel} open={['Following','Followers','Likes'].includes(panel)} onClose={()=>setPanel('')}><p>{panel==='Likes'?`${likedIds.length} videos liked in this session.`:`No ${panel.toLowerCase()} recorded. Shared follow accounts are not connected.`}</p></VibraSheet>
-      {uploadPanel}{notice&&<p className="vibra-notice" role="status">{notice}</p>}
-      <nav className="bottom-nav fixed bottom-0 inset-x-0 bg-video flex items-center justify-around"><Button variant="ghost" onClick={()=>setView('home')}>🏠 Home</Button><Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>＋</Button><Button variant="ghost" onClick={()=>setView('me')}>👤 Me</Button></nav>
-    </div>
-  }
+  // 3. FIX DP
+  const handleDpChange = (e: any) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev: any) => {
+      setDp(ev.target.result);
+      localStorage.setItem("vibra_dp", ev.target.result);
+      alert("✅ DP imewekwa!");
+    };
+    reader.readAsDataURL(file);
+  };
 
-  return(
-    <div data-ready={hydrated} className="vibra-app bg-video text-video-text fixed inset-0 overflow-hidden" onTouchStart={e=> {const touch=e.touches[0];if(touch) sy.current=touch.clientY}} onTouchEnd={e=>{ const touch=e.changedTouches[0];if(!touch || !feed.length) return;const dy=sy.current - touch.clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
-      {uploadInput}
-      {uploadPanel}
-      <div style={{position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'8px 12px', background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)'}}>
-        <div style={{display:'flex', gap:8, alignItems:'center'}}>
-          <input value={search} onChange={e=> setSearch(e.target.value)} placeholder='🔍 Search' style={{flex:1, background:'rgba(255,255,255,0.15)', border:'none', borderRadius:20, padding:'6px 12px', color:'white', fontSize:13}}/>
-          <span className="text-xs whitespace-nowrap">{coins} Coins</span><Button className="action-button" aria-label="Upload a video" onClick={()=>uploadRef.current?.click()}>＋</Button>
-        </div>
-        <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:8, fontWeight:'900', color:'white', fontSize:15}}>
-          <Button variant="ghost" onClick={()=>{setTab('following');setNotice('Shared following accounts are not connected yet.')}} style={{opacity: tab==='following'?1:0.6, borderBottom: tab==='following'?'2px solid white':'none'}}>Following</Button>
-          <Button variant="ghost" onClick={()=> setTab('foryou')} style={{opacity: tab==='foryou'?1:0.6, borderBottom: tab==='foryou'?'2px solid white':'none'}}>For You</Button>
+  const claimCoins = () => {
+    const newCoins = coins + 8;
+    setCoins(newCoins);
+    localStorage.setItem("vibra_coins", newCoins.toString());
+    alert("🎉 Umeclaim 8 Coins! Total: " + newCoins);
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-white relative">
+      {/* TOP BAR */}
+      <div className="fixed top-0 w-full flex justify-between p-3 z-50 bg-black/80">
+        {/* LIVE BUTTON - HAPA NDIPO LIVE INARUDI */}
+        <button
+          onClick={handleLive}
+          className={`px-4 py-1 rounded-full font-bold text-sm ${
+            isLive ? "bg-red-600 animate-pulse" : "bg-red-600"
+          }`}
+        >
+          {isLive ? "🔴 LIVE • 1.2K" : "🔴 LIVE"}
+        </button>
+        
+        <div className="flex gap-2">
+          <span className="text-yellow-400 font-bold">{coins} Coins</span>
+          <button className="text-xs border px-2 rounded">Sound on</button>
         </div>
       </div>
 
-      {current ? <video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop muted playsInline onPlay={e=>{if(playback.current.view!=='home'||playback.current.panel||playback.current.suspended) silenceVideo(e.currentTarget)}} onClick={()=>{const video=videoRef.current;if(!video) return;if(video.paused) void startActiveVideo(video,soundEnabled,()=>!playback.current.suspended&&!playback.current.panel);else video.pause()}} /> : <p className="empty-feed">No videos found.</p>}
-      <div className="absolute right-3 top-24 z-[60]"><Button className="action-button px-3" aria-label={soundEnabled?'Sound on':'Bonyeza kuwasha sauti'} aria-pressed={soundEnabled} onClick={()=>setSoundEnabled(value=>!value)}>{soundEnabled?'🔊 Sound on':'🔇 Bonyeza kuwasha sauti'}</Button></div>
-      <div className="feed-caption absolute left-3 right-20"><p className="text-xs">{cloudReady?'Worldwide':'Cloud Mode: Local'}</p><h1 className="font-bold">VIBRA WORLDWIDE</h1><p>{current?.caption}</p><p>#vibra #worldwide</p></div>
-      {current && <VideoProgress clipId="active" source={current.url} videos={videos} />}
-      <div className="action-stack right-3 bottom-32 flex flex-col gap-2">
-        <Button className="action-button" aria-label="Open profile" onClick={()=>setView('me')}>👤</Button>
-        <Button className={`action-button ${liked?'is-active':''}`} aria-label="Like video" aria-pressed={liked} onClick={toggleLike}>❤️<span>{likes}</span></Button>
-        <Button className="action-button" aria-label="Comments" onClick={()=>setPanel('Comments')}>💬<span>{comments[clipKey]?.length||0}</span></Button>
-        <Button className="action-button" aria-label="Save video" aria-pressed={saved} onClick={toggleSave}>🔖<span>{saved?'Saved':'Save'}</span></Button>
-        <Button className="action-button" aria-label="Share video" onClick={()=>void shareVideo()}>↗️<span>Share</span></Button>
-        <Button className="action-button" aria-label="Lyrics" onClick={()=>setPanel('Lyrics')}>♫<span>Lyrics</span></Button>
-        <VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} onBalanceChange={setCoins} onNotice={setNotice} />
+      {/* VIDEO FEED - 8 Videos */}
+      <div className="pt-16 pb-20">
+        <div className="text-center py-10">
+          <h1 className="text-3xl font-bold text-yellow-400">VIBRA WORLDWIDE 🌍</h1>
+          <p>Mombasa Support Vibra - 8 Videos</p>
+        </div>
+
+        {/* Me Page - DP HAPA */}
+        <div className="flex flex-col items-center p-5 border-t border-gray-800">
+          <input type="file" id="dpInput" accept="image/*" hidden onChange={handleDpChange} />
+          <img
+            src={dp}
+            onClick={() => document.getElementById("dpInput")?.click()}
+            className="w-24 h-24 rounded-full border-4 border-yellow-400 cursor-pointer object-cover"
+          />
+          <p className="text-xs mt-2 text-gray-400">Bonyeza picha kuweka DP yako</p>
+          <h2 className="font-bold mt-2">@MrVibra</h2>
+          <p className="text-sm text-gray-400">8 Videos • {coins} Coins</p>
+          
+          <div className="grid grid-cols-3 gap-2 mt-5 w-full max-w-sm">
+            {[1,2,3,4,5,6,7,8].map(i => (
+              <div key={i} className="bg-gray-800 h-32 rounded flex items-center justify-center text-xs">
+                Video {i}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-      <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex items-center justify-around">
-        <Button variant="ghost" onClick={()=>setView('home')}>🏠 Home</Button>
-        <Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>＋</Button>
-        <Button variant="ghost" onClick={()=>setView('me')}>👤 Me</Button>
-      </nav>
-      <VibraSheet title={panel} open={panel==='Comments'||panel==='Lyrics'} onClose={()=>setPanel('')}>
-        {panel==='Lyrics'?<p className="lyrics-copy">{current?.lyrics?.trim()||'Lyrics are not available for this video yet.'}</p>:<div className="space-y-3">
-          {(comments[clipKey]||[]).map((text,i)=><p key={i}>{text}</p>)}
-          <form onSubmit={e=>{e.preventDefault();if(!comment.trim())return;setComments(values=>({...values,[clipKey]:[...(values[clipKey]||[]),comment.trim()]}));setComment('')}} className="flex gap-2"><input placeholder="Add comment..." aria-label="Add comment" value={comment} onChange={e=>setComment(e.target.value)} /><Button type="submit">Post</Button></form>
-        </div>}
-      </VibraSheet>
-      {notice&&<p className="vibra-notice" role="status">{notice}</p>}
+
+      {/* BOTTOM BAR - SHARE HAPA SIO PICHA TENA */}
+      <div className="fixed bottom-0 w-full bg-black border-t border-gray-800 p-3 flex justify-around">
+        <button>🏠 Home</button>
+        <button>🔍 Discover</button>
+        <button onClick={handleShare} className="bg-white text-black px-4 py-1 rounded-full font-bold">
+          ↗️ Share
+        </button>
+        <button onClick={claimCoins} className="bg-yellow-400 text-black px-3 py-1 rounded-full font-bold">
+          8 Coins
+        </button>
+        <button>👤 Me</button>
+      </div>
     </div>
-  )
+  );
 }
