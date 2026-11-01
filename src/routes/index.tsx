@@ -56,7 +56,7 @@ function VibraTikTok(){
     }).catch(()=>{})
   },[])
 
-  const defaultVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:'', isAd:false}
+  const defaultVid:Clip={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:''}
   const baseFeed=myVideos.length>0?myVideos:[defaultVid]
   const feed=search ? baseFeed.filter(v=>v.caption.toLowerCase().includes(search.toLowerCase())) : baseFeed
   const current=feed.length>0?feed[idx%feed.length]:undefined
@@ -68,7 +68,7 @@ function VibraTikTok(){
   useEffect(()=>{
     const video=videoRef.current
     if(!video) return
-    videos.current.active=video
+    videos.current['active']=video
     const active=()=>videoRef.current===video && playback.current.view==='home' && playback.current.source===current?.url && !playback.current.suspended && !playback.current.panel && !playback.current.showEdit && !document.hidden
     if(active()) void startActiveVideo(video,soundEnabled,active)
     else silenceVideo(video)
@@ -92,7 +92,7 @@ function VibraTikTok(){
     } catch { setNotice('Could not save this video. Please try again.') }
   }
   async function shareVideo(){
-    try { if(navigator.share) await navigator.share({title:'Vibra Worldwide',text:current?.caption,url:window.location.href});else {await navigator.clipboard.writeText(window.location.href);setNotice('Link copied.')} }
+    try { if(navigator.share) await navigator.share({title:'Vibra Worldwide',text:current?.caption||'Vibra Worldwide',url:window.location.href});else {await navigator.clipboard.writeText(window.location.href);setNotice('Link copied.')} }
     catch { setNotice('Sharing was cancelled or unavailable.') }
   }
   const uploadInput=<input ref={uploadRef} type="file" accept="video/*" aria-label="Upload file" hidden onChange={e=>{void uploadVideo(e.target.files?.[0]);e.target.value=''}} />
