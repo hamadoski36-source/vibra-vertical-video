@@ -1,62 +1,46 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
-import { supabase } from '@/integrations/supabase/client'
+import { useState, useEffect, useRef } from 'react'
 
 export const Route = createFileRoute('/')({
-  component: VibraReal,
+  component: VibraHome,
 })
 
-function VibraReal() {
-  const [isLive, setIsLive] = useState(false)
-  const [dp, setDp] = useState("https://via.placeholder.com/150")
-  const [coins, setCoins] = useState(0)
-  const [videos, setVideos] = useState<any[]>([])
-  const [current, setCurrent] = useState(0)
+function VibraHome() {
+  const [isLive, setIsLive] = useState(true)
+  const [coins, setCoins] = useState(16)
+  const [dp, setDp] = useState("")
+  const [currentVideo, setCurrentVideo] = useState(0)
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
 
-  // Load DP & Coins & Videos
+  const videos = [
+    { id: 1, url: "https://www.w3schools.com/html/mov_bbb.mp4", user: "@MrVibra", title: "VIBRA WORLDWIDE 🌍 Mombasa" },
+    { id: 2, url: "https://www.w3schools.com/html/movie.mp4", user: "@MrVibra", title: "Mombasa Support Vibra 💛" },
+    { id: 3, url: "https://www.w3schools.com/html/mov_bbb.mp4", user: "@MrVibra", title: "8 Videos - Coast Life 🌊" },
+    { id: 4, url: "https://www.w3schools.com/html/movie.mp4", user: "@MrVibra", title: "Worldwide Vibes ✨" },
+    { id: 5, url: "https://www.w3schools.com/html/mov_bbb.mp4", user: "@MrVibra", title: "Swahili Dance 💃" },
+    { id: 6, url: "https://www.w3schools.com/html/movie.mp4", user: "@MrVibra", title: "Beach Vibra 🏖️" },
+    { id: 7, url: "https://www.w3schools.com/html/mov_bbb.mp4", user: "@MrVibra", title: "Mombasa Nights 🌙" },
+    { id: 8, url: "https://www.w3schools.com/html/movie.mp4", user: "@MrVibra", title: "Vibra Forever ❤️" },
+  ]
+
   useEffect(() => {
     const savedDp = localStorage.getItem("vibra_dp")
     if (savedDp) setDp(savedDp)
     const savedCoins = localStorage.getItem("vibra_coins")
     if (savedCoins) setCoins(parseInt(savedCoins))
-
-    // Jaribu kuchukua video kutoka Supabase
-    const loadVideos = async () => {
-      try {
-        const { data } = await supabase.from('videos').select('*').limit(8)
-        if (data && data.length > 0) {
-          setVideos(data)
-        } else {
-          // Kama hakuna, weka demo 8
-          setVideos([
-            { id:1, url:"https://www.w3schools.com/html/mov_bbb.mp4", title:"Mombasa Vibes 1" },
-            { id:2, url:"https://www.w3schools.com/html/movie.mp4", title:"Vibra Dance 2" },
-            { id:3, url:"https://www.w3schools.com/html/mov_bbb.mp4", title:"Coast Life 3" },
-            { id:4, url:"https://www.w3schools.com/html/movie.mp4", title:"Swahili 4" },
-            { id:5, url:"https://www.w3schools.com/html/mov_bbb.mp4", title:"Beach 5" },
-            { id:6, url:"https://www.w3schools.com/html/movie.mp4", title:"Vibra 6" },
-            { id:7, url:"https://www.w3schools.com/html/mov_bbb.mp4", title:"Mombasa 7" },
-            { id:8, url:"https://www.w3schools.com/html/movie.mp4", title:"Worldwide 8" },
-          ])
-        }
-      } catch {
-        // fallback demo
-        setVideos([
-          { id:1, url:"https://www.w3schools.com/html/mov_bbb.mp4", title:"Video 1" },
-          { id:2, url:"https://www.w3schools.com/html/movie.mp4", title:"Video 2" },
-        ])
-      }
-    }
-    loadVideos()
   }, [])
 
-  const handleShare = async (title: string) => {
-    const text = `VIBRA WORLDWIDE 🌍 ${title} - ${window.location.href}`
-    await navigator.clipboard.writeText(text)
-    alert("✅ Link copied! Tuma WhatsApp!")
+  const handleShare = async () => {
+    const link = window.location.href
+    try {
+      await navigator.clipboard.writeText(link)
+      alert("✅ Link copied! - " + link)
+    } catch {
+      prompt("Copy link yako:", link)
+    }
   }
 
-  const handleDp = (e: any) => {
+  const handleDpChange = (e: any) => {
     const file = e.target.files[0]
     if (!file) return
     const reader = new FileReader()
@@ -67,64 +51,107 @@ function VibraReal() {
     reader.readAsDataURL(file)
   }
 
-  const claimCoins = () => {
+  const addCoins = () => {
     const n = coins + 8
     setCoins(n)
     localStorage.setItem("vibra_coins", n.toString())
-    alert("🎉 +8 Coins!")
+  }
+
+  const handleVideoClick = (idx: number) => {
+    const v = videoRefs.current[idx]
+    if (!v) return
+    if (v.paused) v.play()
+    else v.pause()
   }
 
   return (
-    <div style={{background:'black', color:'white', height:'100vh', overflow:'hidden', position:'relative'}}>
-      {/* TOP */}
-      <div style={{position:'fixed', top:0, width:'100%', display:'flex', justifyContent:'space-between', padding:'12px', background:'rgba(0,0,0,0.7)', zIndex:100}}>
-        <button onClick={() => setIsLive(!isLive)} style={{background: isLive ? '#dc2626' : 'red', color:'white', padding:'6px 14px', borderRadius:'20px', fontWeight:'bold', border:'none'}}>
-          {isLive ? '🔴 LIVE • 1.2K' : '🔴 LIVE'}
-        </button>
-        <div style={{color:'#facc15', fontWeight:'bold'}}>{coins} Coins</div>
+    <div style={{ background: 'black', color: 'white', height: '100vh', width: '100vw', overflow: 'hidden', position: 'relative', fontFamily: 'sans-serif' }}>
+      
+      {/* TOP BAR */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 15px', background: 'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)' }}>
+        <div onClick={() => setIsLive(!isLive)} style={{ background: isLive ? '#ef4444' : '#333', borderRadius: '20px', padding: '6px 14px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '10px', height: '10px', background: 'white', borderRadius: '50%', animation: isLive ? 'pulse 1s infinite' : 'none' }}></div>
+          LIVE • 1.2K
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px' }}>
+          <span style={{ color: '#facc15', fontWeight: 'bold' }}>{coins} Coins</span>
+          <span style={{ border: '1px solid #555', borderRadius: '12px', padding: '3px 8px', fontSize: '11px' }}>Sound on</span>
+        </div>
       </div>
 
-      {isLive && <div style={{position:'fixed', top:'50px', width:'100%', background:'red', textAlign:'center', padding:'4px', zIndex:99}}>🔴 Uko LIVE sasa! - Mombasa inakuona!</div>}
+      {isLive && (
+        <div style={{ position: 'fixed', top: '45px', left: 0, right: 0, zIndex: 99, background: '#ef4444', textAlign: 'center', padding: '5px', fontSize: '13px', fontWeight: 'bold' }}>
+          🔴 Uko LIVE sasa!
+        </div>
+      )}
 
-      {/* VIDEO FEED - Vertical kama TikTok */}
-      <div style={{height:'100vh', overflowY:'scroll', scrollSnapType:'y mandatory'}}>
-        {videos.map((v, i) => (
-          <div key={v.id} style={{height:'100vh', scrollSnapAlign:'start', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', background:'#111'}}>
-            <video 
-              src={v.url} 
-              loop 
-              autoPlay={i===current} 
-              muted 
+      {/* VERTICAL VIDEO FEED - Kama TikTok */}
+      <div style={{ height: '100vh', overflowY: 'scroll', scrollSnapType: 'y mandatory' }} onScroll={(e: any) => {
+        const idx = Math.round(e.target.scrollTop / window.innerHeight)
+        setCurrentVideo(idx)
+      }}>
+        {videos.map((vid, idx) => (
+          <div key={vid.id} style={{ height: '100vh', width: '100vw', scrollSnapAlign: 'start', position: 'relative', background: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <video
+              ref={(el) => { videoRefs.current[idx] = el }}
+              src={vid.url}
+              loop
+              muted
               playsInline
-              onClick={(e:any) => e.target.paused ? e.target.play() : e.target.pause()}
-              style={{height:'100%', width:'100%', objectFit:'cover'}}
+              autoPlay={idx === 0}
+              onClick={() => handleVideoClick(idx)}
+              style={{ height: '100%', width: '100%', objectFit: 'cover' }}
             />
-            {/* Info juu ya video */}
-            <div style={{position:'absolute', bottom:'90px', left:'15px', right:'80px'}}>
-              <p style={{fontWeight:'bold'}}>@MrVibra • {v.title || `Video ${i+1}`}</p>
-              <p style={{fontSize:'13px', opacity:0.8}}>VIBRA WORLDWIDE 🌍 Mombasa Support</p>
+            
+            {/* TITLE YA CHINI */}
+            <div style={{ position: 'absolute', bottom: '90px', left: '15px', right: '90px', zIndex: 10 }}>
+              <p style={{ fontWeight: 'bold', fontSize: '15px', margin: 0 }}>VIBRA WORLDWIDE 🌍</p>
+              <p style={{ fontSize: '13px', opacity: 0.9, margin: '4px 0' }}>{vid.title}</p>
+              <p style={{ fontSize: '12px', opacity: 0.7 }}>Mombasa Support Vibra - 8 Videos</p>
             </div>
-            {/* Buttons kulia kama TikTok */}
-            <div style={{position:'absolute', right:'15px', bottom:'100px', display:'flex', flexDirection:'column', gap:'20px', alignItems:'center'}}>
-              <input type="file" id="dpIn" hidden onChange={handleDp} />
-              <img src={dp} onClick={()=>document.getElementById('dpIn')?.click()} style={{width:'50px', height:'50px', borderRadius:'50%', border:'2px solid #facc15'}} />
-              <button style={{fontSize:'24px'}}>❤️<div style={{fontSize:'12px'}}>12K</div></button>
-              <button style={{fontSize:'24px'}}>💬<div style={{fontSize:'12px'}}>345</div></button>
-              <button onClick={()=>handleShare(v.title)} style={{fontSize:'24px'}}>↗️<div style={{fontSize:'12px'}}>Share</div></button>
-              <button onClick={claimCoins} style={{background:'#facc15', color:'black', padding:'5px 10px', borderRadius:'15px', fontSize:'12px', fontWeight:'bold', border:'none'}}>8 Coins</button>
+
+            {/* BUTTONS KULIA */}
+            <div style={{ position: 'absolute', right: '12px', bottom: '110px', display: 'flex', flexDirection: 'column', gap: '22px', alignItems: 'center', zIndex: 10 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <input type="file" id="dpInput" accept="image/*" hidden onChange={handleDpChange} />
+                <div onClick={() => document.getElementById('dpInput')?.click()} style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid #facc15', background: dp ? `url(${dp})` : '#333', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', cursor: 'pointer', overflow: 'hidden' }}>
+                  {!dp && <span>150x150</span>}
+                </div>
+                <span style={{ fontSize: '10px', marginTop: '4px', textAlign: 'center', maxWidth: '60px' }}>Bonyeza kuweka DP</span>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>@MrVibra</span>
+                <span style={{ fontSize: '10px', opacity: 0.6 }}>{videos.length} Videos • {coins} Coins</span>
+              </div>
+
+              <div style={{ textAlign: 'center', cursor: 'pointer' }}>
+                <div style={{ fontSize: '28px' }}>❤️</div>
+                <div style={{ fontSize: '11px', fontWeight: 'bold' }}>12K</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '26px' }}>💬</div>
+                <div style={{ fontSize: '11px' }}>345</div>
+              </div>
+              <div onClick={handleShare} style={{ textAlign: 'center', cursor: 'pointer' }}>
+                <div style={{ fontSize: '26px' }}>↗️</div>
+                <div style={{ fontSize: '11px' }}>Share</div>
+              </div>
+              <div onClick={addCoins} style={{ background: '#facc15', color: 'black', borderRadius: '16px', padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
+                8 Coins
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       {/* BOTTOM NAV */}
-      <div style={{position:'fixed', bottom:0, width:'100%', background:'black', borderTop:'1px solid #222', display:'flex', justifyContent:'space-around', padding:'12px', zIndex:100}}>
-        <span>🏠 Home</span>
-        <span>🔍 Discover</span>
-        <span>➕</span>
-        <span>💬 Inbox</span>
-        <span>👤 Me</span>
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(0,0,0,0.95)', borderTop: '1px solid #222', display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '10px 0', paddingBottom: '15px' }}>
+        <span style={{ fontSize: '20px' }}>🏠</span>
+        <span style={{ fontSize: '20px', opacity: 0.5 }}>🔍</span>
+        <div onClick={handleShare} style={{ background: 'white', color: 'black', borderRadius: '20px', padding: '6px 14px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>↗️ Share</div>
+        <div onClick={addCoins} style={{ background: '#facc15', color: 'black', borderRadius: '20px', padding: '6px 14px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>{coins} Coins</div>
+        <span style={{ fontSize: '20px', opacity: 0.5 }}>👤</span>
       </div>
+
+      <style>{`@keyframes pulse { 0% { opacity: 1 } 50% { opacity: 0.5 } 100% { opacity: 1 } }`}</style>
     </div>
   )
 }
