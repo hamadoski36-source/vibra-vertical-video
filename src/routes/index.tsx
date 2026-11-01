@@ -1,232 +1,136 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 
 export const Route = createFileRoute('/')({
-  component: VibraProfile,
+  component: VibraFixed,
 })
 
-function VibraProfile() {
-  const [currentTab, setCurrentTab] = useState("home")
-  const [forYouTab, setForYouTab] = useState("foryou")
-  const [currentVideo, setCurrentVideo] = useState(0)
+function VibraFixed() {
+  const [page, setPage] = useState("home")
+  const [top, setTop] = useState("foryou")
+  const [idx, setIdx] = useState(0)
+  const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  const [showEditProfile, setShowEditProfile] = useState(false)
-  
-  // PROFILE DATA - SASA UNAWEZA KUIBADILISHA
-  const [profile, setProfile] = useState({
-    name: "Mr Vibra",
-    username: "@MrVibra",
-    bio: "Mombasa to the world 🌍🔥 | Coast Vibes | Support Vibra 💛",
-    avatar: "V",
-    followers: 1200,
-    following: 89,
-    location: "Mombasa, Kenya 🇰🇪"
-  })
-  const [editName, setEditName] = useState(profile.name)
-  const [editBio, setEditBio] = useState(profile.bio)
-  const [editAvatar, setEditAvatar] = useState<string | null>(null)
+  const [showLyrics, setShowLyrics] = useState(false)
+  const [caption, setCaption] = useState("")
+  const [tags, setTags] = useState("")
+  const [search, setSearch] = useState("")
+  const [file, setFile] = useState<File | null>(null)
 
-  const [videos, setVideos] = useState([
-    { id: 1, url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", caption: "Mombasa to the world 🌍🔥", tags: "#vibra #mombasa", likes: 12001, liked: true, views: "12.5K" },
-    { id: 2, url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", caption: "Coast vibes lazima 💃", tags: "#coast #kenya", likes: 8500, liked: false, views: "8.5K" },
-    { id: 3, url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", caption: "Beach life Mombasa", tags: "#beach #tiktokkenya", likes: 15200, liked: false, views: "15.2K" },
+  const [vids, setVids] = useState([
+    { id: 1, user: "@MrVibra", like: 12001, liked: true, saved: false, cap: "Mombasa to the world 🌍🔥", tag: "#vibra #mombasa", url: "https://www.w3schools.com/html/mov_bbb.mp4" },
+    { id: 2, user: "@CoastQueen", like: 8500, liked: false, saved: false, cap: "Coast vibes lazima 💃", tag: "#coast #kenya", url: "https://www.w3schools.com/html/movie.mp4" },
+    { id: 3, user: "@BeachBoy", like: 15200, liked: false, saved: false, cap: "Beach life Mombasa", tag: "#beach #vibra", url: "https://www.w3schools.com/html/mov_bbb.mp4" },
   ])
 
-  const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
-
-  useEffect(() => {
-    videoRefs.current.forEach((v, i) => {
-      if (v) {
-        if (i === currentVideo && currentTab === "home") v.play().catch(()=>{})
-        else v.pause()
-      }
-    })
-  }, [currentVideo, currentTab])
-
-  const handleScroll = (e: any) => {
-    const h = e.target.clientHeight
-    const idx = Math.round(e.target.scrollTop / h)
-    if (idx !== currentVideo) setCurrentVideo(idx)
+  const like = () => {
+    const n = [...vids]; n[idx].liked = !n[idx].liked; n[idx].like += n[idx].liked ? 1 : -1; setVids(n)
+  }
+  const save = () => {
+    const n = [...vids]; n[idx].saved = !n[idx].saved; setVids(n); alert(n[idx].saved ? "✅ Saved!" : "❌ Unsaved")
+  }
+  const post = () => {
+    if (!file) { alert("Chagua video!"); return }
+    const url = URL.createObjectURL(file)
+    setVids([{ id: Date.now(), user: "@MrVibra", like: 0, liked: false, saved: false, cap: caption || "New video", tag: tags || "#vibra", url }, ...vids])
+    setPage("home"); setIdx(0); setCaption(""); setTags(""); setFile(null)
   }
 
-  const handleLike = (id: number) => {
-    setVideos(videos.map(v => v.id === id ? { ...v, liked: !v.liked, likes: v.liked ? v.likes - 1 : v.likes + 1 } : v))
-  }
-
-  const saveProfile = () => {
-    setProfile({ ...profile, name: editName, bio: editBio, avatar: editAvatar || profile.avatar })
-    setShowEditProfile(false)
-    alert("✅ Profile imebadilishwa!")
-  }
-
-  // ========== ME PAGE NA PROFILE KAMILI ==========
-  if (currentTab === "me") {
+  if (page === "upload") {
     return (
-      <div style={{ background: "black", color: "white", minHeight: "100vh" }}>
-        {/* HEADER */}
-        <div style={{ display: "flex", justifyContent: "space-between", padding: "15px", alignItems: "center" }}>
-          <span style={{ fontWeight: "bold", fontSize: "18px" }}>{profile.username}</span>
-          <div style={{ display: "flex", gap: "15px", fontSize: "20px" }}>
-            <span>⚙️</span>
-            <span>☰</span>
-          </div>
+      <div style={{ background: "black", color: "white", minHeight: "100vh", padding: "15px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}><span onClick={()=>setPage("home")} style={{ cursor: "pointer" }}>✕ Close</span><b>Upload</b><span onClick={post} style={{ color: "#facc15", fontWeight: "bold", cursor: "pointer" }}>Post</span></div>
+        <div style={{ marginTop: "20px", border: "2px dashed #555", borderRadius: "12px", padding: "20px", textAlign: "center" }}>
+          <p>{file ? "✅ "+file.name : "Chagua video yako"}</p>
+          <label style={{ background: "white", color: "black", padding: "12px 20px", borderRadius: "20px", display: "inline-block", marginTop: "10px", fontWeight: "bold", cursor: "pointer" }}>CHAGUA VIDEO<input type="file" hidden accept="video/*" onChange={e=>setFile(e.target.files?.[0]||null)} /></label>
         </div>
-
-        <div style={{ padding: "10px 20px", textAlign: "center" }}>
-          {/* AVATAR - SASA UNAWEZA KUBADILISHA PICHA */}
-          <div style={{ position: "relative", width: "90px", height: "90px", margin: "0 auto" }}>
-            <div style={{ width: "90px", height: "90px", borderRadius: "50%", background: "#facc15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "35px", color: "black", fontWeight: "bold", overflow: "hidden" }}>
-              {editAvatar ? <img src={editAvatar} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : profile.avatar}
-            </div>
-            <div style={{ position: "absolute", bottom: 0, right: 0, background: "#25D366", width: "24px", height: "24px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", border: "2px solid black" }}>✓</div>
-          </div>
-
-          <h3 style={{ margin: "12px 0 5px" }}>{profile.name}</h3>
-          <p style={{ fontSize: "13px", opacity: 0.6, margin: 0 }}>{profile.username} • {profile.location}</p>
-          <p style={{ fontSize: "13px", marginTop: "10px", lineHeight: "1.4" }}>{profile.bio}</p>
-
-          <div style={{ display: "flex", justifyContent: "center", gap: "30px", marginTop: "18px" }}>
-            <div><b>{profile.following}</b><div style={{ fontSize: "12px", opacity: 0.6 }}>Following</div></div>
-            <div><b>{profile.followers.toLocaleString()}</b><div style={{ fontSize: "12px", opacity: 0.6 }}>Followers</div></div>
-            <div><b>{videos.reduce((a,b)=>a+b.likes,0).toLocaleString()}</b><div style={{ fontSize: "12px", opacity: 0.6 }}>Likes</div></div>
-          </div>
-
-          <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginTop: "18px" }}>
-            <button onClick={()=>setShowEditProfile(true)} style={{ flex: 1, background: "#222", color: "white", border: "1px solid #333", padding: "10px", borderRadius: "8px", fontWeight: "bold" }}>Edit profile</button>
-            <button onClick={()=>setShowShare(true)} style={{ flex: 1, background: "#222", color: "white", border: "1px solid #333", padding: "10px", borderRadius: "8px", fontWeight: "bold" }}>Share profile</button>
-            <button style={{ background: "#222", padding: "10px 14px", borderRadius: "8px", border: "1px solid #333" }}>👤+</button>
-          </div>
-
-          <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginTop: "15px", fontSize: "12px" }}>
-            <span style={{ background: "#111", padding: "5px 10px", borderRadius: "15px" }}>🔗 vibra.world/mrvibra</span>
-            <span style={{ background: "#111", padding: "5px 10px", borderRadius: "15px" }}>📍 Mombasa</span>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", borderTop: "1px solid #222", marginTop: "15px" }}>
-          <div style={{ flex: 1, textAlign: "center", padding: "12px", borderBottom: "2px solid white", fontSize: "18px" }}>🎬</div>
-          <div style={{ flex: 1, textAlign: "center", padding: "12px", opacity: 0.4, fontSize: "18px" }}>🔒</div>
-          <div style={{ flex: 1, textAlign: "center", padding: "12px", opacity: 0.4, fontSize: "18px" }}>❤️</div>
-          <div style={{ flex: 1, textAlign: "center", padding: "12px", opacity: 0.4, fontSize: "18px" }}>🔖</div>
-        </div>
-
-        {/* VIDEO GRID - ZINACHEZA LIVE */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: "#222" }}>
-          {videos.map((v, i) => (
-            <div key={v.id} onClick={() => { setCurrentTab("home"); setCurrentVideo(i) }} style={{ position: "relative", aspectRatio: "3/4", background: "black", overflow: "hidden" }}>
-              <video src={v.url} muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              <div style={{ position: "absolute", bottom: "5px", left: "5px", fontSize: "11px", display: "flex", alignItems: "center", gap: "3px", color: "white" }}>▶️ {v.views}</div>
-              <div style={{ position: "absolute", top: "5px", right: "5px", fontSize: "10px", background: "rgba(0,0,0,0.5)", padding: "2px 5px", borderRadius: "4px", color: "white" }}>📌</div>
-            </div>
-          ))}
-        </div>
-
-        {/* EDIT PROFILE MODAL */}
-        {showEditProfile && (
-          <div style={{ position: "fixed", inset: 0, background: "black", zIndex: 300, padding: "15px", overflowY: "auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span onClick={()=>setShowEditProfile(false)} style={{ fontSize: "20px" }}>✕</span>
-              <b>Edit profile</b>
-              <span onClick={saveProfile} style={{ color: "#facc15", fontWeight: "bold" }}>Save</span>
-            </div>
-
-            <div style={{ textAlign: "center", marginTop: "25px" }}>
-              <div style={{ width: "100px", height: "100px", borderRadius: "50%", background: "#facc15", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px", color: "black", fontWeight: "bold", overflow: "hidden" }}>
-                {editAvatar ? <img src={editAvatar} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : profile.avatar}
-              </div>
-              <label style={{ display: "inline-block", marginTop: "12px", color: "#facc15", fontSize: "13px", cursor: "pointer" }}>
-                Change photo
-                <input type="file" hidden accept="image/*" onChange={e=>{
-                  const f = e.target.files?.[0]; if(!f) return;
-                  const url = URL.createObjectURL(f);
-                  setEditAvatar(url);
-                }} />
-              </label>
-            </div>
-
-            <div style={{ marginTop: "25px" }}>
-              <p style={{ fontSize: "12px", opacity: 0.6 }}>Name</p>
-              <input value={editName} onChange={e=>setEditName(e.target.value)} style={{ width: "100%", background: "#111", border: "1px solid #333", borderRadius: "8px", padding: "12px", color: "white", marginTop: "5px" }} />
-              
-              <p style={{ fontSize: "12px", opacity: 0.6, marginTop: "15px" }}>Username</p>
-              <input value={profile.username} disabled style={{ width: "100%", background: "#111", border: "1px solid #333", borderRadius: "8px", padding: "12px", color: "gray", marginTop: "5px" }} />
-              
-              <p style={{ fontSize: "12px", opacity: 0.6, marginTop: "15px" }}>Bio</p>
-              <textarea value={editBio} onChange={e=>setEditBio(e.target.value)} maxLength={80} style={{ width: "100%", background: "#111", border: "1px solid #333", borderRadius: "8px", padding: "12px", color: "white", marginTop: "5px", height: "80px" }} />
-              <p style={{ fontSize: "11px", opacity: 0.4, textAlign: "right" }}>{editBio.length}/80</p>
-
-              <p style={{ fontSize: "12px", opacity: 0.6, marginTop: "15px" }}>Location</p>
-              <input value={profile.location} onChange={e=>setProfile({...profile, location: e.target.value})} style={{ width: "100%", background: "#111", border: "1px solid #333", borderRadius: "8px", padding: "12px", color: "white", marginTop: "5px" }} />
-            </div>
-
-            <div style={{ marginTop: "30px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button style={{ background: "#111", border: "none", padding: "12px", borderRadius: "8px", color: "white", textAlign: "left" }}>🔗 Add link to bio</button>
-              <button style={{ background: "#111", border: "none", padding: "12px", borderRadius: "8px", color: "white", textAlign: "left" }}>📧 Add email</button>
-            </div>
-          </div>
-        )}
-
-        {showShare && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end" }} onClick={()=>setShowShare(false)}>
-            <div style={{ background: "#1a1a1a", width: "100%", borderRadius: "20px 20px 0 0", padding: "20px" }} onClick={e=>e.stopPropagation()}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}><b>Share profile</b><span onClick={()=>setShowShare(false)}>✕</span></div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "15px", marginTop: "20px" }}>
-                <a href={`https://wa.me/?text=${encodeURIComponent(profile.bio + " " + window.location.href)}`} target="_blank" style={{ textAlign: "center", textDecoration: "none" }}><div style={{ width: "55px", height: "55px", background: "#25D366", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>💬</div><div style={{ color: "white", fontSize: "11px", marginTop: "6px" }}>WhatsApp</div></a>
-                <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" style={{ textAlign: "center", textDecoration: "none" }}><div style={{ width: "55px", height: "55px", background: "#1877F2", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", color: "white", fontWeight: "bold" }}>f</div><div style={{ color: "white", fontSize: "11px", marginTop: "6px" }}>Facebook</div></a>
-                <div onClick={()=>{ navigator.clipboard.writeText(window.location.href); alert("Profile link copied!") }} style={{ textAlign: "center" }}><div style={{ width: "55px", height: "55px", background: "#333", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>🔗</div><div style={{ color: "white", fontSize: "11px", marginTop: "6px" }}>Copy link</div></div>
-                <div style={{ textAlign: "center" }}><div style={{ width: "55px", height: "55px", background: "#333", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>📩</div><div style={{ color: "white", fontSize: "11px", marginTop: "6px" }}>Message</div></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "black", display: "flex", justifyContent: "space-around", padding: "10px 0", borderTop: "1px solid #222" }}>
-          <span onClick={() => setCurrentTab("home")}>🏠 Home</span>
-          <span>🔍 Discover</span>
-          <span>➕</span>
-          <span>📥 Inbox</span>
-          <span style={{ color: "#facc15" }}>👤 Me</span>
+        <div style={{ marginTop: "20px" }}>
+          <p style={{ fontWeight: "bold" }}>Caption</p><textarea value={caption} onChange={e=>setCaption(e.target.value)} placeholder="Andika caption..." style={{ width: "100%", background: "#222", border: "none", borderRadius: "10px", padding: "12px", color: "white", height: "60px", marginTop: "5px" }} />
+          <p style={{ fontWeight: "bold", marginTop: "15px", color: "#facc15" }}>#Tags - HAPA ANDIKA TAGS</p><input value={tags} onChange={e=>setTags(e.target.value)} placeholder="#vibra #mombasa #kenya" style={{ width: "100%", background: "#222", border: "2px solid #facc15", borderRadius: "10px", padding: "12px", color: "white", marginTop: "5px" }} />
+          <p style={{ fontSize: "11px", opacity: 0.5, marginTop: "5px" }}>Mfano: #vibra #mombasa #coast #dance</p>
+          <div style={{ marginTop: "15px", background: "#111", padding: "10px", borderRadius: "10px" }}><p style={{ fontSize: "12px", opacity: 0.6 }}>Preview:</p><p style={{ fontSize: "13px" }}>{caption} <span style={{ color: "#facc15" }}>{tags}</span></p></div>
         </div>
       </div>
     )
   }
 
-  // HOME PAGE
+  if (page === "search" || page === "live") {
+    return (
+      <div style={{ background: "black", color: "white", minHeight: "100vh" }}>
+        <div style={{ padding: "10px 15px", display: "flex", gap: "10px", alignItems: "center", borderBottom: "1px solid #222" }}>
+          <span onClick={()=>setPage("home")} style={{ fontSize: "20px", cursor: "pointer" }}>←</span>
+          <input autoFocus value={search} onChange={e=>setSearch(e.target.value)} placeholder={page==="live" ? "Search LIVE..." : "Search users, #tags..."} style={{ flex: 1, background: "#222", border: "none", borderRadius: "20px", padding: "10px 15px", color: "white" }} />
+        </div>
+        <div style={{ padding: "15px" }}>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>{["#vibra","#mombasa","#kenya","#coast","#dance"].map(t=><span key={t} onClick={()=>setSearch(t)} style={{ background: "#222", padding: "6px 12px", borderRadius: "15px", fontSize: "12px", cursor: "pointer" }}>{t}</span>)}</div>
+          <div style={{ marginTop: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>{vids.filter(v=> search==="" || v.tag.includes(search)).map((v,i)=><div key={v.id} onClick={()=>{ setPage("home"); setIdx(i) }} style={{ background: "#111", borderRadius: "10px", overflow: "hidden" }}><video src={v.url} muted style={{ width: "100%", aspectRatio: "9/16", objectFit: "cover" }} /><p style={{ fontSize: "11px", padding: "5px" }}>{v.cap}<br/><span style={{ color: "#facc15" }}>{v.tag}</span></p></div>)}</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (page === "me") {
+    return (
+      <div style={{ background: "black", color: "white", minHeight: "100vh" }}>
+        <div style={{ padding: "20px", textAlign: "center" }}><div style={{ width: "80px", height: "80px", background: "#facc15", borderRadius: "50%", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "30px", color: "black", fontWeight: "bold" }}>V</div><h3 style={{ margin: "10px 0 5px" }}>@MrVibra</h3><p style={{ fontSize: "12px", opacity: 0.6 }}>Mombasa • {vids.length} videos</p></div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px" }}>{vids.map((v,i)=><div key={v.id} onClick={()=>{ setPage("home"); setIdx(i) }} style={{ aspectRatio: "3/4", background: "#111" }}><video src={v.url} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>)}</div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ background: "black", height: "100vh", width: "100vw", overflow: "hidden", position: "relative" }}>
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 50, display: "flex", justifyContent: "center", gap: "20px", padding: "12px", background: "linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)" }}>
-        <span onClick={()=>setForYouTab("following")} style={{ color: forYouTab==="following" ? "white" : "rgba(255,255,255,0.6)", fontWeight: forYouTab==="following" ? "bold" : "400", borderBottom: forYouTab==="following" ? "2px solid white" : "none", paddingBottom: "4px" }}>Following</span>
-        <span onClick={()=>setForYouTab("foryou")} style={{ color: forYouTab==="foryou" ? "white" : "rgba(255,255,255,0.6)", fontWeight: forYouTab==="foryou" ? "bold" : "400", borderBottom: forYouTab==="foryou" ? "2px solid white" : "none", paddingBottom: "4px" }}>For You</span>
+      {/* JUU KABISA - SEARCH NA LIVE SASA ZIKO */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 50, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)" }}>
+        <span onClick={()=>setPage("search")} style={{ fontSize: "20px", background: "rgba(255,255,255,0.2)", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>🔍</span>
+        <div style={{ display: "flex", gap: "20px" }}>
+          <span onClick={()=>setTop("following")} style={{ color: top==="following" ? "white" : "rgba(255,255,255,0.5)", fontWeight: top==="following" ? "bold" : "normal", borderBottom: top==="following" ? "2px solid white" : "none", fontSize: "15px", cursor: "pointer" }}>Following</span>
+          <span onClick={()=>setTop("foryou")} style={{ color: top==="foryou" ? "white" : "rgba(255,255,255,0.5)", fontWeight: top==="foryou" ? "bold" : "normal", borderBottom: top==="foryou" ? "2px solid white" : "none", fontSize: "15px", cursor: "pointer" }}>For You</span>
+        </div>
+        <span onClick={()=>setPage("live")} style={{ fontSize: "12px", border: "1px solid #facc15", color: "#facc15", padding: "5px 10px", borderRadius: "15px", cursor: "pointer" }}>🔴 LIVE</span>
       </div>
 
-      <div onScroll={handleScroll} style={{ height: "100vh", overflowY: "scroll", scrollSnapType: "y mandatory" }}>
-        {videos.map((v, i) => (
-          <div key={v.id} style={{ height: "100vh", position: "relative", scrollSnapAlign: "start" }}>
-            <video ref={el => { videoRefs.current[i] = el }} src={v.url} loop muted playsInline preload="auto" style={{ width: "100%", height: "100%", objectFit: "cover" }} onClick={e => { const vid = e.currentTarget; vid.paused ? vid.play() : vid.pause() }} />
-            <div style={{ position: "absolute", bottom: "90px", left: "12px", right: "85px", color: "white" }}>
-              <p style={{ fontWeight: "bold", margin: 0 }}>{profile.username} {v.id === 1 ? "✓" : ""}</p>
-              <p style={{ fontSize: "13px", margin: "5px 0" }}>{v.caption}</p>
-              <p style={{ fontSize: "13px", color: "#facc15" }}>{v.tags}</p>
+      <div style={{ height: "100vh", overflowY: "scroll", scrollSnapType: "y mandatory" }} onScroll={e=>{ const i=Math.round((e.target as any).scrollTop / (e.target as any).clientHeight); if(i!==idx) setIdx(i) }}>
+        {vids.map((v,i)=>(
+          <div key={v.id} style={{ height: "100vh", position: "relative", scrollSnapAlign: "start", background: "black" }}>
+            <video 
+              src={v.url} 
+              autoPlay={i===idx} 
+              loop 
+              muted 
+              playsInline 
+              controls={false}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+            />
+            <div style={{ position: "absolute", bottom: "85px", left: "12px", right: "80px", color: "white" }}>
+              <p style={{ fontWeight: "bold", margin: 0, fontSize: "15px" }}>{v.user} • <span style={{ border: "1px solid white", padding: "2px 8px", borderRadius: "4px", fontSize: "11px" }}>Follow</span></p>
+              <p style={{ margin: "6px 0", fontSize: "13px" }}>{v.cap}</p>
+              <p style={{ margin: 0, fontSize: "13px", color: "#facc15", fontWeight: "bold" }}>{v.tag}</p>
+              <p style={{ margin: "4px 0 0", fontSize: "12px" }}>🎵 Original Sound - Vibra</p>
             </div>
-            <div style={{ position: "absolute", right: "10px", bottom: "110px", display: "flex", flexDirection: "column", gap: "16px", alignItems: "center" }}>
-              <div style={{ position: "relative" }}>
-                <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#facc15", border: "2px solid white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", color: "black" }}>{profile.avatar}</div>
-                <div style={{ position: "absolute", bottom: "-6px", left: "50%", transform: "translateX(-50%)", background: "#facc15", width: "18px", height: "18px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", color: "black" }}>+</div>
-              </div>
-              <div onClick={()=>handleLike(v.id)} style={{ textAlign: "center" }}><div style={{ width: "48px", height: "48px", borderRadius: "50%", background: v.liked ? "#ef4444" : "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>{v.liked ? "❤️" : "🤍"}</div><div style={{ color: "white", fontSize: "11px", marginTop: "4px" }}>{v.likes}</div></div>
-              <div style={{ textAlign: "center" }}><div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>💬</div><div style={{ color: "white", fontSize: "11px", marginTop: "4px" }}>12</div></div>
-              <div onClick={()=>setShowShare(true)} style={{ textAlign: "center" }}><div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#facc15", display: "flex", alignItems: "center", justifyContent: "center" }}>↗️</div><div style={{ color: "white", fontSize: "10px", marginTop: "4px" }}>Share</div></div>
+
+            <div style={{ position: "absolute", right: "8px", bottom: "100px", display: "flex", flexDirection: "column", gap: "14px", alignItems: "center" }}>
+              <div style={{ position: "relative" }}><div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#facc15", border: "2px solid white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", color: "black" }}>V</div><div style={{ position: "absolute", bottom: "-5px", left: "50%", transform: "translateX(-50%)", background: "#facc15", width: "16px", height: "16px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "black" }}>+</div></div>
+              <div onClick={like} style={{ textAlign: "center", cursor: "pointer" }}><div style={{ width: "46px", height: "46px", borderRadius: "50%", background: v.liked ? "#ef4444" : "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px" }}>{v.liked ? "❤️" : "🤍"}</div><div style={{ color: "white", fontSize: "11px", fontWeight: "bold", marginTop: "3px" }}>{v.like}</div></div>
+              <div onClick={()=>setShowComments(true)} style={{ textAlign: "center", cursor: "pointer" }}><div style={{ width: "46px", height: "46px", borderRadius: "50%", background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px" }}>💬</div><div style={{ color: "white", fontSize: "11px", marginTop: "3px" }}>12</div></div>
+              <div onClick={save} style={{ textAlign: "center", cursor: "pointer" }}><div style={{ width: "46px", height: "46px", borderRadius: "50%", background: v.saved ? "#facc15" : "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>{v.saved ? "✅" : "🔖"}</div><div style={{ color: "white", fontSize: "9px", marginTop: "3px" }}>{v.saved ? "Saved" : "Save"}</div></div>
+              <div onClick={()=>setShowLyrics(true)} style={{ textAlign: "center", cursor: "pointer" }}><div style={{ width: "46px", height: "46px", borderRadius: "50%", background: "rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>🎵</div><div style={{ color: "white", fontSize: "9px", marginTop: "3px" }}>Lyrics</div></div>
+              <div onClick={()=>setShowShare(true)} style={{ textAlign: "center", cursor: "pointer" }}><div style={{ width: "46px", height: "46px", borderRadius: "50%", background: "#facc15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>↗️</div><div style={{ color: "white", fontSize: "9px", fontWeight: "bold", marginTop: "3px" }}>Share</div></div>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "black", display: "flex", justifyContent: "space-around", padding: "12px 0", borderTop: "1px solid #222", zIndex: 100 }}>
-        <span style={{ color: "#facc15" }}>🏠 Home</span>
-        <span>🔍 Discover</span>
-        <span style={{ background: "white", color: "black", padding: "2px 14px", borderRadius: "8px" }}>+</span>
-        <span>📥 Inbox</span>
-        <span onClick={()=>setCurrentTab("me")}>👤 Me</span>
+      {showComments && (<div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1a1a1a", borderRadius: "20px 20px 0 0", padding: "15px", zIndex: 100 }}><div style={{ display: "flex", justifyContent: "space-between" }}><b style={{ color: "white" }}>Comments</b><span onClick={()=>setShowComments(false)} style={{ color: "white", cursor: "pointer" }}>✕ Close</span></div><p style={{ color: "white", marginTop: "10px", fontSize: "13px" }}>Mombasa 🔥🔥 - Video kali sana!</p><div style={{ display: "flex", gap: "8px", marginTop: "10px" }}><input placeholder="Add comment..." style={{ flex: 1, background: "#222", border: "none", borderRadius: "20px", padding: "10px", color: "white" }} /><button style={{ background: "#facc15", border: "none", borderRadius: "20px", padding: "10px 15px", fontWeight: "bold" }}>Post</button></div></div>)}
+      {showLyrics && (<div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1a1a1a", borderRadius: "20px 20px 0 0", padding: "20px", zIndex: 100 }}><div style={{ display: "flex", justifyContent: "space-between" }}><b style={{ color: "white" }}>🎵 Lyrics</b><span onClick={()=>setShowLyrics(false)} style={{ color: "white", cursor: "pointer" }}>✕</span></div><p style={{ color: "white", marginTop: "15px", textAlign: "center", lineHeight: "1.8" }}>Mombasa to the world 🌍<br/>Coast vibes ina-rise 🔥<br/>Support Vibra 💛<br/><br/><span style={{ color: "#facc15" }}>{vids[idx].tag}</span></p></div>)}
+      {showShare && (<div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1a1a1a", borderRadius: "20px 20px 0 0", padding: "20px", zIndex: 100 }}><div style={{ display: "flex", justifyContent: "space-between" }}><b style={{ color: "white" }}>Share to</b><span onClick={()=>setShowShare(false)} style={{ color: "white", cursor: "pointer" }}>✕</span></div><div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "15px", marginTop: "20px" }}><a href={`https://wa.me/?text=${encodeURIComponent(window.location.href)}`} target="_blank" style={{ textAlign: "center", textDecoration: "none" }}><div style={{ width: "55px", height: "55px", background: "#25D366", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>💬</div><div style={{ color: "white", fontSize: "11px", marginTop: "5px" }}>WhatsApp</div></a><a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" style={{ textAlign: "center", textDecoration: "none" }}><div style={{ width: "55px", height: "55px", background: "#1877F2", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", color: "white", fontWeight: "bold" }}>f</div><div style={{ color: "white", fontSize: "11px", marginTop: "5px" }}>Facebook</div></a><div onClick={()=>{ navigator.clipboard.writeText(window.location.href); alert("Link copied!") }} style={{ textAlign: "center" }}><div style={{ width: "55px", height: "55px", background: "#333", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>🔗</div><div style={{ color: "white", fontSize: "11px", marginTop: "5px" }}>Copy</div></div><div style={{ textAlign: "center" }}><div style={{ width: "55px", height: "55px", background: "#333", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>⬇️</div><div style={{ color: "white", fontSize: "11px", marginTop: "5px" }}>Save</div></div></div></div>)}
+
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "black", display: "flex", justifyContent: "space-around", padding: "10px 0", borderTop: "1px solid #222", zIndex: 90 }}>
+        <span onClick={()=>setPage("home")} style={{ color: page==="home" ? "#facc15" : "white", cursor: "pointer" }}>🏠 Home</span>
+        <span onClick={()=>setPage("search")} style={{ color: page==="search" ? "#facc15" : "white", cursor: "pointer" }}>🔍 Discover</span>
+        <span onClick={()=>setPage("upload")} style={{ background: "white", color: "black", padding: "2px 14px", borderRadius: "8px", cursor: "pointer" }}>+</span>
+        <span onClick={()=>setPage("live")} style={{ color: page==="live" ? "#facc15" : "white", cursor: "pointer" }}>📥 Inbox</span>
+        <span onClick={()=>setPage("me")} style={{ color: page==="me" ? "#facc15" : "white", cursor: "pointer" }}>👤 Me</span>
       </div>
     </div>
   )
