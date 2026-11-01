@@ -20,3 +20,5 @@
 - Suspend all media through the shared playback lifecycle helper; resume only the current view after visibility/focus returns so pending play requests cannot leak background audio.
 - The current compact feed uses session-only clip/activity state and controlled Radix sheets; do not treat its local identity or demo clips as verified cloud accounts or ownership.
 - Keep ad configuration in a browser-safe module and disable reward credit until a supported provider verifies completion; timers and local storage cannot verify revenue.
+- Demo coins use a separate local balance and explicit no-cash labeling; never promote them to a payout or ad-revenue ledger.
+- External cloud video uploads require verified account IDs and compatible owner-scoped schema; retain local mode on configuration failure instead of granting anonymous writes.
