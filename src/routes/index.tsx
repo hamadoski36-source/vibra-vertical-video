@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { VibraSheet } from '@/components/vibra-sheet'
@@ -18,6 +18,7 @@ export const Route = createFileRoute('/')({
 type Clip = { id?: number; url: string; caption: string; thumb: string; lyrics?: string; blob?: Blob }
 
 function VibraTikTok(){
+  const hydrated=useHydrated()
   const videoRef=useRef<HTMLVideoElement>(null)
   const [idx,setIdx]=useState(0)
   const [tab,setTab]=useState('foryou')
@@ -146,7 +147,7 @@ function VibraTikTok(){
   }
 
   return(
-    <div className="vibra-app bg-video text-video-text fixed inset-0 overflow-hidden" onTouchStart={e=> {const touch=e.touches[0];if(touch) sy.current=touch.clientY}} onTouchEnd={e=>{ const touch=e.changedTouches[0];if(!touch || !feed.length) return;const dy=sy.current - touch.clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
+    <div data-ready={hydrated} className="vibra-app bg-video text-video-text fixed inset-0 overflow-hidden" onTouchStart={e=> {const touch=e.touches[0];if(touch) sy.current=touch.clientY}} onTouchEnd={e=>{ const touch=e.changedTouches[0];if(!touch || !feed.length) return;const dy=sy.current - touch.clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
       {uploadInput}
       <div style={{position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'8px 12px', background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)'}}>
         <div style={{display:'flex', gap:8, alignItems:'center'}}>
