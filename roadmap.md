@@ -1,5 +1,14 @@
 # Vibra migration roadmap
 
+## Controls, cloud and demo coins — November 1, 2026
+- [x] Repair selected-video likes/comments/bookmarks, profile/Home navigation, upload composer, editable profile and three-column playable video previews; preserve zero follower totals honestly.
+- [x] Inspect existing external service: videos SELECT fails because username column does not exist; vibra-videos and Vibra clips bucket checks return NoSuchBucket. No authorized administration access is available; do not provision a replacement backend.
+- [x] Add browser upload adapter with authenticated user_id, Storage public URL, metadata insertion and cleanup on metadata failure; staged upload progress/status/errors. Adapter cannot be verified on real cloud until existing setup is repaired. Retain IndexedDB clips and clearly labeled Local Mode.
+- [x] Add five-second demo awarding exactly 8 non-cash coins, persistent vibra_coins balance and single claim per demo; no fake sponsored/Google ad or KSH conversion.
+- [x] 390×844 browser verification passes: likes 246→247, save toast, comment posting, supplied example lyric, five-second claim, balance reload, real local video upload, Profile count/preview/player, sound and blur silence. 19 focused tests pass; full suite 22 pass / 5 older compact-feed tests fail (known missing demo/relationship/delete/observer flows).
+- [ ] Worldwide upload/cross-account test blocked by missing compatible videos fields, bucket and verified auth flow; owner must connect the EXISTING project for administration through Project settings → General → External Supabase → Connect. Need owner-only write policies, not public true-for-everyone.
+- [ ] No deployment/commit performed. Restore five older compact-feed flows in a separate verified step; do not delete tests or claim full regression success.
+
 ## Rewards repair — November 1, 2026
 - [x] Repair truncated Home route, retain device clips/profile editing, restore Home controls and upload access, and use shared playback lifecycle to stop background audio.
 - [x] Make KSH 8 open a controlled unavailable panel; retain supplied AdMob IDs without a fake Google image, timer, banner, cash credit or earning claim. Preserve existing vibra_ksh without modification.

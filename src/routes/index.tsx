@@ -1,5 +1,7 @@
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
+import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
+import { demoCoinBalance } from '@/lib/vibra-rewards'
 import { Button } from '@/components/ui/button'
 import { VibraSheet } from '@/components/vibra-sheet'
 import { VibraRewards } from '@/components/vibra-rewards'
@@ -15,7 +17,7 @@ export const Route = createFileRoute('/')({
   ] }), component: VibraTikTok,
 })
 
-type Clip = { id?: number; url: string; caption: string; thumb: string; lyrics?: string; blob?: Blob }
+type Clip = { id?: number | string; url: string; caption: string; thumb: string; lyrics?: string; blob?: Blob; username?: string; cloud?: boolean }
 
 function VibraTikTok(){
   const hydrated=useHydrated()
@@ -29,7 +31,16 @@ function VibraTikTok(){
   const [panel,setPanel]=useState('')
   const [comment,setComment]=useState('')
   const [comments,setComments]=useState<Record<string,string[]>>({})
-  const [saved,setSaved]=useState(false)
+  const [savedIds,setSavedIds]=useState<string[]>([])
+  const [likedIds,setLikedIds]=useState<string[]>([])
+  const [cloudClips,setCloudClips]=useState<Clip[]>([])
+  const [cloudReady,setCloudReady]=useState(false)
+  const [cloudError,setCloudError]=useState('Checking cloud configuration…')
+  const [uploading,setUploading]=useState(false)
+  const [uploadProgress,setUploadProgress]=useState(0)
+  const [pendingFile,setPendingFile]=useState<File>()
+  const [caption,setCaption]=useState('')
+  const [coins,setCoins]=useState(0)
   const [notice,setNotice]=useState('')
   const videos=useRef<Record<string,HTMLVideoElement|null>>({})
   const uploadRef=useRef<HTMLInputElement>(null)
@@ -37,14 +48,13 @@ function VibraTikTok(){
   const [bio,setBio]=useState('Mombasa Vibes 🌴 | Kamata 🔥')
   const [name,setName]=useState('@MrVibra')
   const [myVideos,setMyVideos]=useState<Clip[]>([])
-  const [liked,setLiked]=useState(false)
-  const [likes,setLikes]=useState(246)
   const [showEdit,setShowEdit]=useState(false)
   const followers=0
   const following=0
   const sy=useRef(0)
 
   useEffect(()=>{
+    setCoins(demoCoinBalance(localStorage.getItem('vibra_coins')))
     setDp(localStorage.getItem('vibra_dp')||''); setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes 🌴 | Kamata 🔥'); setName(localStorage.getItem('vibra_name')||'@MrVibra')
     const openDB=():Promise<IDBDatabase>=> new Promise((res,rej)=>{
       const r=indexedDB.open('vibra_db',1)
@@ -57,11 +67,19 @@ function VibraTikTok(){
     }).catch(()=>{})
   },[])
 
-  const defaultVid:Clip={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:''}
-  const baseFeed=myVideos.length>0?myVideos:[defaultVid]
+  const toClip=(row:CloudVideo):Clip=>({id:row.id,url:row.video_url,caption:row.caption,thumb:'',username:row.username,cloud:true})
+  useEffect(()=>{let alive=true;readCloudVideos().then(rows=>{if(!alive)return;setCloudClips(rows.map(toClip));setCloudReady(true);setCloudError('')}).catch(error=>{if(alive){setCloudReady(false);setCloudError(error instanceof Error?error.message:'Cloud configuration unavailable')}});return()=>{alive=false}},[])
+
+  const defaultVid:Clip={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:'', lyrics:'Uwepo wako unanikamilisha...'}
+  const baseFeed=cloudReady?cloudClips:myVideos.length>0?myVideos:[defaultVid]
   const feed=search ? baseFeed.filter(v=>v.caption.toLowerCase().includes(search.toLowerCase())) : baseFeed
   const current=feed.length>0?feed[idx%feed.length]:undefined
   const clipKey=String(current?.id ?? current?.url ?? 'empty')
+  const liked=likedIds.includes(clipKey)
+  const saved=savedIds.includes(clipKey)
+  const likes=246+(liked?1:0)
+  function toggleLike(){setLikedIds(values=>liked?values.filter(id=>id!==clipKey):[...values,clipKey])}
+  function toggleSave(){setSavedIds(values=>saved?values.filter(id=>id!==clipKey):[...values,clipKey]);setNotice(saved?'Removed from saved videos.':'Saved!')}
   const playback=useRef({ view, source: current?.url, soundEnabled, suspended, panel, showEdit })
   playback.current={view,source:current?.url,soundEnabled,suspended,panel,showEdit}
 
@@ -80,8 +98,12 @@ function VibraTikTok(){
   async function uploadVideo(file:File|undefined){
     if(!file) return
     if(!file.type.startsWith('video/')) { setNotice('Choose a video file.'); return }
+    if(uploading) return
+    setUploading(true);setUploadProgress(0)
     try {
-      const clip:Clip={id:Date.now(),url:'',caption:file.name,thumb:'',blob:file}
+      if(cloudReady){const row=await uploadCloudVideo(file,name,caption||file.name,setUploadProgress);const clip=toClip(row);setCloudClips(values=>[clip,...values]);setMyVideos(values=>[clip,...values]);setSearch('');setIdx(0);setView('home');setPanel('');setPendingFile(undefined);setNotice('Uploaded worldwide!');return}
+      setUploadProgress(10)
+      const clip:Clip={id:Date.now(),url:'',caption:caption||file.name,thumb:'',blob:file}
       await new Promise<void>((resolve,reject)=>{
         const request=indexedDB.open('vibra_db',1)
         request.onupgradeneeded=()=>request.result.createObjectStore('videos',{keyPath:'id'})
@@ -89,89 +111,68 @@ function VibraTikTok(){
         request.onsuccess=()=>{const db=request.result;const tx=db.transaction('videos','readwrite');tx.objectStore('videos').put(clip);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)}}
       })
       clip.url=URL.createObjectURL(file)
-      setMyVideos(list=>[clip,...list]);setSearch('');setIdx(0);setView('home');setNotice('Video saved on this device. Cloud upload is not connected.')
-    } catch { setNotice('Could not save this video. Please try again.') }
+      setMyVideos(list=>[clip,...list]);setSearch('');setIdx(0);setView('home');setPanel('');setPendingFile(undefined);setUploadProgress(100);setNotice('Upload complete. Cloud Mode: Local (Connect Supabase for worldwide)')
+    } catch(error) { setNotice(`Upload failed: ${error instanceof Error?error.message:'Please try again.'}`) } finally {setUploading(false)}
   }
   async function shareVideo(){
-    try { if(navigator.share) await navigator.share({title:'Vibra Worldwide',text:current?.caption||'Vibra Worldwide',url:window.location.href});else {await navigator.clipboard.writeText(window.location.href);setNotice('Link copied.')} }
+    try { if(navigator.share) await navigator.share({title:'Vibra Worldwide',text:current?.caption||'Vibra Worldwide',url:`${window.location.origin}/?video=${encodeURIComponent(clipKey)}`});else {await navigator.clipboard.writeText(`${window.location.origin}/?video=${encodeURIComponent(clipKey)}`);setNotice('Link copied.')} }
     catch { setNotice('Sharing was cancelled or unavailable.') }
   }
-  const uploadInput=<input ref={uploadRef} type="file" accept="video/*" aria-label="Upload file" hidden onChange={e=>{void uploadVideo(e.target.files?.[0]);e.target.value=''}} />
+  const uploadInput=<input ref={uploadRef} type="file" accept="video/*" aria-label="Upload file" hidden onChange={e=>{const file=e.target.files?.[0];if(file){setPendingFile(file);setCaption(file.name);setPanel('Upload')}e.target.value=''}} />
 
   const saveProfile=()=>{
     localStorage.setItem('vibra_dp', dp); localStorage.setItem('vibra_bio', bio); localStorage.setItem('vibra_name', name); setShowEdit(false)
   }
 
+  const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>{if(!uploading)setPanel('')}}><form className="space-y-4" onSubmit={e=>{e.preventDefault();void uploadVideo(pendingFile)}}><p>{pendingFile?.name}</p><label>Caption<input aria-label="Caption" value={caption} onChange={e=>setCaption(e.target.value)} /></label><p className="text-sm text-panel-muted">{cloudReady?'Cloud Mode: Worldwide':'Cloud Mode: Local (Connect Supabase for worldwide)'}</p>{!cloudReady&&<p className="text-sm text-panel-muted">Cloud setup: {cloudError}</p>}{uploading&&<div><progress className="w-full" aria-label="Upload progress" value={uploadProgress} max={100}/><p>{uploadProgress}% · Upload steps</p></div>}<Button type="submit" disabled={uploading||!pendingFile} className="sheet-command w-full">{uploading?'Uploading…':'Post'}</Button></form></VibraSheet>
+  const profileVideos=cloudReady?[...myVideos.filter(v=>!v.cloud),...cloudClips.filter(v=>v.username===name)]:myVideos
+  function openClip(clip:Clip){const index=baseFeed.findIndex(v=>v.url===clip.url);setSearch('');setIdx(index<0?0:index);setView('home')}
   if(view==='me'){
-    return(
-      <div className="vibra-app bg-video text-video-text">{uploadInput}
-        <div style={{padding:10, borderBottom:'1px solid #222', position:'sticky', top:0, background:'black', zIndex:5}}>
-          <div style={{display:'flex', gap:8, alignItems:'center'}}>
-            <input value={search} onChange={e=> setSearch(e.target.value)} placeholder='🔍 Search' style={{flex:1, background:'#1a1a1a', border:'1px solid #333', borderRadius:20, padding:'8px 14px', color:'white'}}/>
-            <span className="text-sm text-video-text">Rewards unavailable</span>
-          </div>
-          <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:12, fontWeight:'900'}}>
-            <span style={{opacity: tab==='following'?1:0.5, borderBottom: tab==='following'?'2px solid white':'none'}}>Following</span>
-            <span style={{opacity: tab==='foryou'?1:0.5, borderBottom: tab==='foryou'?'2px solid white':'none'}}>For You</span>
-          </div>
-        </div>
-        <div style={{padding:16, textAlign:'center'}}>
-          <div onClick={()=> setShowEdit(true)} style={{width:96,height:96,borderRadius:48,margin:'0 auto',background:'#333', backgroundImage:`url(${dp})`, backgroundSize:'cover', border:'2px solid #ff0'}}></div>
-          <div style={{marginTop:10, fontWeight:'900', fontSize:18}}>{name}</div>
-          <div style={{marginTop:4, fontSize:13, color:'#aaa'}}>{bio}</div>
-
-          <button onClick={()=> setShowEdit(true)} style={{marginTop:10, background:'#222', color:'white', border:'1px solid #444', borderRadius:20, padding:'6px 16px'}}>Edit Profile</button>
-          <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:16}}>
-            <div><b>{following}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Following</span></div>
-            <div><b>{followers}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Followers</span></div>
-            <div><b>{liked ? 1 : 0}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Likes</span></div>
-          </div>
-          <div className="mt-4"><Button onClick={()=>uploadRef.current?.click()}>＋ Upload a video</Button></div>
-
-        </div>
-        <div style={{padding:12}}>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:4}}>
-            {myVideos.map((v:any,i:number)=><div key={v.id} onClick={()=>{setView('home'); setIdx(i)}} style={{aspectRatio:'3/4', background:'#111', borderRadius:8, overflow:'hidden'}}><img src={v.thumb} style={{width:'100%', height:'100%', objectFit:'cover'}}/></div>)}
-          </div>
-        </div>
-        {showEdit&&<div style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.9)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:20}}><div style={{background:'#1a1a1a', padding:20, borderRadius:16, width:'90%'}}>
-          <h3>Edit Profile</h3>
-          <input value={name} onChange={e=> setName(e.target.value)} placeholder='@username' style={{width:'100%', padding:10, marginTop:10, borderRadius:8, background:'#222', color:'white', border:'1px solid #444'}}/>
-          <input value={bio} onChange={e=> setBio(e.target.value)} placeholder='Bio' style={{width:'100%', padding:10, marginTop:10, borderRadius:8, background:'#222', color:'white', border:'1px solid #444'}}/>
-          <input placeholder='DP image URL' value={dp} onChange={e=> setDp(e.target.value)} style={{width:'100%', padding:10, marginTop:10, borderRadius:8, background:'#222', color:'white', border:'1px solid #444'}}/>
-          <div style={{display:'flex', gap:10, marginTop:12}}><button onClick={()=> setShowEdit(false)} style={{flex:1, padding:10, borderRadius:8, background:'#333', color:'white', border:0}}>Cancel</button><button onClick={saveProfile} style={{flex:1, padding:10, borderRadius:8, background:'#ff0', color:'black', fontWeight:'900', border:0}}>Save</button></div>
-        </div></div>}
-        <div style={{position:'fixed', bottom:0, left:0, right:0, height:60, background:'black', display:'flex', justifyContent:'space-around', alignItems:'center', borderTop:'1px solid #222'}}><div onClick={()=> setView('home')}>🏠 Home</div><div>🔍</div><div style={{width:36,height:24,background:'white',borderRadius:6}}></div><div>💬</div><div style={{fontWeight:'900', borderBottom:'2px solid white'}}>👤 You</div></div>
-      </div>
-    )
+    return <div data-ready={hydrated} className="vibra-app bg-video text-video-text overflow-y-auto profile-scroll">{uploadInput}
+      <header className="flex items-center justify-between p-4"><Button variant="ghost" onClick={()=>setView('home')}>← Home</Button><span>{coins} Demo Coins</span></header>
+      <section className="px-4 text-center space-y-3">
+        <Button variant="ghost" className="h-20 w-20 rounded-full bg-video-glass" aria-label="Edit profile photo" onClick={()=>setShowEdit(true)}>{dp?<img src={dp} alt="Profile" className="h-full w-full rounded-full object-cover"/>:'V'}</Button>
+        <h1 className="font-bold text-xl">{name}</h1><p>{bio}</p>
+        <Button variant="ghost" className="bg-video-glass text-video-text border border-panel-muted" onClick={()=>setShowEdit(true)}>Edit Profile</Button>
+        <div className="flex justify-center gap-3"><Button variant="ghost" onClick={()=>setPanel('Following')}>{following} Following</Button><Button variant="ghost" onClick={()=>setPanel('Followers')}>{followers} Followers</Button><Button variant="ghost" onClick={()=>setPanel('Likes')}>{likedIds.length} Likes</Button></div>
+        <p>{profileVideos.length} Videos</p><Button onClick={()=>uploadRef.current?.click()}>＋ Upload a video</Button>
+      </section>
+      <section className="p-3 profile-grid">{profileVideos.map(v=><Button key={v.url} className="profile-tile" aria-label={`Play ${v.caption}`} onClick={()=>openClip(v)}><video src={v.url} muted playsInline preload="metadata" onLoadedData={e=>{const video=e.currentTarget;video.currentTime=Math.min(0.1,video.duration||0);}}/><span className="mini-caption">{v.caption}</span></Button>)}</section>
+      {!profileVideos.length&&<p className="p-6 text-center">No uploaded videos yet.</p>}
+      <VibraSheet title="Edit Profile" open={showEdit} onClose={()=>setShowEdit(false)}><form className="space-y-3" onSubmit={e=>{e.preventDefault();saveProfile()}}><input aria-label="Username" value={name} onChange={e=>setName(e.target.value)} /><input aria-label="Bio" value={bio} onChange={e=>setBio(e.target.value)} /><input aria-label="Profile photo URL" value={dp} onChange={e=>setDp(e.target.value)} /><Button type="submit" className="sheet-command">Save profile</Button></form></VibraSheet>
+      <VibraSheet title={panel} open={['Following','Followers','Likes'].includes(panel)} onClose={()=>setPanel('')}><p>{panel==='Likes'?`${likedIds.length} videos liked in this session.`:`No ${panel.toLowerCase()} recorded. Shared follow accounts are not connected.`}</p></VibraSheet>
+      {uploadPanel}{notice&&<p className="vibra-notice" role="status">{notice}</p>}
+      <nav className="bottom-nav fixed bottom-0 inset-x-0 bg-video flex items-center justify-around"><Button variant="ghost" onClick={()=>setView('home')}>🏠 Home</Button><Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>＋</Button><Button variant="ghost" onClick={()=>setView('me')}>👤 Me</Button></nav>
+    </div>
   }
 
   return(
     <div data-ready={hydrated} className="vibra-app bg-video text-video-text fixed inset-0 overflow-hidden" onTouchStart={e=> {const touch=e.touches[0];if(touch) sy.current=touch.clientY}} onTouchEnd={e=>{ const touch=e.changedTouches[0];if(!touch || !feed.length) return;const dy=sy.current - touch.clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
       {uploadInput}
+      {uploadPanel}
       <div style={{position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'8px 12px', background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)'}}>
         <div style={{display:'flex', gap:8, alignItems:'center'}}>
           <input value={search} onChange={e=> setSearch(e.target.value)} placeholder='🔍 Search' style={{flex:1, background:'rgba(255,255,255,0.15)', border:'none', borderRadius:20, padding:'6px 12px', color:'white', fontSize:13}}/>
-          <Button className="action-button" aria-label="Upload a video" onClick={()=>uploadRef.current?.click()}>＋</Button>
+          <span className="text-xs whitespace-nowrap">{coins} Coins</span><Button className="action-button" aria-label="Upload a video" onClick={()=>uploadRef.current?.click()}>＋</Button>
         </div>
         <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:8, fontWeight:'900', color:'white', fontSize:15}}>
-          <span onClick={()=> setTab('following')} style={{opacity: tab==='following'?1:0.6, borderBottom: tab==='following'?'2px solid white':'none'}}>Following</span>
-          <span onClick={()=> setTab('foryou')} style={{opacity: tab==='foryou'?1:0.6, borderBottom: tab==='foryou'?'2px solid white':'none'}}>For You</span>
+          <Button variant="ghost" onClick={()=>{setTab('following');setNotice('Shared following accounts are not connected yet.')}} style={{opacity: tab==='following'?1:0.6, borderBottom: tab==='following'?'2px solid white':'none'}}>Following</Button>
+          <Button variant="ghost" onClick={()=> setTab('foryou')} style={{opacity: tab==='foryou'?1:0.6, borderBottom: tab==='foryou'?'2px solid white':'none'}}>For You</Button>
         </div>
       </div>
 
       {current ? <video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop muted playsInline onPlay={e=>{if(playback.current.view!=='home'||playback.current.panel||playback.current.suspended) silenceVideo(e.currentTarget)}} onClick={()=>{const video=videoRef.current;if(!video) return;if(video.paused) void startActiveVideo(video,soundEnabled,()=>!playback.current.suspended&&!playback.current.panel);else video.pause()}} /> : <p className="empty-feed">No videos found.</p>}
       <div className="absolute right-3 top-24 z-[60]"><Button className="action-button px-3" aria-label={soundEnabled?'Sound on':'Bonyeza kuwasha sauti'} aria-pressed={soundEnabled} onClick={()=>setSoundEnabled(value=>!value)}>{soundEnabled?'🔊 Sound on':'🔇 Bonyeza kuwasha sauti'}</Button></div>
-      <div className="feed-caption absolute left-3 right-20"><h1 className="font-bold">VIBRA WORLDWIDE</h1><p>{current?.caption}</p><p>#vibra #worldwide</p></div>
+      <div className="feed-caption absolute left-3 right-20"><p className="text-xs">{cloudReady?'Worldwide':'Cloud Mode: Local'}</p><h1 className="font-bold">VIBRA WORLDWIDE</h1><p>{current?.caption}</p><p>#vibra #worldwide</p></div>
       {current && <VideoProgress clipId="active" source={current.url} videos={videos} />}
       <div className="action-stack right-3 bottom-32 flex flex-col gap-2">
         <Button className="action-button" aria-label="Open profile" onClick={()=>setView('me')}>👤</Button>
-        <Button className="action-button" aria-label="Like video" aria-pressed={liked} onClick={()=>{setLiked(!liked);setLikes(value=>liked?value-1:value+1)}}>❤️<span>{likes}</span></Button>
+        <Button className={`action-button ${liked?'is-active':''}`} aria-label="Like video" aria-pressed={liked} onClick={toggleLike}>❤️<span>{likes}</span></Button>
         <Button className="action-button" aria-label="Comments" onClick={()=>setPanel('Comments')}>💬<span>{comments[clipKey]?.length||0}</span></Button>
-        <Button className="action-button" aria-label="Save video" aria-pressed={saved} onClick={()=>setSaved(value=>!value)}>🔖<span>{saved?'Saved':'Save'}</span></Button>
+        <Button className="action-button" aria-label="Save video" aria-pressed={saved} onClick={toggleSave}>🔖<span>{saved?'Saved':'Save'}</span></Button>
         <Button className="action-button" aria-label="Share video" onClick={()=>void shareVideo()}>↗️<span>Share</span></Button>
         <Button className="action-button" aria-label="Lyrics" onClick={()=>setPanel('Lyrics')}>♫<span>Lyrics</span></Button>
-        <VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} />
+        <VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} onBalanceChange={setCoins} onNotice={setNotice} />
       </div>
       <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex items-center justify-around">
         <Button variant="ghost" onClick={()=>setView('home')}>🏠 Home</Button>
@@ -181,7 +182,7 @@ function VibraTikTok(){
       <VibraSheet title={panel} open={panel==='Comments'||panel==='Lyrics'} onClose={()=>setPanel('')}>
         {panel==='Lyrics'?<p className="lyrics-copy">{current?.lyrics?.trim()||'Lyrics are not available for this video yet.'}</p>:<div className="space-y-3">
           {(comments[clipKey]||[]).map((text,i)=><p key={i}>{text}</p>)}
-          <form onSubmit={e=>{e.preventDefault();if(!comment.trim())return;setComments(values=>({...values,[clipKey]:[...(values[clipKey]||[]),comment.trim()]}));setComment('')}} className="flex gap-2"><input aria-label="Add comment" value={comment} onChange={e=>setComment(e.target.value)} /><Button type="submit">Post</Button></form>
+          <form onSubmit={e=>{e.preventDefault();if(!comment.trim())return;setComments(values=>({...values,[clipKey]:[...(values[clipKey]||[]),comment.trim()]}));setComment('')}} className="flex gap-2"><input placeholder="Add comment..." aria-label="Add comment" value={comment} onChange={e=>setComment(e.target.value)} /><Button type="submit">Post</Button></form>
         </div>}
       </VibraSheet>
       {notice&&<p className="vibra-notice" role="status">{notice}</p>}
