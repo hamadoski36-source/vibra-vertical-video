@@ -1,61 +1,88 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 
 export const Route = createFileRoute('/')({
-  component: VibraFinal,
+  component: VibraFixed,
 })
 
-function VibraFinal() {
-  const [tab, setTab] = useState('home')
+function VibraFixed() {
+  const [likes, setLikes] = useState(12000)
+  const [liked, setLiked] = useState(false)
   const [showComments, setShowComments] = useState(false)
+  const [showLyrics, setShowLyrics] = useState(false)
   const [showShare, setShowShare] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
-  const [currentIdx, setCurrentIdx] = useState(0)
-  const [caption, setCaption] = useState("")
-  const [tags, setTags] = useState("")
-  const [dp, setDp] = useState("")
-  const [myVideoUrl, setMyVideoUrl] = useState<string|null>(null)
-  const [myVideoTags, setMyVideoTags] = useState("")
-  const [likes, setLikes] = useState([12000,8900,5400,12000,9800,7600,5400,3200])
-  const [liked, setLiked] = useState([false,false,false,false,false,false,false,false])
-  const videoRef = useRef<HTMLVideoElement|null>(null)
+  const [myVideo, setMyVideo] = useState<string | null>(null)
+  const [comments, setComments] = useState(["Mombasa 🔥🔥", "Video kali sana!", "Support Vibra 💛"])
+  const [newComment, setNewComment] = useState("")
+  const [tab, setTab] = useState("home")
+  const videoRef = useRef<HTMLVideoElement>(null)
 
-  const baseVideos = [
-    { id:1, title:"VIBRA WORLDWIDE 🌍", user:"@MrVibra", poster:"https://picsum.photos/id/1015/720/1280", url:"https://www.w3schools.com/html/mov_bbb.mp4", tags:"#vibra #mombasa #worldwide" },
-    { id:2, title:"Mombasa Support 💛", user:"@MrVibra", poster:"https://picsum.photos/id/1016/720/1280", url:"https://www.w3schools.com/html/movie.mp4", tags:"#mombasa #support #vibra" },
-    { id:3, title:"Coast Life 🌊", user:"@CoastVibes", poster:"https://picsum.photos/id/1025/720/1280", url:"https://www.w3schools.com/html/mov_bbb.mp4", tags:"#coast #beach #vibra" },
-    { id:4, title:"Beach Vibra 🏖️", user:"@BeachBoy", poster:"https://picsum.photos/id/1062/720/1280", url:"https://www.w3schools.com/html/movie.mp4", tags:"#beach #mombasa" },
-  ]
-
-  useEffect(()=>{
-    const d=localStorage.getItem("vibra_dp"); if(d) setDp(d)
-    const handleVis = () => { if(document.hidden && videoRef.current) videoRef.current.pause() }
-    document.addEventListener('visibilitychange', handleVis)
-    return ()=>document.removeEventListener('visibilitychange', handleVis)
-  },[])
-
-  const allVideos = myVideoUrl ? [{id:99, title: caption || "My Video 💛", user:"@MrVibra", poster:myVideoUrl, url:myVideoUrl, tags:myVideoTags}, ...baseVideos] : baseVideos
-
-  // LIKE INAONGEZEKA HALISI
-  const handleLike = (idx:number) => {
-    const newLiked = [...liked]; const newLikes = [...likes]
-    newLiked[idx] = !newLiked[idx]
-    if(newLiked[idx]) newLikes[idx] = newLikes[idx] + 1
-    else newLikes[idx] = newLikes[idx] - 1
-    setLiked(newLiked); setLikes(newLikes)
+  // LIKE - SASA INAONGEZEKA UKIBONYEZA
+  const handleLike = () => {
+    if (!liked) {
+      setLikes(likes + 1)
+      setLiked(true)
+    } else {
+      setLikes(likes - 1)
+      setLiked(false)
+    }
   }
 
-  const handleUpload = (file:File) => {
+  // UPLOAD - SASA VIDEO INAONYESHA MOJA KWA MOJA
+  const handleUpload = (e: any) => {
+    const file = e.target.files[0]
+    if (!file) return
     const url = URL.createObjectURL(file)
-    setMyVideoUrl(url)
-    setMyVideoTags(tags)
-    setCurrentIdx(0)
-    setTab('home')
-    alert(`✅ Video uploaded!\nCaption: ${caption}\nTags: ${tags}\nSasa inaonekana Home!`)
+    setMyVideo(url)
+    setTab("home")
+    alert("✅ Video imepanda! Sasa utaiona Home")
   }
 
-  // SHARE NA WHATSAPP HALISI
-  const ShareModal = () => (
-    <div style={{position:'fixed',inset:0,zIndex:300,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-end'}} onClick={()=>setShowShare(false)}>
-      <div style={{background:'#1a1a1a',width:'100%',borderRadius:'15px 15px 0 0',padding:'20px'}} onClick={e=>e.stopPropagation()}>
-        <div style
+  if (tab === "upload") {
+    return (
+      <div style={{ background: "black", color: "white", minHeight: "100vh", padding: "20px" }}>
+        <h2 onClick={() => setTab("home")} style={{ cursor: "pointer" }}>← Back Home</h2>
+        <div style={{ marginTop: "100px", textAlign: "center", border: "2px dashed #333", padding: "40px", borderRadius: "20px" }}>
+          <h3>Upload Video Yako</h3>
+          <p style={{ opacity: 0.6, fontSize: "13px" }}>Chagua video, itaonekana moja kwa moja Home</p>
+          <label style={{ background: "white", color: "black", padding: "15px 30px", borderRadius: "30px", display: "inline-block", marginTop: "20px", fontWeight: "bold", cursor: "pointer" }}>
+            📁 CHAGUA VIDEO
+            <input type="file" accept="video/*" onChange={handleUpload} hidden />
+          </label>
+        </div>
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", justifyContent: "space-around", background: "black", padding: "10px", borderTop: "1px solid #222" }}>
+          <span onClick={() => setTab("home")}>🏠 Home</span>
+          <span onClick={() => setTab("upload")} style={{ color: "#facc15" }}>➕ Upload</span>
+          <span>👤 Me</span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ background: "black", color: "white", height: "100vh", width: "100vw", position: "relative", overflow: "hidden" }}>
+      {/* VIDEO - SASA INAONYESHA YAKO UKI-UPLOAD */}
+      <video
+        ref={videoRef}
+        src={myVideo || "https://www.w3schools.com/html/mov_bbb.mp4"}
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        onClick={() => videoRef.current?.paused ? videoRef.current.play() : videoRef.current?.pause()}
+      />
+
+      {/* LEFT BOTTOM - INFO */}
+      <div style={{ position: "absolute", bottom: "80px", left: "12px", right: "90px" }}>
+        <p style={{ fontWeight: "bold", margin: 0 }}>@MrVibra • Mombasa</p>
+        <p style={{ fontSize: "12px", margin: "4px 0" }}>{myVideo ? "Video Yangu 🔥" : "VIBRA WORLDWIDE 🌍"} - {likes} likes</p>
+        <p style={{ fontSize: "11px", opacity: 0.7 }}>🎵 Original Sound - Support Vibra</p>
+      </div>
+
+      {/* RIGHT SIDE - SIO PICHA TENA - BUTTONS HALISI */}
+      <div style={{ position: "absolute", right: "10px", bottom: "120px", display: "flex", flexDirection: "column", gap: "18px", alignItems: "center", zIndex: 50 }}>
+
+        {/* LIKE - INAFANYA KAZI */}
+        <div onClick={handleLike} style={{ textAlign: "center", cursor: "pointer" }}>
+          <div style={{ fontSize: "32px", background: liked ? "#ef4444" : "rgba(255,255,255,0.15
