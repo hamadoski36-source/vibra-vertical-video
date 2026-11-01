@@ -62,5 +62,14 @@
 .vibra-app .mini-caption { position:absolute; bottom:8px; left:8px; right:48px; z-index:2; font-size:11px; overflow-wrap:anywhere; color:var(--vibra-video-text); }
 .vibra-app button, .vibra-sheet button { touch-action:manipulation; }
 .vibra-sheet-body .lyrics-copy { white-space:pre-wrap; line-height:1.8; }
+.coin-demo { display:flex; align-items:center; flex-direction:column; gap:12px; padding:20px; background:var(--vibra-panel-control); border-radius:8px; text-align:center; }
+.coin-demo img { width:80px; height:80px; border-radius:8px; }
+.coin-demo output { font-size:32px; font-weight:700; min-height:48px; }
+.coin-ready { animation:coin-ready 1s ease-in-out infinite alternate; }
+@keyframes coin-ready { to { transform:scale(1.025); } }
+.vibra-app .profile-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
+.vibra-app .profile-grid .profile-tile { padding:0; width:100%; height:auto; min-height:0; overflow:hidden; border-radius:6px; background:var(--vibra-video); }
+.profile-tile video { width:100%; height:100%; object-fit:cover; pointer-events:none; }
+.vibra-app .action-button.is-active { color:var(--vibra-brand); background:var(--vibra-glass); }
 @media (max-height:720px) { .action-stack { gap:2px; } .action-stack .action-button { height:44px; } .vibra-app .feed-caption { max-height:100px; } }
-@media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto; } }
+@media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto; } .coin-ready { animation:none; } }
