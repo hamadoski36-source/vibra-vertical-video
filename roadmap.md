@@ -1,5 +1,12 @@
 # Vibra migration roadmap
 
+## Controls, cloud and demo coins — November 1, 2026
+- [ ] Test and repair all action/navigation/profile controls and three-column video previews without invented follower totals.
+- [ ] Inspect existing external Storage and tables; upload and discover worldwide only through accessible existing configuration; no replacement backend or silently bypassed ownership.
+- [ ] Add explicit upload status/progress/error reporting and preserve local clips; never label local fallback as worldwide.
+- [ ] Add five-second demo with 8 non-cash coins, persistent balance and single claim per completed demo; no fake sponsored/Google advertisement.
+- [ ] Test buttons, real uploads where access permits, thumbnails, sound lifecycle, demo claims and regressions; no publication or Git commit claim.
+
 ## Rewards repair — November 1, 2026
 - [x] Repair truncated Home route, retain device clips/profile editing, restore Home controls and upload access, and use shared playback lifecycle to stop background audio.
 - [x] Make KSH 8 open a controlled unavailable panel; retain supplied AdMob IDs without a fake Google image, timer, banner, cash credit or earning claim. Preserve existing vibra_ksh without modification.
