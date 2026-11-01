@@ -133,7 +133,7 @@ function VibraTikTok(){
       <section className="px-4 text-center space-y-3">
         <Button variant="ghost" className="h-20 w-20 rounded-full bg-video-glass" aria-label="Edit profile photo" onClick={()=>setShowEdit(true)}>{dp?<img src={dp} alt="Profile" className="h-full w-full rounded-full object-cover"/>:'V'}</Button>
         <h1 className="font-bold text-xl">{name}</h1><p>{bio}</p>
-        <Button variant="outline" onClick={()=>setShowEdit(true)}>Edit Profile</Button>
+        <Button variant="ghost" className="bg-video-glass text-video-text border border-panel-muted" onClick={()=>setShowEdit(true)}>Edit Profile</Button>
         <div className="flex justify-center gap-3"><Button variant="ghost" onClick={()=>setPanel('Following')}>{following} Following</Button><Button variant="ghost" onClick={()=>setPanel('Followers')}>{followers} Followers</Button><Button variant="ghost" onClick={()=>setPanel('Likes')}>{likedIds.length} Likes</Button></div>
         <p>{profileVideos.length} Videos</p><Button onClick={()=>uploadRef.current?.click()}>＋ Upload a video</Button>
       </section>

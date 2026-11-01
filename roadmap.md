@@ -1,11 +1,13 @@
 # Vibra migration roadmap
 
 ## Controls, cloud and demo coins — November 1, 2026
-- [ ] Test and repair all action/navigation/profile controls and three-column video previews without invented follower totals.
-- [ ] Inspect existing external Storage and tables; upload and discover worldwide only through accessible existing configuration; no replacement backend or silently bypassed ownership.
-- [ ] Add explicit upload status/progress/error reporting and preserve local clips; never label local fallback as worldwide.
-- [ ] Add five-second demo with 8 non-cash coins, persistent balance and single claim per completed demo; no fake sponsored/Google advertisement.
-- [ ] Test buttons, real uploads where access permits, thumbnails, sound lifecycle, demo claims and regressions; no publication or Git commit claim.
+- [x] Repair selected-video likes/comments/bookmarks, profile/Home navigation, upload composer, editable profile and three-column playable video previews; preserve zero follower totals honestly.
+- [x] Inspect existing external service: videos SELECT fails because username column does not exist; vibra-videos and Vibra clips bucket checks return NoSuchBucket. No authorized administration access is available; do not provision a replacement backend.
+- [x] Add browser upload adapter with authenticated user_id, Storage public URL, metadata insertion and cleanup on metadata failure; staged upload progress/status/errors. Adapter cannot be verified on real cloud until existing setup is repaired. Retain IndexedDB clips and clearly labeled Local Mode.
+- [x] Add five-second demo awarding exactly 8 non-cash coins, persistent vibra_coins balance and single claim per demo; no fake sponsored/Google ad or KSH conversion.
+- [x] 390×844 browser verification passes: likes 246→247, save toast, comment posting, supplied example lyric, five-second claim, balance reload, real local video upload, Profile count/preview/player, sound and blur silence. 19 focused tests pass; full suite 22 pass / 5 older compact-feed tests fail (known missing demo/relationship/delete/observer flows).
+- [ ] Worldwide upload/cross-account test blocked by missing compatible videos fields, bucket and verified auth flow; owner must connect the EXISTING project for administration through Project settings → General → External Supabase → Connect. Need owner-only write policies, not public true-for-everyone.
+- [ ] No deployment/commit performed. Restore five older compact-feed flows in a separate verified step; do not delete tests or claim full regression success.
 
 ## Rewards repair — November 1, 2026
 - [x] Repair truncated Home route, retain device clips/profile editing, restore Home controls and upload access, and use shared playback lifecycle to stop background audio.
