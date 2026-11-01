@@ -1,5 +1,12 @@
 # Vibra migration roadmap
 
+## Rewards repair — November 1, 2026
+- [ ] Repair truncated Home route, preserve current controls and device uploads, and stop background audio.
+- [ ] Make the requested rewards control open an honest unavailable panel; keep supplied AdMob IDs without fake ad delivery or credited cash.
+- [ ] Verify rewards, playback, local upload, and phone layout; do not publish or make purchases.
+- [ ] Real rewarded advertising blocked: browser app has no native Mobile Ads SDK; Google prohibits KSH cash rewards. Choose a non-transferable in-app benefit and supported web/native ad path before implementation.
+- [ ] Vercel deployment unverified: existing SPA rewrite is not proof of a working TanStack server deployment; do not claim a deployment or misleading commit.
+
 ## Current interface repairs — October 30, 2026
 - [x] Restore clickable right-side and two-column Profile actions; controlled stats/comments/lyrics/delete panels
 - [x] Stop and mute all media on hidden/pagehide/blur; only active Home video gets sound; verify seeking
