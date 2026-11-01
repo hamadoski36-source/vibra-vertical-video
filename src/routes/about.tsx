@@ -1,6 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/about")({
+  head: () => ({ meta: [
+    { title: 'About Vibra Worldwide' },
+    { name: 'description', content: 'Learn about the Vibra Worldwide short-video project.' },
+    { property: 'og:title', content: 'About Vibra Worldwide' },
+    { property: 'og:description', content: 'Learn about the Vibra Worldwide short-video project.' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+  ] }),
   component: AboutPage,
 })
 

@@ -1,33 +1,51 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
-export const Route = createFileRoute('/')({ component: VibraTikTok })
+import { Button } from '@/components/ui/button'
+import { VibraSheet } from '@/components/vibra-sheet'
+import { VibraRewards } from '@/components/vibra-rewards'
+import { VideoProgress } from '@/components/video-progress'
+import { startActiveVideo, silenceVideo, watchPlaybackLifecycle } from '@/lib/vibra-playback'
+export const Route = createFileRoute('/')({
+  head: () => ({ meta: [
+    { title: 'Vibra Worldwide — Video feed' },
+    { name: 'description', content: 'Watch and share short videos with Vibra Worldwide.' },
+    { property: 'og:title', content: 'Vibra Worldwide — Video feed' },
+    { property: 'og:description', content: 'Watch and share short videos with Vibra Worldwide.' },
+    { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary_large_image' },
+  ] }), component: VibraTikTok,
+})
 
-// 🔥 ID ZAKO ZA PESA YA UKWELI - USISHIRIKISHE MTU!
-const ADMOB_APP_ID = "ca-app-pub-6181996899763561~9348255750"
-const ADMOB_REWARDED_ID = "ca-app-pub-6181996899763561/8848020316"
+type Clip = { id?: number; url: string; caption: string; thumb: string; lyrics?: string; blob?: Blob }
 
 function VibraTikTok(){
+  const hydrated=useHydrated()
   const videoRef=useRef<HTMLVideoElement>(null)
   const [idx,setIdx]=useState(0)
   const [tab,setTab]=useState('foryou')
   const [view,setView]=useState('home')
   const [search,setSearch]=useState('')
-  const [hasInteracted,setHasInteracted]=useState(false)
-  const [dp,setDp]=useState(()=> localStorage.getItem('vibra_dp')||'')
-  const [bio,setBio]=useState(()=> localStorage.getItem('vibra_bio')||'Mombasa Vibes 🌴 | Kamata 🔥')
-  const [name,setName]=useState(()=> localStorage.getItem('vibra_name')||'@MrVibra')
-  const [myVideos,setMyVideos]=useState<any[]>([])
-  const [totalEarnings,setTotalEarnings]=useState(()=> Number(localStorage.getItem('vibra_total')||'0'))
-  const [realEarnings,setRealEarnings]=useState(()=> Number(localStorage.getItem('vibra_real')||'0'))
+  const [soundEnabled,setSoundEnabled]=useState(false)
+  const [suspended,setSuspended]=useState(false)
+  const [panel,setPanel]=useState('')
+  const [comment,setComment]=useState('')
+  const [comments,setComments]=useState<Record<string,string[]>>({})
+  const [saved,setSaved]=useState(false)
+  const [notice,setNotice]=useState('')
+  const videos=useRef<Record<string,HTMLVideoElement|null>>({})
+  const uploadRef=useRef<HTMLInputElement>(null)
+  const [dp,setDp]=useState('')
+  const [bio,setBio]=useState('Mombasa Vibes 🌴 | Kamata 🔥')
+  const [name,setName]=useState('@MrVibra')
+  const [myVideos,setMyVideos]=useState<Clip[]>([])
   const [liked,setLiked]=useState(false)
   const [likes,setLikes]=useState(246)
   const [showEdit,setShowEdit]=useState(false)
-  const [followers,setFollowers]=useState(1250)
-  const [following,setFollowing]=useState(342)
-  const [showAdModal,setShowAdModal]=useState(false)
+  const followers=0
+  const following=0
   const sy=useRef(0)
 
   useEffect(()=>{
+    setDp(localStorage.getItem('vibra_dp')||''); setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes 🌴 | Kamata 🔥'); setName(localStorage.getItem('vibra_name')||'@MrVibra')
     const openDB=():Promise<IDBDatabase>=> new Promise((res,rej)=>{
       const r=indexedDB.open('vibra_db',1)
       r.onupgradeneeded=()=> r.result.createObjectStore('videos',{keyPath:'id'})
@@ -35,49 +53,50 @@ function VibraTikTok(){
     })
     openDB().then(async db=>{
       const tx=db.transaction('videos','readonly'); const req=tx.objectStore('videos').getAll()
-      req.onsuccess=()=>{ const vids=req.result.map((v:any)=> ({...v, url: URL.createObjectURL(v.blob)})); if(vids.length>0) setMyVideos(vids.reverse()) }
+      req.onsuccess=()=>{ const vids=req.result.map((v:Clip)=> ({...v, url: v.blob ? URL.createObjectURL(v.blob) : v.url})); if(vids.length>0) setMyVideos(vids.reverse()) }
     }).catch(()=>{})
   },[])
 
-  const defaultVid={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:'', isAd:false}
-  // Ad ya kweli - video bright
-  const adVid={url:'https://videos.pexels.com/video-files/18069166/18069166-uhd_1440_1440_24fps.mp4', caption:'TANGAZO LA UKWELI', thumb:'', isAd:true, isRealAd:true}
-
+  const defaultVid:Clip={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:''}
   const baseFeed=myVideos.length>0?myVideos:[defaultVid]
-  const filtered=search ? baseFeed.filter((v:any)=> v.caption.toLowerCase().includes(search.toLowerCase())) : baseFeed
-  const feed:any[]=[]
-  filtered.forEach((v:any,i:number)=>{
-    feed.push({...v, isAd:false})
-    if(!search && (i+1)%3===0) feed.push({...adVid, id:`ad-${i}`, isAd:true})
-  })
-  const current=feed.length>0?feed[idx%feed.length]:defaultVid
+  const feed=search ? baseFeed.filter(v=>v.caption.toLowerCase().includes(search.toLowerCase())) : baseFeed
+  const current=feed.length>0?feed[idx%feed.length]:undefined
+  const clipKey=String(current?.id ?? current?.url ?? 'empty')
+  const playback=useRef({ view, source: current?.url, soundEnabled, suspended, panel, showEdit })
+  playback.current={view,source:current?.url,soundEnabled,suspended,panel,showEdit}
 
-  // 🔥 HII NDIO INALETA PESA YA UKWELI
+  useEffect(()=>watchPlaybackLifecycle(()=>setSuspended(true),()=>setSuspended(false)),[])
   useEffect(()=>{
-    if(current?.isAd){
-      // Onyesha modal ya Ad ya kweli
-      setShowAdModal(true)
-      const t=setTimeout(()=>{ 
-        // Hapa ndipo AdMob ya kweli ingelipwa - kwa sasa tuna-simulate
-        // Google atakapo-verify (24h), tutaunganisha hapa:
-        // AdMobRewarded.load({adId: ADMOB_REWARDED_ID})
-        
-        const nt=totalEarnings+1; 
-        localStorage.setItem('vibra_total', String(nt)); 
-        setTotalEarnings(nt)
-        const nr=realEarnings+0.05 // $0.05 = KSH 6.5 kwa kila ad ya kweli
-        localStorage.setItem('vibra_real', String(nr))
-        setRealEarnings(nr)
-        setShowAdModal(false)
-      },4000)
-      return ()=>clearTimeout(t)
-    }
-  },[idx,current])
+    const video=videoRef.current
+    if(!video) return
+    videos.current['active']=video
+    const active=()=>videoRef.current===video && playback.current.view==='home' && playback.current.source===current?.url && !playback.current.suspended && !playback.current.panel && !playback.current.showEdit && !document.hidden
+    if(active()) void startActiveVideo(video,soundEnabled,active)
+    else silenceVideo(video)
+    return ()=>silenceVideo(video)
+  },[current?.url,view,soundEnabled,suspended,panel,showEdit])
+  useEffect(()=>{ if(!notice) return; const timer=setTimeout(()=>setNotice(''),3500); return ()=>clearTimeout(timer) },[notice])
 
-  useEffect(()=>{
-    if(view!=='home' || !current?.url) return
-    const v=videoRef.current; if(!v) return; v.src=current.url; v.loop=true; v.play().catch(()=>{})
-  },[idx,current,view,hasInteracted])
+  async function uploadVideo(file:File|undefined){
+    if(!file) return
+    if(!file.type.startsWith('video/')) { setNotice('Choose a video file.'); return }
+    try {
+      const clip:Clip={id:Date.now(),url:'',caption:file.name,thumb:'',blob:file}
+      await new Promise<void>((resolve,reject)=>{
+        const request=indexedDB.open('vibra_db',1)
+        request.onupgradeneeded=()=>request.result.createObjectStore('videos',{keyPath:'id'})
+        request.onerror=()=>reject(request.error)
+        request.onsuccess=()=>{const db=request.result;const tx=db.transaction('videos','readwrite');tx.objectStore('videos').put(clip);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)}}
+      })
+      clip.url=URL.createObjectURL(file)
+      setMyVideos(list=>[clip,...list]);setSearch('');setIdx(0);setView('home');setNotice('Video saved on this device. Cloud upload is not connected.')
+    } catch { setNotice('Could not save this video. Please try again.') }
+  }
+  async function shareVideo(){
+    try { if(navigator.share) await navigator.share({title:'Vibra Worldwide',text:current?.caption||'Vibra Worldwide',url:window.location.href});else {await navigator.clipboard.writeText(window.location.href);setNotice('Link copied.')} }
+    catch { setNotice('Sharing was cancelled or unavailable.') }
+  }
+  const uploadInput=<input ref={uploadRef} type="file" accept="video/*" aria-label="Upload file" hidden onChange={e=>{void uploadVideo(e.target.files?.[0]);e.target.value=''}} />
 
   const saveProfile=()=>{
     localStorage.setItem('vibra_dp', dp); localStorage.setItem('vibra_bio', bio); localStorage.setItem('vibra_name', name); setShowEdit(false)
@@ -85,11 +104,11 @@ function VibraTikTok(){
 
   if(view==='me'){
     return(
-      <div style={{minHeight:'100dvh', background:'black', color:'white'}}>
+      <div className="vibra-app bg-video text-video-text">{uploadInput}
         <div style={{padding:10, borderBottom:'1px solid #222', position:'sticky', top:0, background:'black', zIndex:5}}>
           <div style={{display:'flex', gap:8, alignItems:'center'}}>
             <input value={search} onChange={e=> setSearch(e.target.value)} placeholder='🔍 Search' style={{flex:1, background:'#1a1a1a', border:'1px solid #333', borderRadius:20, padding:'8px 14px', color:'white'}}/>
-            <div style={{textAlign:'right'}}><div style={{color:'#ff0', fontWeight:'900'}}>KSH {totalEarnings}</div><div style={{fontSize:10, color:'#0f0'}}>${realEarnings.toFixed(2)} real</div></div>
+            <span className="text-sm text-video-text">Rewards unavailable</span>
           </div>
           <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:12, fontWeight:'900'}}>
             <span style={{opacity: tab==='following'?1:0.5, borderBottom: tab==='following'?'2px solid white':'none'}}>Following</span>
@@ -100,20 +119,15 @@ function VibraTikTok(){
           <div onClick={()=> setShowEdit(true)} style={{width:96,height:96,borderRadius:48,margin:'0 auto',background:'#333', backgroundImage:`url(${dp})`, backgroundSize:'cover', border:'2px solid #ff0'}}></div>
           <div style={{marginTop:10, fontWeight:'900', fontSize:18}}>{name}</div>
           <div style={{marginTop:4, fontSize:13, color:'#aaa'}}>{bio}</div>
-          <div style={{marginTop:8, fontSize:11, color:'#0f0'}}>AdMob: {ADMOB_REWARDED_ID.slice(0,20)}...</div>
+
           <button onClick={()=> setShowEdit(true)} style={{marginTop:10, background:'#222', color:'white', border:'1px solid #444', borderRadius:20, padding:'6px 16px'}}>Edit Profile</button>
           <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:16}}>
             <div><b>{following}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Following</span></div>
             <div><b>{followers}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Followers</span></div>
-            <div><b>{myVideos.length*246 + 1250}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Likes</span></div>
+            <div><b>{liked ? 1 : 0}</b><br/><span style={{fontSize:12,color:'#aaa'}}>Likes</span></div>
           </div>
-          <div style={{background:'#111', padding:12, borderRadius:12, marginTop:16, textAlign:'left'}}>
-            <b style={{color:'#ff0'}}>💰 Pesa ya Ukweli:</b>
-            <div style={{fontSize:12, marginTop:6}}>AdMob ID: {ADMOB_REWARDED_ID}</div>
-            <div style={{fontSize:12}}>Status: ⏳ Inasubiri verification (24h)</div>
-            <div style={{fontSize:12, color:'#0f0'}}>Real Earnings: ${realEarnings.toFixed(2)} (KSH {(realEarnings*130).toFixed(0)})</div>
-            <div style={{fontSize:11, color:'#aaa', marginTop:4}}>Baada ya verification, kila Ad = $0.05</div>
-          </div>
+          <div className="mt-4"><Button onClick={()=>uploadRef.current?.click()}>＋ Upload a video</Button></div>
+
         </div>
         <div style={{padding:12}}>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:4}}>
@@ -133,11 +147,12 @@ function VibraTikTok(){
   }
 
   return(
-    <div style={{position:'fixed', inset:0, background:'black', overflow:'hidden'}} onTouchStart={e=> sy.current=e.touches[0].clientY} onTouchEnd={e=>{ const dy=sy.current - e.changedTouches[0].clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
+    <div data-ready={hydrated} className="vibra-app bg-video text-video-text fixed inset-0 overflow-hidden" onTouchStart={e=> {const touch=e.touches[0];if(touch) sy.current=touch.clientY}} onTouchEnd={e=>{ const touch=e.changedTouches[0];if(!touch || !feed.length) return;const dy=sy.current - touch.clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
+      {uploadInput}
       <div style={{position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'8px 12px', background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)'}}>
         <div style={{display:'flex', gap:8, alignItems:'center'}}>
           <input value={search} onChange={e=> setSearch(e.target.value)} placeholder='🔍 Search' style={{flex:1, background:'rgba(255,255,255,0.15)', border:'none', borderRadius:20, padding:'6px 12px', color:'white', fontSize:13}}/>
-          <span style={{color:'#ff0', fontWeight:'900', fontSize:12}}>KSH {totalEarnings}<br/><span style={{fontSize:9, color:'#0f0'}}>${realEarnings.toFixed(2)}</span></span>
+          <Button className="action-button" aria-label="Upload a video" onClick={()=>uploadRef.current?.click()}>＋</Button>
         </div>
         <div style={{display:'flex', justifyContent:'center', gap:24, marginTop:8, fontWeight:'900', color:'white', fontSize:15}}>
           <span onClick={()=> setTab('following')} style={{opacity: tab==='following'?1:0.6, borderBottom: tab==='following'?'2px solid white':'none'}}>Following</span>
@@ -145,19 +160,31 @@ function VibraTikTok(){
         </div>
       </div>
 
-      <video ref={videoRef} style={{position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', filter: current?.isAd ? 'brightness(1.3)' : 'none'}} loop playsInline onClick={()=>{setHasInteracted(true); videoRef.current?.play()}}></video>
-      
-      {current?.isAd && <div style={{position:'absolute', top:70, left:0, right:0, background:'#ffcc00', color:'black', padding:'8px', textAlign:'center', fontWeight:'900', zIndex:9}}>🔥 TANGAZO LA UKWELI! ${realEarnings.toFixed(2)} - AdMob: {ADMOB_REWARDED_ID.slice(-6)}</div>}
-
-      {showAdModal&&<div style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.85)', zIndex:20, display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', color:'white', padding:20, textAlign:'center'}}>
-        <div style={{background:'#ffcc00', color:'black', padding:'12px 20px', borderRadius:12, fontWeight:'900', fontSize:18}}>📺 AD YA UKWELI INACHEZA...</div>
-        <div style={{marginTop:16, fontSize:14}}>AdMob ID: {ADMOB_REWARDED_ID}</div>
-        <div style={{marginTop:8, fontSize:12, color:'#0f0'}}>Unapata $0.05 = KSH 6.5 kwa kila Ad!</div>
-        <div style={{marginTop:12, width:60, height:60, border:'4px solid #ffcc00', borderTop:'4px solid transparent', borderRadius:30, animation:'spin 1s linear infinite'}}></div>
-        <div style={{marginTop:12, fontSize:12}}>Google analipa baada ya verification (24h)</div>
-      </div>}
-
-      <div style={{position:'absolute', right:10, bottom:110, display:'flex', flexDirection:'column', gap:14, alignItems:'center'}}>
-        <div onClick={()=> setView('me')} style={{width:52,height:52,borderRadius:26,background:'#333',border:'2px solid white', backgroundImage:`url(${dp})`, backgroundSize:'cover'}}></div>
-        <div onClick={()=>{ setLiked(!liked); setLikes(l=> liked?l-1:l+1)}} style={{textAlign:'center'}}><div style={{width:48,height:48,borderRadius:24,background:liked?'#ff2a6d':'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center', fontSize:22}}>❤️</div><div style={{color:'white',fontSize:12,fontWeight:'900'}}>{likes}</div></div>
-        <div style={{textAlign:'center'}}><div style={{width:48,height:48,borderRadius:24,background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>💬</div>
+      {current ? <video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop muted playsInline onPlay={e=>{if(playback.current.view!=='home'||playback.current.panel||playback.current.suspended) silenceVideo(e.currentTarget)}} onClick={()=>{const video=videoRef.current;if(!video) return;if(video.paused) void startActiveVideo(video,soundEnabled,()=>!playback.current.suspended&&!playback.current.panel);else video.pause()}} /> : <p className="empty-feed">No videos found.</p>}
+      <div className="absolute right-3 top-24 z-[60]"><Button className="action-button px-3" aria-label={soundEnabled?'Sound on':'Bonyeza kuwasha sauti'} aria-pressed={soundEnabled} onClick={()=>setSoundEnabled(value=>!value)}>{soundEnabled?'🔊 Sound on':'🔇 Bonyeza kuwasha sauti'}</Button></div>
+      <div className="feed-caption absolute left-3 right-20"><h1 className="font-bold">VIBRA WORLDWIDE</h1><p>{current?.caption}</p><p>#vibra #worldwide</p></div>
+      {current && <VideoProgress clipId="active" source={current.url} videos={videos} />}
+      <div className="action-stack right-3 bottom-32 flex flex-col gap-2">
+        <Button className="action-button" aria-label="Open profile" onClick={()=>setView('me')}>👤</Button>
+        <Button className="action-button" aria-label="Like video" aria-pressed={liked} onClick={()=>{setLiked(!liked);setLikes(value=>liked?value-1:value+1)}}>❤️<span>{likes}</span></Button>
+        <Button className="action-button" aria-label="Comments" onClick={()=>setPanel('Comments')}>💬<span>{comments[clipKey]?.length||0}</span></Button>
+        <Button className="action-button" aria-label="Save video" aria-pressed={saved} onClick={()=>setSaved(value=>!value)}>🔖<span>{saved?'Saved':'Save'}</span></Button>
+        <Button className="action-button" aria-label="Share video" onClick={()=>void shareVideo()}>↗️<span>Share</span></Button>
+        <Button className="action-button" aria-label="Lyrics" onClick={()=>setPanel('Lyrics')}>♫<span>Lyrics</span></Button>
+        <VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} />
+      </div>
+      <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex items-center justify-around">
+        <Button variant="ghost" onClick={()=>setView('home')}>🏠 Home</Button>
+        <Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>＋</Button>
+        <Button variant="ghost" onClick={()=>setView('me')}>👤 Me</Button>
+      </nav>
+      <VibraSheet title={panel} open={panel==='Comments'||panel==='Lyrics'} onClose={()=>setPanel('')}>
+        {panel==='Lyrics'?<p className="lyrics-copy">{current?.lyrics?.trim()||'Lyrics are not available for this video yet.'}</p>:<div className="space-y-3">
+          {(comments[clipKey]||[]).map((text,i)=><p key={i}>{text}</p>)}
+          <form onSubmit={e=>{e.preventDefault();if(!comment.trim())return;setComments(values=>({...values,[clipKey]:[...(values[clipKey]||[]),comment.trim()]}));setComment('')}} className="flex gap-2"><input aria-label="Add comment" value={comment} onChange={e=>setComment(e.target.value)} /><Button type="submit">Post</Button></form>
+        </div>}
+      </VibraSheet>
+      {notice&&<p className="vibra-notice" role="status">{notice}</p>}
+    </div>
+  )
+}

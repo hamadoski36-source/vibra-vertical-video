@@ -1,6 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/privacy")({
+  head: () => ({ meta: [
+    { title: 'Privacy — Vibra Worldwide' },
+    { name: 'description', content: 'Read the privacy policy for Vibra Worldwide.' },
+    { property: 'og:title', content: 'Privacy — Vibra Worldwide' },
+    { property: 'og:description', content: 'Read the privacy policy for Vibra Worldwide.' },
+    { property: 'og:type', content: 'website' },
+    { name: 'twitter:card', content: 'summary' },
+  ] }),
   component: PrivacyPage,
 })
 
