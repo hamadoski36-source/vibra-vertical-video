@@ -11,8 +11,8 @@ export function VibraRewards({ onOpenChange, onBalanceChange, onNotice }: { onOp
   const claimLock = useRef(false);
   useEffect(() => {
     if (!open || remaining === 0) return;
-    const timer = setTimeout(() => { if (!document.hidden && document.hasFocus()) setRemaining(value => value - 1); }, 1000);
-    return () => clearTimeout(timer);
+    const timer = setInterval(() => { if (!document.hidden) setRemaining(value => Math.max(0, value - 1)); }, 1000);
+    return () => clearInterval(timer);
   }, [open, remaining]);
   function change(value: boolean) {
     if (value) { setRemaining(DEMO_SECONDS); setClaimed(false); claimLock.current = false; }

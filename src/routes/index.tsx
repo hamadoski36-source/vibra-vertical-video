@@ -17,7 +17,7 @@ export const Route = createFileRoute('/')({
   ] }), component: VibraTikTok,
 })
 
-type Clip = { id?: number; url: string; caption: string; thumb: string; lyrics?: string; blob?: Blob; username?: string; cloud?: boolean }
+type Clip = { id?: number | string; url: string; caption: string; thumb: string; lyrics?: string; blob?: Blob; username?: string; cloud?: boolean }
 
 function VibraTikTok(){
   const hydrated=useHydrated()
@@ -67,7 +67,7 @@ function VibraTikTok(){
     }).catch(()=>{})
   },[])
 
-  const toClip=(row:CloudVideo):Clip=>({id:typeof row.id==='number'?row.id:undefined,url:row.video_url,caption:row.caption,thumb:'',username:row.username,cloud:true})
+  const toClip=(row:CloudVideo):Clip=>({id:row.id,url:row.video_url,caption:row.caption,thumb:'',username:row.username,cloud:true})
   useEffect(()=>{let alive=true;readCloudVideos().then(rows=>{if(!alive)return;setCloudClips(rows.map(toClip));setCloudReady(true);setCloudError('')}).catch(error=>{if(alive){setCloudReady(false);setCloudError(error instanceof Error?error.message:'Cloud configuration unavailable')}});return()=>{alive=false}},[])
 
   const defaultVid:Clip={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:'', lyrics:'Uwepo wako unanikamilisha...'}
