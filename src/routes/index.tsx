@@ -7,6 +7,8 @@ import { VibraSheet } from '@/components/vibra-sheet'
 import { VibraRewards } from '@/components/vibra-rewards'
 import { VideoProgress } from '@/components/video-progress'
 import { startActiveVideo, silenceVideo, watchPlaybackLifecycle } from '@/lib/vibra-playback'
+import { VibraShare } from '@/components/vibra-share'
+import { clipShare, type ClipShare } from '@/lib/vibra-sharing'
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
     { title: 'Vibra Worldwide — Video feed' },
@@ -29,6 +31,7 @@ function VibraTikTok(){
   const [soundEnabled,setSoundEnabled]=useState(false)
   const [suspended,setSuspended]=useState(false)
   const [panel,setPanel]=useState('')
+  const [selectedShare,setSelectedShare]=useState<ClipShare|null>(null)
   const [comment,setComment]=useState('')
   const [comments,setComments]=useState<Record<string,string[]>>({})
   const [savedIds,setSavedIds]=useState<string[]>([])
@@ -69,7 +72,7 @@ function VibraTikTok(){
   },[])
 
   const toClip=(row:CloudVideo):Clip=>({id:row.id,url:row.video_url,caption:row.caption,thumb:'',username:row.username,cloud:true})
-  useEffect(()=>{let alive=true;readCloudVideos().then(rows=>{if(!alive)return;setCloudClips(rows.map(toClip));setCloudReady(true);setCloudError('')}).catch(error=>{if(alive){setCloudReady(false);setCloudError(error instanceof Error?error.message:'Cloud configuration unavailable')}});return()=>{alive=false}},[])
+   useEffect(()=>{let alive=true;readCloudVideos().then(rows=>{if(!alive)return;setCloudClips(rows.map(toClip));const requested=new URLSearchParams(window.location.search).get('video');const index=rows.findIndex(row=>String(row.id)===requested);if(index>=0)setIdx(index);else if(requested)setNotice('This shared video is unavailable.');setCloudReady(true);setCloudError('')}).catch(error=>{if(alive){setCloudReady(false);setCloudError(error instanceof Error?error.message:'Cloud configuration unavailable')}});return()=>{alive=false}},[])
 
   const defaultVid:Clip={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:'', lyrics:'Uwepo wako unanikamilisha...'}
   const baseFeed=cloudReady?cloudClips:myVideos.length>0?myVideos:[defaultVid]
@@ -115,10 +118,8 @@ function VibraTikTok(){
       setMyVideos(list=>[clip,...list]);setSearch('');setIdx(0);setView('home');setPanel('');setPendingFile(undefined);setUploadProgress(100);setNotice('Upload complete. Cloud Mode: Local (Connect Supabase for worldwide)')
     } catch(error) { setNotice(`Upload failed: ${error instanceof Error?error.message:'Please try again.'}`) } finally {setUploading(false)}
   }
-  async function shareVideo(){
-    try { if(navigator.share) await navigator.share({title:'Vibra Worldwide',text:current?.caption||'Vibra Worldwide',url:`${window.location.origin}/?video=${encodeURIComponent(clipKey)}`});else {await navigator.clipboard.writeText(`${window.location.origin}/?video=${encodeURIComponent(clipKey)}`);setNotice('Link copied.')} }
-    catch { setNotice('Sharing was cancelled or unavailable.') }
-  }
+   function shareVideo(){if(!current)return;setSelectedShare(clipShare(window.location.origin,current));setPanel('Share')}
+   const sharePanel=<VibraShare share={selectedShare} onClose={()=>{setSelectedShare(null);setPanel('')}} onNotice={setNotice}/>
   const uploadInput=<input ref={uploadRef} type="file" accept="video/*" aria-label="Upload file" hidden onChange={e=>{const file=e.target.files?.[0];if(file){setPendingFile(file);setCaption(file.name);setPanel('Upload')}e.target.value=''}} />
 
   const saveProfile=()=>{
@@ -142,16 +143,17 @@ function VibraTikTok(){
       {!profileVideos.length&&<p className="p-6 text-center">No uploaded videos yet.</p>}
       <VibraSheet title="Edit Profile" open={showEdit} onClose={()=>setShowEdit(false)}><form className="space-y-3" onSubmit={e=>{e.preventDefault();saveProfile()}}><input aria-label="Username" value={name} onChange={e=>setName(e.target.value)} /><input aria-label="Bio" value={bio} onChange={e=>setBio(e.target.value)} /><input aria-label="Profile photo URL" value={dp} onChange={e=>setDp(e.target.value)} /><Button type="submit" className="sheet-command">Save profile</Button></form></VibraSheet>
       <VibraSheet title={panel} open={['Following','Followers','Likes'].includes(panel)} onClose={()=>setPanel('')}><p>{panel==='Likes'?`${likedIds.length} videos liked in this session.`:`No ${panel.toLowerCase()} recorded. Shared follow accounts are not connected.`}</p></VibraSheet>
-      {uploadPanel}{notice&&<p className="vibra-notice" role="status">{notice}</p>}
+       {uploadPanel}{sharePanel}{notice&&<p className="vibra-notice" role="status">{notice}</p>}
       <nav className="bottom-nav fixed bottom-0 inset-x-0 bg-video flex items-center justify-around"><Button variant="ghost" onClick={()=>setView('home')}>🏠 Home</Button><Button variant="ghost" onClick={()=>{setView('home');setTimeout(()=>searchRef.current?.focus(),0)}}>🔍 Search</Button><Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>＋</Button><Button variant="ghost" aria-label="LIVE tab" onClick={()=>setPanel('LIVE')}>📺 LIVE</Button><Button variant="ghost" onClick={()=>setView('me')}>👤 Me</Button></nav>
       <VibraSheet title="LIVE" open={panel==='LIVE'} onClose={()=>setPanel('')}><div className="space-y-3"><p className="font-bold">LIVE streaming is coming soon.</p><p className="text-sm text-panel-muted">Real live video needs a streaming service, which is not connected yet. Nobody is live right now.</p><Button className="sheet-command w-full" onClick={()=>setPanel('')}>OK</Button></div></VibraSheet>
     </div>
   }
 
   return(
-    <div data-ready={hydrated} className="vibra-app bg-video text-video-text fixed inset-0 overflow-hidden" onTouchStart={e=> {const touch=e.touches[0];if(touch) sy.current=touch.clientY}} onTouchEnd={e=>{ const touch=e.changedTouches[0];if(!touch || !feed.length) return;const dy=sy.current - touch.clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
+     <div data-ready={hydrated} className="vibra-app bg-video text-video-text fixed inset-0 overflow-hidden" onTouchStart={e=> {const touch=e.touches[0];if(touch) sy.current=touch.clientY}} onTouchEnd={e=>{ const touch=e.changedTouches[0];if(panel || !touch || !feed.length) return;const dy=sy.current - touch.clientY; if(Math.abs(dy)>50){ if(dy>0) setIdx(i=> (i+1)%feed.length); else setIdx(i=> (i-1+feed.length)%feed.length) } }}>
       {uploadInput}
       {uploadPanel}
+       {sharePanel}
       <div style={{position:'absolute', top:0, left:0, right:0, zIndex:10, padding:'8px 12px', background:'linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)'}}>
         <div style={{display:'flex', gap:8, alignItems:'center'}}>
           <input ref={searchRef} aria-label="Search videos" value={search} onChange={e=> setSearch(e.target.value)} placeholder='🔍 Search' style={{flex:1, background:'rgba(255,255,255,0.15)', border:'none', borderRadius:20, padding:'6px 12px', color:'white', fontSize:13}}/>
