@@ -1,5 +1,9 @@
 # Vibra migration roadmap
 
+## Sharing and public LIVE — November 2, 2026
+- [ ] Add and test WhatsApp, Facebook, Instagram/system sharing and copy-link choices without claiming device-local videos are public.
+- [ ] Real camera broadcasting and public worldwide viewing: blocked until a streaming service, verified broadcaster accounts and secure existing backend access are connected; explain possible costs and get consent first. Do not substitute a camera preview.
+
 ## Real buttons repair — November 2, 2026
 - [x] Outside edits had replaced the main screen with look-alike buttons; restored the last tested working screen and added working Search and LIVE buttons (top, side, bottom). LIVE opens an honest "coming soon" panel.
 - [x] 390×844 tap test: like 246→247, save, comment, lyrics, three LIVE buttons, search, sound, coins, upload picker, profile, edit profile, followers, home; no page errors. 23 targeted tests pass; same 5 older tests still fail.
