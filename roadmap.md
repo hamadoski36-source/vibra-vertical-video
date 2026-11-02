@@ -1,5 +1,10 @@
 # Vibra migration roadmap
 
+## Real buttons repair — November 2, 2026
+- [x] Outside edits had replaced the main screen with look-alike buttons; restored the last tested working screen and added working Search and LIVE buttons (top, side, bottom). LIVE opens an honest "coming soon" panel.
+- [x] 390×844 tap test: like 246→247, save, comment, lyrics, three LIVE buttons, search, sound, coins, upload picker, profile, edit profile, followers, home; no page errors. 23 targeted tests pass; same 5 older tests still fail.
+- [ ] Real LIVE streaming needs a paid streaming service and the user's go-ahead.
+
 ## Controls, cloud and demo coins — November 1, 2026
 - [x] Repair selected-video likes/comments/bookmarks, profile/Home navigation, upload composer, editable profile and three-column playable video previews; preserve zero follower totals honestly.
 - [x] Inspect existing external service: videos SELECT fails because username column does not exist; vibra-videos and Vibra clips bucket checks return NoSuchBucket. No authorized administration access is available; do not provision a replacement backend.
