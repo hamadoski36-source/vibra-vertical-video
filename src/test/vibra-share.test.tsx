@@ -7,7 +7,7 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const share = clipShare('https://vibra-vertical-video.lovable.app', { id: 99, caption: 'My clip', cloud: true });
 it('copies the selected public video link', async () => {
   const writeText = vi.fn().mockResolvedValue(undefined);
-  vi.spyOn(navigator, 'clipboard', 'get').mockReturnValue({ writeText } as unknown as Clipboard);
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
   const notice = vi.fn();
   render(<VibraShare share={share} onClose={vi.fn()} onNotice={notice} />);
   fireEvent.click(screen.getByRole('button', { name: 'Copy link' }));
