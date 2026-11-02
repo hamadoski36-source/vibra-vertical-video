@@ -1,8 +1,9 @@
 # Vibra migration roadmap
 
 ## Sharing and public LIVE — November 2, 2026
-- [ ] Add and test WhatsApp, Facebook, Instagram/system sharing and copy-link choices without claiming device-local videos are public.
-- [ ] Real camera broadcasting and public worldwide viewing: blocked until a streaming service, verified broadcaster accounts and secure existing backend access are connected; explain possible costs and get consent first. Do not substitute a camera preview.
+- [x] Add WhatsApp and Facebook link choices, Instagram/system sharing and copy-link in a controlled sheet; shared cloud links select the requested loaded clip, and local clips share only the app with an explicit warning.
+- [x] 14 focused tests pass; 390×844 touch check verifies share links, real clipboard readback, Instagram unsupported fallback, dismissal and existing Like/LIVE controls; build OK. External app delivery and real shared cloud clip readback remain unverified because this browser has no installed apps and the existing cloud setup is incompatible.
+- [ ] Real camera broadcasting and public worldwide viewing: blocked until a streaming service, verified broadcaster accounts and secure existing backend access are connected; no connections currently available. LiveKit Cloud has a capped free Build plan worth assessing; obtain consent before setup or any paid usage. Do not substitute a camera preview.
 
 ## Real buttons repair — November 2, 2026
 - [x] Outside edits had replaced the main screen with look-alike buttons; restored the last tested working screen and added working Search and LIVE buttons (top, side, bottom). LIVE opens an honest "coming soon" panel.
