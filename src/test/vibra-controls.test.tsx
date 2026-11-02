@@ -18,4 +18,11 @@ it('toggles the 246 heart count and selected-video bookmark, and posts comments'
   fireEvent.change(screen.getByLabelText('Add comment'),{target:{value:'Hello Vibra'}});
   fireEvent.click(screen.getByRole('button',{name:'Post'}));
   await waitFor(()=>expect(screen.getByText('Hello Vibra')).toBeInTheDocument());
+});it('LIVE buttons open the honest LIVE panel and Search focuses the search box',()=>{
+  const App=Route.options.component;if(!App)throw Error('Missing app');render(<App/>);
+  fireEvent.click(screen.getByRole('button',{name:'LIVE tab'}));
+  expect(screen.getByText('LIVE streaming is coming soon.')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'OK'}));
+  fireEvent.click(screen.getByRole('button',{name:'🔍 Search'}));
+  expect(document.activeElement).toBe(screen.getByLabelText('Search videos'));
 });
