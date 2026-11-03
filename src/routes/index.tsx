@@ -9,6 +9,8 @@ import { VideoProgress } from '@/components/video-progress'
 import { startActiveVideo, silenceVideo, watchPlaybackLifecycle } from '@/lib/vibra-playback'
 import { VibraShare } from '@/components/vibra-share'
 import { clipShare, type ClipShare } from '@/lib/vibra-sharing'
+import { withAdPlacements } from '@/lib/vibra-ads'
+import { VibraAdSpace } from '@/components/vibra-ad-space'
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
     { title: 'Vibra Worldwide — Video feed' },
@@ -72,12 +74,15 @@ function VibraTikTok(){
   },[])
 
   const toClip=(row:CloudVideo):Clip=>({id:row.id,url:row.video_url,caption:row.caption,thumb:'',username:row.username,cloud:true})
-   useEffect(()=>{let alive=true;readCloudVideos().then(rows=>{if(!alive)return;setCloudClips(rows.map(toClip));const requested=new URLSearchParams(window.location.search).get('video');const index=rows.findIndex(row=>String(row.id)===requested);if(index>=0)setIdx(index);else if(requested)setNotice('This shared video is unavailable.');setCloudReady(true);setCloudError('')}).catch(error=>{if(alive){setCloudReady(false);setCloudError(error instanceof Error?error.message:'Cloud configuration unavailable')}});return()=>{alive=false}},[])
+   useEffect(()=>{let alive=true;readCloudVideos().then(rows=>{if(!alive)return;const clips=rows.map(toClip);setCloudClips(clips);const requested=new URLSearchParams(window.location.search).get('video');const index=withAdPlacements(clips).findIndex(entry=>entry.kind==='clip' && String(entry.clip.id)===requested);if(index>=0)setIdx(index);else if(requested)setNotice('This shared video is unavailable.');setCloudReady(true);setCloudError('')}).catch(error=>{if(alive){setCloudReady(false);setCloudError(error instanceof Error?error.message:'Cloud configuration unavailable')}});return()=>{alive=false}},[])
 
   const defaultVid:Clip={url:'https://videos.pexels.com/video-files/18069234/18069234-uhd_1440_1440_24fps.mp4', caption:'Kamata - Mombasa 🔥', thumb:'', lyrics:'Uwepo wako unanikamilisha...'}
   const baseFeed=cloudReady?cloudClips:myVideos.length>0?myVideos:[defaultVid]
-  const feed=search ? baseFeed.filter(v=>v.caption.toLowerCase().includes(search.toLowerCase())) : baseFeed
-  const current=feed.length>0?feed[idx%feed.length]:undefined
+  const filteredClips=search ? baseFeed.filter(v=>v.caption.toLowerCase().includes(search.toLowerCase())) : baseFeed
+  const feed=withAdPlacements(filteredClips)
+  const entry=feed.length>0?feed[idx%feed.length]:undefined
+  const current=entry?.kind==='clip'?entry.clip:undefined
+  const adActive=entry?.kind==='advertisement'
   const clipKey=String(current?.id ?? current?.url ?? 'empty')
   const liked=likedIds.includes(clipKey)
   const saved=savedIds.includes(clipKey)
@@ -128,7 +133,7 @@ function VibraTikTok(){
 
   const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>{if(!uploading)setPanel('')}}><form className="space-y-4" onSubmit={e=>{e.preventDefault();void uploadVideo(pendingFile)}}><p>{pendingFile?.name}</p><label>Caption<input aria-label="Caption" value={caption} onChange={e=>setCaption(e.target.value)} /></label><p className="text-sm text-panel-muted">{cloudReady?'Cloud Mode: Worldwide':'Cloud Mode: Local (Connect Supabase for worldwide)'}</p>{!cloudReady&&<p className="text-sm text-panel-muted">Cloud setup: {cloudError}</p>}{uploading&&<div><progress className="w-full" aria-label="Upload progress" value={uploadProgress} max={100}/><p>{uploadProgress}% · Upload steps</p></div>}<Button type="submit" disabled={uploading||!pendingFile} className="sheet-command w-full">{uploading?'Uploading…':'Post'}</Button></form></VibraSheet>
   const profileVideos=cloudReady?[...myVideos.filter(v=>!v.cloud),...cloudClips.filter(v=>v.username===name)]:myVideos
-  function openClip(clip:Clip){const index=baseFeed.findIndex(v=>v.url===clip.url);setSearch('');setIdx(index<0?0:index);setView('home')}
+  function openClip(clip:Clip){const index=withAdPlacements(baseFeed).findIndex(entry=>entry.kind==='clip' && entry.clip.url===clip.url);setSearch('');setIdx(index<0?0:index);setView('home')}
   if(view==='me'){
     return <div data-ready={hydrated} className="vibra-app bg-video text-video-text overflow-y-auto profile-scroll">{uploadInput}
       <header className="flex items-center justify-between p-4"><Button variant="ghost" onClick={()=>setView('home')}>← Home</Button><span>{coins} Demo Coins</span></header>
@@ -165,7 +170,8 @@ function VibraTikTok(){
         </div>
       </div>
 
-      {current ? <video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop muted playsInline onPlay={e=>{if(playback.current.view!=='home'||playback.current.panel||playback.current.suspended) silenceVideo(e.currentTarget)}} onClick={()=>{const video=videoRef.current;if(!video) return;if(video.paused) void startActiveVideo(video,soundEnabled,()=>!playback.current.suspended&&!playback.current.panel);else video.pause()}} /> : <p className="empty-feed">No videos found.</p>}
+      {adActive ? <VibraAdSpace onContinue={()=>setIdx(i=>(i+1)%feed.length)} /> : current ? <video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop muted playsInline onPlay={e=>{if(playback.current.view!=='home'||playback.current.panel||playback.current.suspended) silenceVideo(e.currentTarget)}} onClick={()=>{const video=videoRef.current;if(!video) return;if(video.paused) void startActiveVideo(video,soundEnabled,()=>!playback.current.suspended&&!playback.current.panel);else video.pause()}} /> : <p className="empty-feed">No videos found.</p>}
+      {!adActive && <>
       <div className="absolute right-3 top-24 z-[60]"><Button className="action-button px-3" aria-label={soundEnabled?'Sound on':'Bonyeza kuwasha sauti'} aria-pressed={soundEnabled} onClick={()=>setSoundEnabled(value=>!value)}>{soundEnabled?'🔊 Sound on':'🔇 Bonyeza kuwasha sauti'}</Button></div>
       <div className="feed-caption absolute left-3 right-20"><p className="text-xs">{cloudReady?'Worldwide':'Cloud Mode: Local'}</p><h1 className="font-bold">VIBRA WORLDWIDE</h1><p>{current?.caption}</p><p>#vibra #worldwide</p></div>
       {current && <VideoProgress clipId="active" source={current.url} videos={videos} />}
@@ -179,6 +185,7 @@ function VibraTikTok(){
         <Button className="action-button" aria-label="LIVE" onClick={()=>setPanel('LIVE')}>🔴<span>LIVE</span></Button>
         <VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} onBalanceChange={setCoins} onNotice={setNotice} />
       </div>
+      </>}
       <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex items-center justify-around">
         <Button variant="ghost" onClick={()=>{setView('home');setSearch('');setIdx(0)}}>🏠 Home</Button>
         <Button variant="ghost" onClick={()=>searchRef.current?.focus()}>🔍 Search</Button>
