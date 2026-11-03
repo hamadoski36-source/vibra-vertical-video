@@ -23,3 +23,4 @@
 - Demo coins use a separate local balance and explicit no-cash labeling; never promote them to a payout or ad-revenue ledger.
 - External cloud video uploads require verified account IDs and compatible owner-scoped schema; retain local mode on configuration failure instead of granting anonymous writes.
 - Keep sharing in a controlled selected-clip sheet with browser-safe URL helpers; use native app sharing for Instagram and never represent a local clip link as worldwide-accessible media.
+- Interleave advertising entries through the browser-safe feed helper, never overlay ads on video controls; keep ad serving off until approval, real unit IDs and consent are verified, retaining account verification without global ad scripts.

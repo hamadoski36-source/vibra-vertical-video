@@ -74,3 +74,6 @@
 @media (max-height:720px) { .action-stack { gap:2px; } .action-stack .action-button { height:44px; } .vibra-app .feed-caption { max-height:100px; } }
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto; } .coin-ready { animation:none; } }.vibra-app .live-pill { border-radius:999px; padding:0 10px; font-size:11px; font-weight:700; background:var(--destructive); color:var(--destructive-foreground); white-space:nowrap; }
 .vibra-app .bottom-nav button { font-size:12px; padding:0 6px; }
+.vibra-ad-break { position:absolute; inset:0; display:grid; place-items:center; padding:140px 20px 100px; background:var(--vibra-panel); color:var(--vibra-panel-text); }
+.vibra-ad-inner { display:flex; flex-direction:column; align-items:center; gap:20px; width:min(100%,600px); }
+.vibra-ad-container { width:100%; min-height:250px; display:grid; place-items:center; padding:24px; border:1px solid var(--vibra-panel-line); background:var(--vibra-panel-control); }

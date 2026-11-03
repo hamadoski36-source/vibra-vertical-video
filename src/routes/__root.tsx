@@ -72,6 +72,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#140c18" },
       { name: "monetag", content: "70d452a2e002b3e5f4e39b401c50ca91" },
+      { name: "google-adsense-account", content: "ca-pub-6181996899763561" },
       { title: "Vibra Worldwide – Your daily frequency" },
       {
         name: "description",
@@ -102,13 +103,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/pwa-192x192.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
-    scripts: [
-      {
-        src: "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6181996899763561",
-        async: true,
-        crossOrigin: "anonymous",
-      },
-    ],
+    // Account verification stays available through the meta tag and ads.txt.
+    // Do not request ads before site approval, a real unit and consent setup.
   }),
   shellComponent: RootShell,
   component: RootComponent,

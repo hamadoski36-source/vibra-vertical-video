@@ -1,5 +1,12 @@
 # Vibra migration roadmap
 
+## AdSense preparation — November 3, 2026
+- [x] Prepare clearly separated inactive advertising containers after every four clips when another follows, preserving playback and controls; no simulated Google ads or reward credit.
+- [x] Inspect existing AdSense script/ads.txt, preserve matching publisher verification through meta tag/ads.txt and remove unconditional ad loading; document real ad-unit, Google Ready status and consent prerequisites in ADSENSE-READINESS.md. Correct privacy text that falsely described all uploads as public.
+- [ ] Verify the user's actual custom-domain name and hosted status; blocker: message contains only “[my custom domain]”, not an address.
+- [x] Test five real local uploads at 390×844: fourth-clip-to-ad transition silences/removes media, Continue resumes next video, sharing and likes still work, no Google ad requests or page errors; build OK. 20 focused tests pass; full suite 30 pass / same 5 pre-existing worldwide tests fail. No publication or purchase.
+- [ ] Real AdSense serving remains blocked by unverified site approval, missing real display-slot ID and consent setup; actual delivery/revenue cannot be claimed. Worldwide cloud and public LIVE remain separately blocked.
+
 ## Sharing and public LIVE — November 2, 2026
 - [x] Add WhatsApp and Facebook link choices, Instagram/system sharing and copy-link in a controlled sheet; shared cloud links select the requested loaded clip, and local clips share only the app with an explicit warning.
 - [x] 14 focused tests pass; 390×844 touch check verifies share links, real clipboard readback, Instagram unsupported fallback, dismissal and existing Like/LIVE controls; build OK. External app delivery and real shared cloud clip readback remain unverified because this browser has no installed apps and the existing cloud setup is incompatible.
