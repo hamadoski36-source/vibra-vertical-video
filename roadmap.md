@@ -3,7 +3,8 @@
 ## AdSense preparation — November 3, 2026
 - [x] Prepare clearly separated inactive advertising containers after every four clips when another follows, preserving playback and controls; no simulated Google ads or reward credit.
 - [x] Inspect existing AdSense script/ads.txt, preserve matching publisher verification through meta tag/ads.txt and remove unconditional ad loading; document real ad-unit, Google Ready status and consent prerequisites in ADSENSE-READINESS.md. Correct privacy text that falsely described all uploads as public.
-- [ ] Verify supplied al-video-jhab.vercel.app hosting and distinguish it from a connected Lovable custom domain; do not claim ownership or deployment sync without evidence.
+- [x] Checked supplied al-video-jhab.vercel.app: not a connected Lovable domain; HTTPS and /ads.txt return Vercel 404 DEPLOYMENT_NOT_FOUND. Ownership/sync unverified.
+- [ ] Correct or restore the Vercel deployment before Google can review that address; blocker: user must supply the working Vercel production address or restore their deployment.
 - [x] Test five real local uploads at 390×844: fourth-clip-to-ad transition silences/removes media, Continue resumes next video, sharing and likes still work, no Google ad requests or page errors; build OK. 20 focused tests pass; full suite 30 pass / same 5 pre-existing worldwide tests fail. No publication or purchase.
 - [ ] Real AdSense serving remains blocked by unverified site approval, missing real display-slot ID and consent setup; actual delivery/revenue cannot be claimed. Worldwide cloud and public LIVE remain separately blocked.
 
