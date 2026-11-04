@@ -8,8 +8,8 @@
 - Sharing continues to distinguish local content from public cloud links.
 
 ## Before real requests
-1. Supply the actual custom-domain address. The current URL lookup only returned the Lovable address; no custom domain could be verified.
-2. Confirm domain setup and deploy only with explicit publication authorization. Google reviews the published site, not these unpublished changes.
+1. Use the current production address **https://vibra-vertical-video.vercel.app** for Google's site review. It replaces the previously supplied broken Vercel address; it is a Vercel-hosted address, not a verified Lovable-connected custom domain.
+2. The November 4, 2026 HTTPS check returned 200 for the production home page (title: Vibra Worldwide — Video feed), the matching `google-adsense-account` meta tag, and `/ads.txt` with the exact matching publisher row. The deployment-specific address `https://vibra-vertical-video-9pdjukydh-vole-world.vercel.app` redirects visitors to Vercel login, so do not use it for public Google review. These checks verify reachability and publisher-file presence, not ownership, Google approval or full deployment sync. Deploy further changes only with explicit publication authorization.
 3. Finish Google site review using the matching account verification meta tag or ads.txt method in AdSense. Neither proves approval.
 4. Provide the real responsive display ad-unit slot ID from the approved account. Never substitute an AdMob unit or fabricated ID.
 5. Configure an appropriate consent flow before any ad requests, including Google's certified CMP requirement where applicable (EEA, UK and Switzerland). Evaluate age handling, privacy disclosures and regional rules before enabling serving.
@@ -17,6 +17,7 @@
 7. Integrate and verify real ad fill, no-fill/failure handling and mobile separation from swipe/tap controls. Collapse no-fill placements in the production serving flow. Keep rewards unrelated to display ads.
 
 ## Still blocked
-- No real display slot, site approval, consent provider or actual custom-domain name is available.
+- No real display slot, verified Google site approval or consent provider is available. The working production Vercel address is now known and checked; the previous unreachable-address blocker is resolved.
 - Worldwide uploads and authenticated public-camera LIVE are separate unfinished integrations; this work does not make them operational.
+- Existing LiveKit credentials are left unchanged; this address check neither rotates nor validates them.
 - No purchase or publication performed. AdSense delivery, eligibility and earnings are not guaranteed.

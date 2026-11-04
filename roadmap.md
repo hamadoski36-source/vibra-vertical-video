@@ -3,8 +3,8 @@
 ## AdSense preparation — November 3, 2026
 - [x] Prepare clearly separated inactive advertising containers after every four clips when another follows, preserving playback and controls; no simulated Google ads or reward credit.
 - [x] Inspect existing AdSense script/ads.txt, preserve matching publisher verification through meta tag/ads.txt and remove unconditional ad loading; document real ad-unit, Google Ready status and consent prerequisites in ADSENSE-READINESS.md. Correct privacy text that falsely described all uploads as public.
-- [x] Checked supplied al-video-jhab.vercel.app: not a connected Lovable domain; HTTPS and /ads.txt return Vercel 404 DEPLOYMENT_NOT_FOUND. Ownership/sync unverified.
-- [ ] Correct or restore the Vercel deployment before Google can review that address; blocker: user must supply the working Vercel production address or restore their deployment.
+- [x] Update AdSense checks to the replacement production address https://vibra-vertical-video.vercel.app (November 4, 2026): home returns HTTPS 200 with Vibra's title and matching AdSense account meta tag; /ads.txt returns HTTPS 200 with the exact publisher row. The old al-video-jhab.vercel.app address is superseded. Google approval, ownership and full deployment sync remain unverified.
+- [x] Resolve the unreachable production-address blocker. Supplied deployment https://vibra-vertical-video-9pdjukydh-vole-world.vercel.app redirects to Vercel login; use the public production address for review instead. Preserve existing LiveKit credentials without reading, changing or rotating them; no publication or purchase.
 - [x] Test five real local uploads at 390×844: fourth-clip-to-ad transition silences/removes media, Continue resumes next video, sharing and likes still work, no Google ad requests or page errors; build OK. 20 focused tests pass; full suite 30 pass / same 5 pre-existing worldwide tests fail. No publication or purchase.
 - [ ] Real AdSense serving remains blocked by unverified site approval, missing real display-slot ID and consent setup; actual delivery/revenue cannot be claimed. Worldwide cloud and public LIVE remain separately blocked.
 
