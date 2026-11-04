@@ -3,14 +3,14 @@
 ## AdSense preparation — November 3, 2026
 - [x] Prepare clearly separated inactive advertising containers after every four clips when another follows, preserving playback and controls; no simulated Google ads or reward credit.
 - [x] Inspect existing AdSense script/ads.txt, preserve matching publisher verification through meta tag/ads.txt and remove unconditional ad loading; document real ad-unit, Google Ready status and consent prerequisites in ADSENSE-READINESS.md. Correct privacy text that falsely described all uploads as public.
-- [ ] Verify the user's actual custom-domain name and hosted status; blocker: message contains only “[my custom domain]”, not an address.
+- [ ] Verify supplied al-video-jhab.vercel.app hosting and distinguish it from a connected Lovable custom domain; do not claim ownership or deployment sync without evidence.
 - [x] Test five real local uploads at 390×844: fourth-clip-to-ad transition silences/removes media, Continue resumes next video, sharing and likes still work, no Google ad requests or page errors; build OK. 20 focused tests pass; full suite 30 pass / same 5 pre-existing worldwide tests fail. No publication or purchase.
 - [ ] Real AdSense serving remains blocked by unverified site approval, missing real display-slot ID and consent setup; actual delivery/revenue cannot be claimed. Worldwide cloud and public LIVE remain separately blocked.
 
 ## Sharing and public LIVE — November 2, 2026
 - [x] Add WhatsApp and Facebook link choices, Instagram/system sharing and copy-link in a controlled sheet; shared cloud links select the requested loaded clip, and local clips share only the app with an explicit warning.
 - [x] 14 focused tests pass; 390×844 touch check verifies share links, real clipboard readback, Instagram unsupported fallback, dismissal and existing Like/LIVE controls; build OK. External app delivery and real shared cloud clip readback remain unverified because this browser has no installed apps and the existing cloud setup is incompatible.
-- [ ] Real camera broadcasting and public worldwide viewing: blocked until a streaming service, verified broadcaster accounts and secure existing backend access are connected; no connections currently available. LiveKit Cloud has a capped free Build plan worth assessing; obtain consent before setup or any paid usage. Do not substitute a camera preview.
+- [ ] User approved LiveKit's limited free setup. Continue secure connection preparation; real broadcasting remains blocked by missing LiveKit project credentials, verified broadcaster accounts and secure existing backend access. No paid plan authorized; do not substitute a camera preview.
 
 ## Real buttons repair — November 2, 2026
 - [x] Outside edits had replaced the main screen with look-alike buttons; restored the last tested working screen and added working Search and LIVE buttons (top, side, bottom). LIVE opens an honest "coming soon" panel.
