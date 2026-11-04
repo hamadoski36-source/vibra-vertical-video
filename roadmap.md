@@ -11,7 +11,8 @@
 ## Sharing and public LIVE — November 2, 2026
 - [x] Add WhatsApp and Facebook link choices, Instagram/system sharing and copy-link in a controlled sheet; shared cloud links select the requested loaded clip, and local clips share only the app with an explicit warning.
 - [x] 14 focused tests pass; 390×844 touch check verifies share links, real clipboard readback, Instagram unsupported fallback, dismissal and existing Like/LIVE controls; build OK. External app delivery and real shared cloud clip readback remain unverified because this browser has no installed apps and the existing cloud setup is incompatible.
-- [ ] User approved LiveKit's limited free setup. Continue secure connection preparation; real broadcasting remains blocked by missing LiveKit project credentials, verified broadcaster accounts and secure existing backend access. No paid plan authorized; do not substitute a camera preview.
+- [x] User approved LiveKit's limited free setup and saved LIVEKIT_URL, LIVEKIT_API_KEY and LIVEKIT_API_SECRET through the secure form; values are not exposed. Credentials and provider plan remain unverified.
+- [ ] Real broadcasting remains blocked by verified broadcaster accounts and secure existing backend access: user must connect the existing account service through Settings → General → External Supabase → Connect before backend implementation. Then validate LiveKit access without creating paid resources, add scoped tokens/public discovery and test publisher/viewer from separate sessions. No paid plan authorized; do not substitute a camera preview.
 
 ## Real buttons repair — November 2, 2026
 - [x] Outside edits had replaced the main screen with look-alike buttons; restored the last tested working screen and added working Search and LIVE buttons (top, side, bottom). LIVE opens an honest "coming soon" panel.
