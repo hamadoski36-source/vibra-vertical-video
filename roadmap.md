@@ -1,5 +1,11 @@
 # Vibra migration roadmap
 
+## Me logo and bottom banners — November 5, 2026
+- [x] Add authenticated-user-ID avatar_url read and larger 104px round logo on Me, preserving local fallback and editing. Empty REST projection verifies user_id/avatar_url columns exist without reading rows; five avatar tests pass.
+- [x] Move advertising spaces below Home's video content and to the bottom of Me; no interstitial or control overlays, no ad requests without verified approval, display slot and consent. Pause media when its Home stage is less than 60% visible.
+- [x] 19 focused tests pass; full suite 35 pass / same five older worldwide-flow failures. 390×844 phone check verifies bottom banners, Like and profile navigation; build OK. LiveKit credentials unchanged; no publication or purchase.
+- [ ] Actual saved logo readback on signed-in Me remains unverified: external unmanaged authentication has no usable test session and the current auth page only edits a local name. Do not claim the user's real logo appeared; automated avatar test uses a controlled mock. Real Google ads remain blocked by approval, real slot ID and consent.
+
 ## AdSense preparation — November 3, 2026
 - [x] Prepare clearly separated inactive advertising containers after every four clips when another follows, preserving playback and controls; no simulated Google ads or reward credit.
 - [x] Inspect existing AdSense script/ads.txt, preserve matching publisher verification through meta tag/ads.txt and remove unconditional ad loading; document real ad-unit, Google Ready status and consent prerequisites in ADSENSE-READINESS.md. Correct privacy text that falsely described all uploads as public.

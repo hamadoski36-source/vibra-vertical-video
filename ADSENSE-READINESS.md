@@ -4,7 +4,7 @@
 - Existing publisher identifier preserved: `ca-pub-6181996899763561`.
 - Existing `public/ads.txt` preserved with the matching Google publisher row.
 - Account-verification meta tag added; unconditionally loaded advertising script removed until approval and consent integration.
-- A separated full-screen advertising space appears after four clips when another clip follows. No fake creative, ad click, revenue event or reward is generated. Continue moves to the next video; previous media is silenced and removed during this space.
+- Inactive bottom banner spaces appear after Home's video content and after the Me video grid. No interruptions between clips or banners over controls. No fake creative, ad click, revenue event or reward is generated. Real serving remains disabled pending the prerequisites below.
 - Sharing continues to distinguish local content from public cloud links.
 
 ## Before real requests
