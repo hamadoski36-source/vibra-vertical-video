@@ -21,8 +21,8 @@ it('toggles the 246 heart count and selected-video bookmark, and posts comments'
 });it('LIVE buttons open the honest LIVE panel and Search focuses the search box',()=>{
   const App=Route.options.component;if(!App)throw Error('Missing app');render(<App/>);
   fireEvent.click(screen.getByRole('button',{name:'LIVE tab'}));
-  expect(screen.getByText('LIVE streaming is coming soon.')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button',{name:'OK'}));
+  expect(screen.getByRole('button',{name:/washa kamera/i})).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Close panel'}));
   fireEvent.click(screen.getByRole('button',{name:'🔍 Search'}));
   expect(document.activeElement).toBe(screen.getByLabelText('Search videos'));
 });

@@ -11,7 +11,8 @@ import { VibraShare } from '@/components/vibra-share'
 import { clipShare, type ClipShare } from '@/lib/vibra-sharing'
 import { VibraBanner } from '@/components/vibra-banner'
 import { useAuth } from '@/hooks/use-auth'
-import { readCreatorAvatar } from '@/lib/vibra-profile'
+import { readCreatorAvatar, readLocalPhoto, saveCreatorAvatar } from '@/lib/vibra-profile'
+import { VibraLive } from '@/components/vibra-live'
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
     { title: 'Vibra Worldwide — Video feed' },
@@ -62,6 +63,8 @@ function VibraTikTok(){
   const [name,setName]=useState('@MrVibra')
   const [myVideos,setMyVideos]=useState<Clip[]>([])
   const [showEdit,setShowEdit]=useState(false)
+  const [savingPhoto,setSavingPhoto]=useState(false)
+  const photoRef=useRef<HTMLInputElement>(null)
   const followers=0
   const following=0
   const sy=useRef(0)
@@ -152,6 +155,23 @@ function VibraTikTok(){
     localStorage.setItem('vibra_dp', dp); localStorage.setItem('vibra_bio', bio); localStorage.setItem('vibra_name', name); setShowEdit(false)
   }
 
+  async function choosePhoto(file:File|undefined){
+    if(!file) return
+    setSavingPhoto(true)
+    try {
+      if(user?.id){
+        const url=await saveCreatorAvatar(user.id,file)
+        setCreatorAvatar(url);setAvatarFailed(false);setDp(url);localStorage.setItem('vibra_dp',url)
+        setNotice('Picha imehifadhiwa kwenye akaunti yako!')
+      } else {
+        const dataUrl=await readLocalPhoto(file)
+        setDp(dataUrl);localStorage.setItem('vibra_dp',dataUrl)
+        setNotice('Picha imehifadhiwa kwenye simu hii. Ingia kwenye akaunti ili ionekane kila mahali.')
+      }
+    } catch(error){ setNotice(`Picha haijahifadhiwa: ${error instanceof Error?error.message:'Jaribu tena.'}`) }
+    finally{ setSavingPhoto(false) }
+  }
+
   const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>{if(!uploading)setPanel('')}}><form className="space-y-4" onSubmit={e=>{e.preventDefault();void uploadVideo(pendingFile)}}><p>{pendingFile?.name}</p><label>Caption<input aria-label="Caption" value={caption} onChange={e=>setCaption(e.target.value)} /></label><p className="text-sm text-panel-muted">{cloudReady?'Cloud Mode: Worldwide':'Cloud Mode: Local (Connect Supabase for worldwide)'}</p>{!cloudReady&&<p className="text-sm text-panel-muted">Cloud setup: {cloudError}</p>}{uploading&&<div><progress className="w-full" aria-label="Upload progress" value={uploadProgress} max={100}/><p>{uploadProgress}% · Upload steps</p></div>}<Button type="submit" disabled={uploading||!pendingFile} className="sheet-command w-full">{uploading?'Uploading…':'Post'}</Button></form></VibraSheet>
   const profileVideos=cloudReady?[...myVideos.filter(v=>!v.cloud),...cloudClips.filter(v=>v.username===name)]:myVideos
   function openClip(clip:Clip){const index=baseFeed.findIndex(entry=>entry.url===clip.url);setSearch('');setIdx(index<0?0:index);setView('home')}
@@ -169,11 +189,14 @@ function VibraTikTok(){
       <section className="p-3 profile-grid">{profileVideos.map(v=><Button key={v.url} className="profile-tile" aria-label={`Play ${v.caption}`} onClick={()=>openClip(v)}><video src={v.url} muted playsInline preload="metadata" onLoadedData={e=>{const video=e.currentTarget;video.currentTime=Math.min(0.1,video.duration||0);}}/><span className="mini-caption">{v.caption}</span></Button>)}</section>
       {!profileVideos.length&&<p className="p-6 text-center">No uploaded videos yet.</p>}
       <VibraBanner placement="profile" />
-      <VibraSheet title="Edit Profile" open={showEdit} onClose={()=>setShowEdit(false)}><form className="space-y-3" onSubmit={e=>{e.preventDefault();saveProfile()}}><input aria-label="Username" value={name} onChange={e=>setName(e.target.value)} /><input aria-label="Bio" value={bio} onChange={e=>setBio(e.target.value)} /><input aria-label="Profile photo URL" value={dp} onChange={e=>setDp(e.target.value)} /><Button type="submit" className="sheet-command">Save profile</Button></form></VibraSheet>
+      <VibraSheet title="Edit Profile" open={showEdit} onClose={()=>setShowEdit(false)}><form className="space-y-3" onSubmit={e=>{e.preventDefault();saveProfile()}}>
+        <input ref={photoRef} type="file" accept="image/*" aria-label="Choose profile photo" hidden onChange={e=>{void choosePhoto(e.target.files?.[0]);e.target.value=''}} />
+        <Button type="button" className="sheet-command w-full" disabled={savingPhoto} onClick={()=>photoRef.current?.click()}>{savingPhoto?'Inahifadhi picha…':'📷 Change Photo'}</Button>
+        <input aria-label="Username" value={name} onChange={e=>setName(e.target.value)} /><input aria-label="Bio" value={bio} onChange={e=>setBio(e.target.value)} /><input aria-label="Profile photo URL" value={dp} onChange={e=>setDp(e.target.value)} /><Button type="submit" className="sheet-command">Save profile</Button></form></VibraSheet>
       <VibraSheet title={panel} open={['Following','Followers','Likes'].includes(panel)} onClose={()=>setPanel('')}><p>{panel==='Likes'?`${likedIds.length} videos liked in this session.`:`No ${panel.toLowerCase()} recorded. Shared follow accounts are not connected.`}</p></VibraSheet>
        {uploadPanel}{sharePanel}{notice&&<p className="vibra-notice" role="status">{notice}</p>}
       <nav className="bottom-nav fixed bottom-0 inset-x-0 bg-video flex items-center justify-around"><Button variant="ghost" onClick={()=>setView('home')}>🏠 Home</Button><Button variant="ghost" onClick={()=>{setView('home');setTimeout(()=>searchRef.current?.focus(),0)}}>🔍 Search</Button><Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>＋</Button><Button variant="ghost" aria-label="LIVE tab" onClick={()=>setPanel('LIVE')}>📺 LIVE</Button><Button variant="ghost" onClick={()=>setView('me')}>👤 Me</Button></nav>
-      <VibraSheet title="LIVE" open={panel==='LIVE'} onClose={()=>setPanel('')}><div className="space-y-3"><p className="font-bold">LIVE streaming is coming soon.</p><p className="text-sm text-panel-muted">Real live video needs a streaming service, which is not connected yet. Nobody is live right now.</p><Button className="sheet-command w-full" onClick={()=>setPanel('')}>OK</Button></div></VibraSheet>
+      <VibraLive open={panel==='LIVE'} onClose={()=>setPanel('')} />
     </div>
   }
 
@@ -219,7 +242,7 @@ function VibraTikTok(){
       </nav>
       </div>
       <VibraBanner placement="home" />
-      <VibraSheet title="LIVE" open={panel==='LIVE'} onClose={()=>setPanel('')}><div className="space-y-3"><p className="font-bold">LIVE streaming is coming soon.</p><p className="text-sm text-panel-muted">Real live video needs a streaming service, which is not connected yet. Nobody is live right now.</p><Button className="sheet-command w-full" onClick={()=>setPanel('')}>OK</Button></div></VibraSheet>
+      <VibraLive open={panel==='LIVE'} onClose={()=>setPanel('')} />
       <VibraSheet title={panel} open={panel==='Comments'||panel==='Lyrics'} onClose={()=>setPanel('')}>
         {panel==='Lyrics'?<p className="lyrics-copy">{current?.lyrics?.trim()||'Lyrics are not available for this video yet.'}</p>:<div className="space-y-3">
           {(comments[clipKey]||[]).map((text,i)=><p key={i}>{text}</p>)}

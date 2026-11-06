@@ -25,6 +25,12 @@
 - [x] 390×844 tap test: like 246→247, save, comment, lyrics, three LIVE buttons, search, sound, coins, upload picker, profile, edit profile, followers, home; no page errors. 23 targeted tests pass; same 5 older tests still fail.
 - [ ] Real LIVE streaming needs a paid streaming service and the user's go-ahead.
 
+## LIVE camera preview and Change Photo — November 6, 2026
+- [x] LIVE panel now starts the real phone camera (getUserMedia, front camera + mic) with start/stop; tracks are released when the panel closes. Worldwide broadcast button stays disabled with an honest note until secure accounts and a streaming service are connected.
+- [x] Edit Profile has a Change Photo button: signed-in users upload to the avatars bucket and creator_profiles.avatar_url; signed-out users get a local device copy with an honest notice. 5MB image limit, image-type validation.
+- [x] 3 new VibraLive tests + updated controls test pass (38 pass / same 5 pre-existing vibra-worldwide failures). 390×844 checks: camera preview starts and stops, broadcast button disabled, photo saved locally with notice, round avatar shows the chosen photo.
+- [ ] Signed-in avatar upload to Supabase remains unverified: no test session for the external account service; the avatars bucket and its policies are unconfirmed.
+
 ## Controls, cloud and demo coins — November 1, 2026
 - [x] Repair selected-video likes/comments/bookmarks, profile/Home navigation, upload composer, editable profile and three-column playable video previews; preserve zero follower totals honestly.
 - [x] Inspect existing external service: videos SELECT fails because username column does not exist; vibra-videos and Vibra clips bucket checks return NoSuchBucket. No authorized administration access is available; do not provision a replacement backend.
