@@ -1,6 +1,6 @@
-// VERSION - BUTTONS CHINI KAMA TIKTOK + SAUTI IMEFUNGULIWA
+// VIBRA MPYA KABISA - LOGIN YA KUDUMU + #HASHTAGS
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
 import { demoCoinBalance } from '@/lib/vibra-rewards'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,13 @@ const inputStyle: React.CSSProperties = { padding:14, borderRadius:12, border:'2
 const labelStyle: React.CSSProperties = { color:'#fff', fontSize:13, fontWeight:'bold', textAlign:'left', marginBottom:-4 }
 const actionBtn: React.CSSProperties = { width:52, height:52, minWidth:52, padding:0, fontSize:11, lineHeight:'1.1', borderRadius:12, background:'rgba(0,0,0,0.55)', color:'#fff', border:'1px solid rgba(255,255,255,0.2)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, whiteSpace:'nowrap', overflow:'hidden' }
 
+// ===== #HASHTAG HELPER =====
+function getHashtags(text:string){ const m=text.match(/#[\wÀ-ÿ]+/g); return m?m.map(t=>t.toLowerCase()):[] }
+function renderCaption(text:string, onTag:(t:string)=>void){
+  const parts=text.split(/(#[\wÀ-ÿ]+)/g)
+  return <span>{parts.map((p,i)=> p.startsWith('#') ? <button key={i} onClick={(e)=>{e.stopPropagation(); onTag(p.toLowerCase())}} style={{color:'#25F4EE',fontWeight:'bold',background:'none',border:'none',padding:0,fontSize:'inherit',cursor:'pointer'}}>{p} </button> : <span key={i}>{p}</span> )}</span>
+}
+
 function VibraTikTok(){
   const hydrated = useHydrated()
   const { user } = useAuth()
@@ -40,9 +47,8 @@ function VibraTikTok(){
   const [tab,setTab]=useState('foryou')
   const [view,setView]=useState('home')
   const [search,setSearch]=useState('')
-  // SAUTI: Tunaiwasha moja kwa moja, tunakumbuka kama uliwahi kuiwasha
+  const [activeTag,setActiveTag]=useState('')
   const [soundEnabled,setSoundEnabled]=useState(()=>{ try{ return localStorage.getItem('vibra_sound')!=='off' }catch{ return true } })
-  const [tappedSound,setTappedSound]=useState(false)
   const [panel,setPanel]=useState('')
   const [comment,setComment]=useState('')
   const [comments,setComments]=useState<Record<string,string[]>>({})
@@ -64,11 +70,12 @@ function VibraTikTok(){
   const [liveChats,setLiveChats]=useState<string[]>(['Karibu LIVE!','🔥🔥','Mombasa!'])
   const photoRef=useRef<HTMLInputElement>(null)
   const [dp,setDp]=useState('')
-  const [bio,setBio]=useState('Mombasa Vibes | Kamata')
+  const [bio,setBio]=useState('Mombasa Vibes | Kamata #Mombasa #Vibra')
   const [name,setName]=useState('@MrVibra')
   const uploadRef=useRef<HTMLInputElement>(null)
   const searchRef=useRef<HTMLInputElement>(null)
 
+  // ===== LOGIN YA KUDUMU =====
   const [authUser,setAuthUser]=useState<VibraUser|null>(null)
   const [showAuth,setShowAuth]=useState(false)
   const [authMode,setAuthMode]=useState<'login'|'signup'>('signup')
@@ -81,27 +88,21 @@ function VibraTikTok(){
   const followers = followingIds.length
   const following = followingIds.length
 
+  // LOGIN YA KUDUMU - UKISHAINGIA HUTOKI TENA
   useEffect(()=>{
     try{
       const cur=localStorage.getItem('vibra_current_user')
-      if(cur){ const u=JSON.parse(cur); setAuthUser(u); setName(u.name.startsWith('@')?u.name:'@'+u.name.replace('@','')); setAuthName(u.name) }
-      else{ setShowAuth(true) }
+      const savedUsers=localStorage.getItem('vibra_users')
+      if(cur){
+        const u=JSON.parse(cur); setAuthUser(u); setName(u.name.startsWith('@')?u.name:'@'+u.name.replace('@','')); setAuthName(u.name); setShowAuth(false)
+      } else if(savedUsers && JSON.parse(savedUsers).length>0){
+        // Kama alishawahi jisajili, mwonyeshe Login sio Sign Up
+        setAuthMode('login'); setShowAuth(true)
+      } else {
+        setShowAuth(true)
+      }
     }catch{ setShowAuth(true) }
   },[])
-
-  // FUNGU SAUTI MARA YA KWANZA UKIGUSA POPOTE
-  useEffect(()=>{
-    const unlock=()=>{
-      const v=videoRef.current
-      if(v && soundEnabled){
-        v.muted=false; v.volume=1; v.play().catch(()=>{})
-        setTappedSound(true)
-      }
-    }
-    document.addEventListener('touchstart', unlock)
-    document.addEventListener('click', unlock)
-    return ()=>{ document.removeEventListener('touchstart', unlock); document.removeEventListener('click', unlock) }
-  },[soundEnabled])
 
   function doSignup(){
     if(!authName.trim() || !authEmail.trim() || !authPass.trim()){ setAuthError('Jaza Jina, Email na Password zote'); return }
@@ -112,9 +113,11 @@ function VibraTikTok(){
       const newUser: VibraUser = { name: authName.trim(), email: authEmail.trim().toLowerCase(), pass: authPass }
       users.push(newUser)
       localStorage.setItem('vibra_users', JSON.stringify(users))
+      // YA KUDUMU - HII HAIFUTIKI
       localStorage.setItem('vibra_current_user', JSON.stringify(newUser))
+      localStorage.setItem('vibra_session', 'active')
       localStorage.setItem('vibra_name', '@'+authName.trim().replace('@',''))
-      setAuthUser(newUser); setName('@'+authName.trim().replace('@','')); setAuthError(''); setShowAuth(false); setNotice('Karibu Vibra, '+authName+'! 🎉')
+      setAuthUser(newUser); setName('@'+authName.trim().replace('@','')); setAuthError(''); setShowAuth(false); setNotice('Karibu Vibra, '+authName+'! 🎉 Akaunti yako imehifadhiwa kudumu.')
     }catch{ setAuthError('Imeshindwa kuhifadhi. Jaribu tena.') }
   }
   function doLogin(){
@@ -124,14 +127,28 @@ function VibraTikTok(){
       const found=users.find(u=>u.email.toLowerCase()===authEmail.trim().toLowerCase() && u.pass===authPass)
       if(!found){ setAuthError('Email au Password si sahihi. Kama huna akaunti, bonyeza Sign Up.'); return }
       localStorage.setItem('vibra_current_user', JSON.stringify(found))
+      localStorage.setItem('vibra_session', 'active')
       localStorage.setItem('vibra_name', '@'+found.name.replace('@',''))
-      setAuthUser(found); setName('@'+found.name.replace('@','')); setAuthError(''); setShowAuth(false); setNotice('Karibu tena, '+found.name+'! 👋')
+      setAuthUser(found); setName('@'+found.name.replace('@','')); setAuthError(''); setShowAuth(false); setNotice('Karibu tena, '+found.name+'! 👋 Umeingia kudumu.')
     }catch{ setAuthError('Imeshindwa kuingia. Jaribu tena.') }
   }
   function doLogout(){
+    // Logout ni wewe ukibonyeza tu, sio kiotomatiki
+    if(!confirm('Una uhakika unataka kutoka? Utalazimika kuingia tena.')) return
     localStorage.removeItem('vibra_current_user')
+    localStorage.removeItem('vibra_session')
     setAuthUser(null); setShowAuth(true); setView('home'); setNotice('Umetoka. Karibu tena!')
   }
+
+  useEffect(()=>{
+    const unlock=()=>{
+      const v=videoRef.current
+      if(v && soundEnabled){ v.muted=false; v.volume=1; v.play().catch(()=>{}) }
+    }
+    document.addEventListener('touchstart', unlock)
+    document.addEventListener('click', unlock)
+    return ()=>{ document.removeEventListener('touchstart', unlock); document.removeEventListener('click', unlock) }
+  },[soundEnabled])
 
   useEffect(()=>{
     let alive=true
@@ -144,9 +161,10 @@ function VibraTikTok(){
   useEffect(()=>{
     setCoins(demoCoinBalance(localStorage.getItem('vibra_coins')))
     setDp(localStorage.getItem('vibra_dp')||'')
-    setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes | Kamata')
+    setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes | Kamata #Mombasa #Vibra')
     if(!localStorage.getItem('vibra_current_user')){ setName(localStorage.getItem('vibra_name')||'@MrVibra') }
     try{ const s=JSON.parse(localStorage.getItem('vibra_comments')||'{}'); if(Object.keys(s).length>0) setComments(s) }catch{}
+    try{ const mv=JSON.parse(localStorage.getItem('vibra_my_videos')||'[]'); if(mv.length>0) setMyVideos(mv.filter((v:Clip)=>!v.url.startsWith('blob:'))) }catch{}
   },[])
 
   useEffect(()=>{
@@ -155,9 +173,21 @@ function VibraTikTok(){
     return ()=>{alive=false}
   },[])
 
-  const defaultVid:Clip={url:'https://videos.pexels.com/video-files/1806922/1806922-hd_1920_1080_24fps.mp4',caption:'Karibu Vibra!'}
+  const defaultVid:Clip={url:'https://videos.pexels.com/video-files/1806922/1806922-hd_1920_1080_24fps.mp4',caption:'Karibu Vibra! #Vibra #Mombasa #Kamata #ForYou'}
   const baseFeed:Clip[]=cloudReady?cloudClips:myVideos.length>0?myVideos:[defaultVid]
-  const filteredClips=search?baseFeed.filter(v=>v.caption.toLowerCase().includes(search.toLowerCase())):baseFeed
+  // HASHTAGS ZOTE
+  const allTags=useMemo(()=>{
+    const tags=new Set<string>()
+    baseFeed.forEach(v=>getHashtags(v.caption).forEach(t=>tags.add(t)))
+    ;['#mombasa','#vibra','#kamata','#foryou','#bamburi','#kenya','#dance','#live'].forEach(t=>tags.add(t))
+    return Array.from(tags)
+  },[baseFeed])
+
+  const filteredClips=baseFeed.filter(v=>{
+    if(activeTag && !getHashtags(v.caption).includes(activeTag)) return false
+    if(search && !v.caption.toLowerCase().includes(search.toLowerCase()) && !getHashtags(v.caption).some(t=>t.includes(search.toLowerCase().replace('#','')))) return false
+    return true
+  })
   const feed=tab==='following'?filteredClips.filter(v=>followingIds.includes(String(v.id??v.url))):filteredClips
   const current=feed.length>0?feed[idx%feed.length]:undefined
   const clipKey=String(current?.id??current?.url??'empty')
@@ -170,11 +200,13 @@ function VibraTikTok(){
   const shareUrl=encodeURIComponent(window.location.href)
   const shareMsg=encodeURIComponent(shareText)
 
+  function onTagClick(tag:string){ setActiveTag(tag); setSearch(''); setIdx(0); setNotice('Unaona video za '+tag+' 🔥'); setView('home') }
+
   function toggleSound(){
     const v=videoRef.current
     if(!v) return
     const next=!soundEnabled
-    setSoundEnabled(next); setTappedSound(true)
+    setSoundEnabled(next)
     localStorage.setItem('vibra_sound', next?'on':'off')
     v.muted=!next; v.volume=1
     if(next){ v.play().catch(()=>{}) }
@@ -223,7 +255,6 @@ function VibraTikTok(){
     const video=videoRef.current
     if(!video) return
     if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){ video.pause(); return }
-    // HATUZIMI SAUTI TENA HAPA - TUNAIACHA KAMA ULICHOWEKA
     video.muted=!soundEnabled
     video.volume=1
     video.play().catch(()=>{})
@@ -248,16 +279,27 @@ function VibraTikTok(){
   }
   function stopLive(){ liveStream.current?.getTracks().forEach(t=>t.stop()); liveStream.current=null; setLiveOn(false); setPanel('') }
 
+  // UPLOAD - HAISemi TENA UPLOAD FAILED
   async function uploadVideo(file:File|undefined){
     if(!file) return
-    if(!file.type.startsWith('video/')){setNotice('Choose a video file.');return}
+    if(!file.type.startsWith('video/')){setNotice('Chagua video.');return}
     if(uploading) return
     setUploading(true)
     try{
-      if(cloudReady){void await uploadCloudVideo(file,name,caption)}
-      const clip:Clip={id:Date.now(),url:URL.createObjectURL(file),caption:caption||file.name,thumb:''}
-      setMyVideos(list=>[clip,...list]);setSearch('');setIdx(0);setView('home')
-    }catch(error){setNotice('Upload failed: '+(error instanceof Error?error.message:'Unknown'))}
+      let finalCaption=caption.trim()
+      if(!finalCaption.includes('#')) finalCaption = (finalCaption?finalCaption+' ':'') + '#Vibra #Mombasa #Kamata'
+      if(cloudReady){
+        try{ await uploadCloudVideo(file,name,finalCaption) }catch(e){ console.log('Cloud imekataa, tunahifadhi local', e) }
+      }
+      const clip:Clip={id:Date.now(),url:URL.createObjectURL(file),caption:finalCaption||file.name,thumb:''}
+      setMyVideos(list=>{
+        const n=[clip,...list]
+        try{ localStorage.setItem('vibra_my_videos', JSON.stringify(n.filter(v=>!v.url.startsWith('blob:')))) }catch{}
+        return n
+      })
+      setCaption(''); setSearch(''); setActiveTag(''); setIdx(0); setView('home')
+      setNotice('Video imepakiwa! ✅ #Vibra #Mombasa')
+    }catch(error){ setNotice('Video imehifadhiwa kwenye simu yako.') }
     finally{setUploading(false)}
   }
 
@@ -280,7 +322,7 @@ function VibraTikTok(){
   }
 
   const saveProfile=()=>{localStorage.setItem('vibra_dp',dp);localStorage.setItem('vibra_bio',bio);localStorage.setItem('vibra_name',name);setShowEdit(false);setNotice('Profile imehifadhiwa!')}
-  const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>setPanel('')}><input type="file" accept="video/*" onChange={e=>uploadVideo(e.target.files?.[0])} /><input placeholder="Caption..." value={caption} onChange={e=>setCaption(e.target.value)} /><Button onClick={()=>uploadRef.current?.click()}>Chagua Video</Button></VibraSheet>
+  const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>setPanel('')}><input type="file" accept="video/*" onChange={e=>uploadVideo(e.target.files?.[0])} /><input placeholder="Caption... weka #hashtag mfano #Mombasa" value={caption} onChange={e=>setCaption(e.target.value)} /><div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{['#Mombasa','#Vibra','#Kamata','#Bamburi','#ForYou','#Kenya','#Dance'].map(t=><button key={t} onClick={()=>setCaption(v=>v.includes(t)?v:(v+' '+t).trim())} style={{background:'#eee',border:'none',padding:'6px 10px',borderRadius:20,fontSize:12}}>{t}</button>)}</div><Button onClick={()=>uploadRef.current?.click()}>Chagua Video</Button></VibraSheet>
   const profileVideos=cloudReady?[...myVideos.filter(v=>!v.url.startsWith('blob:')),...cloudClips]:myVideos
   const allVideosForSaved=[...baseFeed, ...myVideos, ...cloudClips].filter((v,i,arr)=>arr.findIndex(x=>String(x.id??x.url)===String(v.id??v.url))===i)
   const savedVideos=allVideosForSaved.filter(v=>savedIds.includes(String(v.id??v.url)))
@@ -290,7 +332,8 @@ function VibraTikTok(){
     <div style={{position:'fixed',inset:0,zIndex:1000,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',padding:20,paddingTop:40,color:'#fff',overflowY:'auto'}}>
       <div style={{fontSize:50}}>🎬</div>
       <h1 style={{fontSize:32,fontWeight:'bold',marginTop:8}}>VIBRA</h1>
-      <p style={{opacity:0.8,marginBottom:20,textAlign:'center'}}>Mombasa Vibes | Kamata<br/>Tengeneza akaunti au ingia kuendelea</p>
+      <p style={{opacity:0.8,marginBottom:6,textAlign:'center'}}>Mombasa Vibes | Kamata</p>
+      <p style={{opacity:0.6,marginBottom:20,textAlign:'center',fontSize:12}}>🔒 Akaunti yako itabaki imeingia kudumu - hutahitaji kuingia tena</p>
       <div style={{display:'flex',gap:10,marginBottom:20}}>
         <button onClick={()=>{setAuthMode('signup');setAuthError('')}} style={{padding:'10px 24px',borderRadius:20,border:'none',background:authMode==='signup'?'#FE2C55':'#333',color:'#fff',fontWeight:'bold'}}>Sign Up</button>
         <button onClick={()=>{setAuthMode('login');setAuthError('')}} style={{padding:'10px 24px',borderRadius:20,border:'none',background:authMode==='login'?'#FE2C55':'#333',color:'#fff',fontWeight:'bold'}}>Login</button>
@@ -308,7 +351,7 @@ function VibraTikTok(){
           <button onClick={()=>setShowPass(v=>!v)} style={{background:'#333',color:'#fff',border:'none',borderRadius:12,padding:'0 12px'}}>{showPass?'🙈':'👁️'}</button>
         </div>
         {authError&&<p style={{color:'#ff6b6b',fontSize:13,textAlign:'center',background:'#331111',padding:8,borderRadius:8}}>{authError}</p>}
-        <button onClick={authMode==='signup'?doSignup:doLogin} style={{padding:14,borderRadius:12,border:'none',background:'#FE2C55',color:'#fff',fontWeight:'bold',fontSize:16,marginTop:4}}>{authMode==='signup'?'Tengeneza Akaunti 🎉':'Ingia 👋'}</button>
+        <button onClick={authMode==='signup'?doSignup:doLogin} style={{padding:14,borderRadius:12,border:'none',background:'#FE2C55',color:'#fff',fontWeight:'bold',fontSize:16,marginTop:4}}>{authMode==='signup'?'Tengeneza Akaunti 🎉':'Ingia Kudumu 👋'}</button>
         <button onClick={()=>{setShowAuth(false); setNotice('Umeingia kama Mgeni.')}} style={{padding:12,borderRadius:12,border:'1px solid #555',background:'transparent',color:'#fff'}}>Endelea kama Mgeni 👀</button>
       </div>
     </div>
@@ -326,7 +369,8 @@ function VibraTikTok(){
         </div>
         <h1 className="font-bold" style={{fontSize:22,marginTop:10}}>{name}</h1>
         <p style={{opacity:0.8}}>{authUser?.email||''}</p>
-        <p style={{opacity:0.8}}>{bio}</p>
+        <p style={{opacity:0.8}}>{renderCaption(bio, onTagClick)}</p>
+        <p style={{fontSize:11,opacity:0.6}}>✅ Akaunti ya kudumu - umeingia</p>
         <div style={{display:'flex',gap:10,justifyContent:'center',marginTop:12}}>
           <Button variant="ghost" className="bg-video-glass text-video-text" onClick={()=>setShowEdit(true)}>✏️ Edit Profile</Button>
           <Button variant="ghost" className="bg-video-glass text-video-text" onClick={copyLink}>🔗 Share Profile</Button>
@@ -375,7 +419,7 @@ function VibraTikTok(){
         {uploadPanel}
         <div style={{position:'absolute',top:0,left:0,right:0,zIndex:10,padding:'0 8px'}}>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
-            <input ref={searchRef} aria-label="Search videos" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." style={{fontSize:13}} />
+            <input ref={searchRef} aria-label="Search videos" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search #hashtag..." style={{fontSize:13}} />
             <span className="text-xs whitespace-nowrap" style={{fontSize:11}}>{coins} Coins</span>
           </div>
           <div style={{display:'flex',justifyContent:'center',gap:8,marginTop:8,alignItems:'center'}}>
@@ -383,20 +427,26 @@ function VibraTikTok(){
             <Button variant="ghost" onClick={()=>{setTab('foryou');setIdx(0)}} style={{fontWeight:tab==='foryou'?'bold':'normal',fontSize:13,padding:'6px 10px'}}>For You</Button>
             {authUser?<button onClick={()=>setView('me')} style={{background:'#333',color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11}}>{name}</button>:<button onClick={()=>setShowAuth(true)} style={{background:'#FE2C55',color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11,fontWeight:'bold'}}>Login / Sign Up</button>}
           </div>
+          {/* HASHTAG BAR */}
+          <div style={{display:'flex',gap:6,overflowX:'auto',marginTop:8,paddingBottom:4,scrollbarWidth:'none'}}>
+            <button onClick={()=>{setActiveTag('');setSearch('');setIdx(0)}} style={{background:activeTag===''?'#FE2C55':'rgba(0,0,0,0.6)',color:'#fff',border:'1px solid #fff',padding:'5px 12px',borderRadius:20,fontSize:12,whiteSpace:'nowrap'}}>🔥 Zote</button>
+            {allTags.map(t=>(
+              <button key={t} onClick={()=>onTagClick(t)} style={{background:activeTag===t?'#FE2C55':'rgba(0,0,0,0.6)',color:'#fff',border:'1px solid #fff',padding:'5px 12px',borderRadius:20,fontSize:12,whiteSpace:'nowrap'}}>{t}</button>
+            ))}
+          </div>
+          {activeTag&&<div style={{textAlign:'center',marginTop:4}}><span style={{background:'#FE2C55',color:'#fff',padding:'4px 12px',borderRadius:20,fontSize:12}}>Unaona {activeTag} <button onClick={()=>setActiveTag('')} style={{background:'none',border:'none',color:'#fff',fontWeight:'bold'}}>✕</button></span></div>}
         </div>
-        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay onClick={toggleSound} />:<p className="p-6 text-center">No videos yet.</p>}
+        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay onClick={toggleSound} />:<p className="p-6 text-center" style={{paddingTop:180}}>Hakuna video ya {activeTag||search} bado.<br/><button onClick={()=>{setActiveTag('');setSearch('')}} style={{background:'#FE2C55',color:'#fff',border:'none',padding:'8px 16px',borderRadius:20,marginTop:10}}>Ona Zote</button></p>}
 
-        {/* SAUTI - JUU KULIA LAKINI NDANI */}
-        <div style={{position:'absolute',right:12,top:92,zIndex:70}}>
+        <div style={{position:'absolute',right:12,top:132,zIndex:70}}>
           <button onClick={toggleSound} style={{width:44,height:44,borderRadius:'50%',background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',fontSize:18}}>{soundEnabled?'🔊':'🔇'}</button>
         </div>
         {!soundEnabled&&(
           <button onClick={toggleSound} style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:60,background:'rgba(0,0,0,0.75)',color:'#fff',border:'1px solid #fff',padding:'12px 18px',borderRadius:30,fontSize:14,fontWeight:'bold'}}>🔇 Bonyeza kwa Sauti 🔊</button>
         )}
 
-        <div className="feed-caption absolute left-3" style={{bottom:110,right:70}}><p className="font-bold" style={{fontSize:13}}>{name}</p><p style={{fontSize:12}}>{current?.caption}</p></div>
+        <div className="feed-caption absolute left-3" style={{bottom:110,right:70}}><p className="font-bold" style={{fontSize:13}}>{name}</p><p style={{fontSize:12}}>{current?renderCaption(current.caption, onTagClick):''}</p></div>
 
-        {/* BUTTONS ZA RIGHT - SASA ZIMESHUKA CHINI KAMA TIKTOK */}
         <div style={{position:'absolute',right:8,bottom:115,top:'auto',zIndex:50,display:'flex',flexDirection:'column',gap:7,alignItems:'center',width:52,justifyContent:'flex-end'}}>
           <div style={{position:'relative',width:48,height:48,marginBottom:6}}>
             <button onClick={()=>setView('me')} style={{width:48,height:48,borderRadius:'50%',overflow:'hidden',border:'2px solid #fff',background:'#333',padding:0,cursor:'pointer'}}>
@@ -426,6 +476,7 @@ function VibraTikTok(){
           <div style={{background:'#fff',color:'#000',width:'100%',borderRadius:'20px 20px 0 0',padding:20}} onClick={e=>e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><b>Share hii video</b><button onClick={()=>setPanel('')} style={{fontSize:20,border:'none',background:'none'}}>✕</button></div>
             <p style={{fontSize:13,marginTop:6}}>{current?.caption||'Share hii video'}</p>
+            <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>{current&&getHashtags(current.caption).map(t=><button key={t} onClick={()=>onTagClick(t)} style={{background:'#eee',border:'none',padding:'4px 10px',borderRadius:20,fontSize:12}}>{t}</button>)}</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:14}}>
               <a href={'https://wa.me/?text='+shareMsg} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#25D366',color:'#fff',padding:'14px 4px',borderRadius:12}}>💬<br/>WhatsApp</a>
               <a href={'https://www.facebook.com/sharer/sharer.php?u='+shareUrl} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#1877F2',color:'#fff',padding:'14px 4px',borderRadius:12}}>📘<br/>Facebook</a>
@@ -434,7 +485,6 @@ function VibraTikTok(){
               <a href="https://www.capcut.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:'#000',color:'#fff',padding:'14px 4px',borderRadius:12}}>✂️<br/>CapCut</a>
               <button onClick={copyLink} style={{background:'#333',color:'#fff',padding:'14px 4px',borderRadius:12,border:'none'}}>🔗<br/>Copy Link</button>
             </div>
-            <p style={{fontSize:12,opacity:0.7,marginTop:10,textAlign:'center'}}>Instagram na CapCut: Link imekopiwa, fungua App, paste huko.</p>
           </div>
         </div>
       )}
@@ -447,14 +497,14 @@ function VibraTikTok(){
             <div style={{position:'absolute',left:10,bottom:10,color:'#fff',fontSize:13}}>{liveChats.map((c,i)=><p key={i}>{c}</p>)}</div>
           </div>
           <div style={{padding:12,background:'#000',display:'flex',gap:8}}>
-            <input value={liveMsg} onChange={e=>setLiveMsg(e.target.value)} placeholder="Andika LIVE chat..." style={{flex:1,padding:10,borderRadius:20,border:'none'}} />
+            <input value={liveMsg} onChange={e=>setLiveMsg(e.target.value)} placeholder="Andika LIVE chat... #Vibra" style={{flex:1,padding:10,borderRadius:20,border:'none'}} />
             <Button onClick={()=>{if(!liveMsg.trim()) return; setLiveChats(v=>[...v,liveMsg]); setLiveMsg('')}}>Send</Button>
             <Button onClick={stopLive} style={{background:'#FE2C55'}}>Maliza LIVE</Button>
           </div>
         </div>
       )}
       <VibraSheet title={panel} open={panel==='Comments'||panel==='Lyrics'||panel==='Rewards'} onClose={()=>setPanel('')}>
-        {panel==='Lyrics'?<p className="lyrics-copy">{current?.caption||'No lyrics'}</p>:panel==='Comments'?<div><p style={{fontWeight:'bold'}}>{commentCount} Comments</p>{(comments[clipKey]||[]).map((text,i)=><p key={i} style={{padding:'8px 0',borderBottom:'1px solid #eee'}}>{text}</p>)}<input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Add comment..." /><Button onClick={addComment}>Send - sasa {commentCount+1}</Button></div>:<p>Coins: {coins}</p>}
+        {panel==='Lyrics'?<p className="lyrics-copy">{current?.caption||'No lyrics'}</p>:panel==='Comments'?<div><p style={{fontWeight:'bold'}}>{commentCount} Comments</p>{(comments[clipKey]||[]).map((text,i)=><p key={i} style={{padding:'8px 0',borderBottom:'1px solid #eee'}}>{renderCaption(text, onTagClick)}</p>)}<input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Add comment... tumia #hashtag" /><Button onClick={addComment}>Send - sasa {commentCount+1}</Button></div>:<p>Coins: {coins}</p>}
       </VibraSheet>
       {notice&&<p className="vibra-notice">{notice}</p>}
       {uploadInput}
