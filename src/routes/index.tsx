@@ -1,4 +1,4 @@
-// VERSION NA SIGN UP / LOGIN + SAVE INAYOFAANYA
+// VERSION - SIGN UP INPUTS ZINAZOONEKANA
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
@@ -23,6 +23,9 @@ export const Route = createFileRoute('/')({
 type Clip = { id?: number | string; url: string; caption: string; thumb?: string; likes?: number }
 type VibraUser = { name: string; email: string; pass: string }
 
+const inputStyle: React.CSSProperties = { padding:14, borderRadius:12, border:'2px solid #ddd', background:'#fff', color:'#000', fontSize:16, width:'100%', boxSizing:'border-box', outline:'none' }
+const labelStyle: React.CSSProperties = { color:'#fff', fontSize:13, fontWeight:'bold', textAlign:'left', marginBottom:-4 }
+
 function VibraTikTok(){
   const hydrated = useHydrated()
   const { user } = useAuth()
@@ -40,7 +43,6 @@ function VibraTikTok(){
   const [panel,setPanel]=useState('')
   const [comment,setComment]=useState('')
   const [comments,setComments]=useState<Record<string,string[]>>({})
-  // SAVE + LIKE - ZINAHIFADHIWA SASA
   const [savedIds,setSavedIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('vibra_saved')||'[]')}catch{return[]}})
   const [likedIds,setLikedIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('vibra_liked')||'[]')}catch{return[]}})
   const [followingIds,setFollowingIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('vibra_following')||'[]')}catch{return[]}})
@@ -64,7 +66,6 @@ function VibraTikTok(){
   const uploadRef=useRef<HTMLInputElement>(null)
   const searchRef=useRef<HTMLInputElement>(null)
 
-  // ===== SIGN UP / LOGIN =====
   const [authUser,setAuthUser]=useState<VibraUser|null>(null)
   const [showAuth,setShowAuth]=useState(false)
   const [authMode,setAuthMode]=useState<'login'|'signup'>('signup')
@@ -72,6 +73,7 @@ function VibraTikTok(){
   const [authEmail,setAuthEmail]=useState('')
   const [authPass,setAuthPass]=useState('')
   const [authError,setAuthError]=useState('')
+  const [showPass,setShowPass]=useState(false)
 
   const followers = followingIds.length
   const following = followingIds.length
@@ -89,7 +91,7 @@ function VibraTikTok(){
     if(authPass.length<4){ setAuthError('Password iwe angalau herufi 4'); return }
     try{
       const users: VibraUser[] = JSON.parse(localStorage.getItem('vibra_users')||'[]')
-      if(users.find(u=>u.email.toLowerCase()===authEmail.toLowerCase())){ setAuthError('Hii Email tayari imeshatumika. Jaribu Login.'); return }
+      if(users.find(u=>u.email.toLowerCase()===authEmail.toLowerCase())){ setAuthError('Hii Email tayari imeshatumika. Bonyeza Login.'); return }
       const newUser: VibraUser = { name: authName.trim(), email: authEmail.trim().toLowerCase(), pass: authPass }
       users.push(newUser)
       localStorage.setItem('vibra_users', JSON.stringify(users))
@@ -159,7 +161,6 @@ function VibraTikTok(){
       return n
     })
   }
-  // ===== SAVE ILIYOREKEBISHWA - INAHIFADHIWA KWENYE SIMU =====
   function toggleSave(){
     setSavedIds(v=>{
       const already=v.includes(clipKey)
@@ -256,22 +257,32 @@ function VibraTikTok(){
   const savedVideos=allVideosForSaved.filter(v=>savedIds.includes(String(v.id??v.url)))
   function openClip(clip:Clip){const index=baseFeed.findIndex(entry=>entry.url===clip.url); if(index>=0){setIdx(index);setView('home')} else { setMyVideos(prev=>[clip,...prev]); setIdx(0); setView('home') }}
 
+  // ===== AUTH SCREEN ILIYOREKEBISHWA - INPUTS NYEUPE ZINAZOONEKANA =====
   const authScreen = showAuth && (
-    <div style={{position:'fixed',inset:0,zIndex:1000,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,color:'#fff',overflowY:'auto'}}>
+    <div style={{position:'fixed',inset:0,zIndex:1000,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',padding:20,paddingTop:40,color:'#fff',overflowY:'auto'}}>
       <div style={{fontSize:50}}>🎬</div>
       <h1 style={{fontSize:32,fontWeight:'bold',marginTop:8}}>VIBRA</h1>
       <p style={{opacity:0.8,marginBottom:20,textAlign:'center'}}>Mombasa Vibes | Kamata<br/>Tengeneza akaunti au ingia kuendelea</p>
-      <div style={{display:'flex',gap:10,marginBottom:16}}>
-        <button onClick={()=>{setAuthMode('signup');setAuthError('')}} style={{padding:'10px 20px',borderRadius:20,border:'none',background:authMode==='signup'?'#FE2C55':'#333',color:'#fff',fontWeight:'bold'}}>Sign Up</button>
-        <button onClick={()=>{setAuthMode('login');setAuthError('')}} style={{padding:'10px 20px',borderRadius:20,border:'none',background:authMode==='login'?'#FE2C55':'#333',color:'#fff',fontWeight:'bold'}}>Login</button>
+      <div style={{display:'flex',gap:10,marginBottom:20}}>
+        <button onClick={()=>{setAuthMode('signup');setAuthError('')}} style={{padding:'10px 24px',borderRadius:20,border:'none',background:authMode==='signup'?'#FE2C55':'#333',color:'#fff',fontWeight:'bold'}}>Sign Up</button>
+        <button onClick={()=>{setAuthMode('login');setAuthError('')}} style={{padding:'10px 24px',borderRadius:20,border:'none',background:authMode==='login'?'#FE2C55':'#333',color:'#fff',fontWeight:'bold'}}>Login</button>
       </div>
-      <div style={{width:'100%',maxWidth:340,display:'flex',flexDirection:'column',gap:10}}>
-        {authMode==='signup'&&<input value={authName} onChange={e=>setAuthName(e.target.value)} placeholder="Jina lako - mfano MrVibra" style={{padding:14,borderRadius:12,border:'none',color:'#000'}} />}
-        <input value={authEmail} onChange={e=>setAuthEmail(e.target.value)} placeholder="Email - mfano wewe@gmail.com" type="email" style={{padding:14,borderRadius:12,border:'none',color:'#000'}} />
-        <input value={authPass} onChange={e=>setAuthPass(e.target.value)} placeholder="Password - angalau 4" type="password" style={{padding:14,borderRadius:12,border:'none',color:'#000'}} />
-        {authError&&<p style={{color:'#ff6b6b',fontSize:13,textAlign:'center'}}>{authError}</p>}
-        <button onClick={authMode==='signup'?doSignup:doLogin} style={{padding:14,borderRadius:12,border:'none',background:'#FE2C55',color:'#fff',fontWeight:'bold',fontSize:16}}>{authMode==='signup'?'Tengeneza Akaunti 🎉':'Ingia 👋'}</button>
+      <div style={{width:'100%',maxWidth:340,display:'flex',flexDirection:'column',gap:12,background:'#111',padding:16,borderRadius:16,border:'1px solid #333'}}>
+        {authMode==='signup'&&<>
+          <label style={labelStyle}>👤 Jina lako</label>
+          <input value={authName} onChange={e=>setAuthName(e.target.value)} placeholder="Mfano: MrVibra" style={inputStyle} />
+        </>}
+        <label style={labelStyle}>📧 Email</label>
+        <input value={authEmail} onChange={e=>setAuthEmail(e.target.value)} placeholder="Mfano: wewe@gmail.com" type="email" style={inputStyle} />
+        <label style={labelStyle}>🔒 Password</label>
+        <div style={{display:'flex',gap:8}}>
+          <input value={authPass} onChange={e=>setAuthPass(e.target.value)} placeholder="Angalau herufi 4" type={showPass?'text':'password'} style={{...inputStyle, flex:1}} />
+          <button onClick={()=>setShowPass(v=>!v)} style={{background:'#333',color:'#fff',border:'none',borderRadius:12,padding:'0 12px'}}>{showPass?'🙈':'👁️'}</button>
+        </div>
+        {authError&&<p style={{color:'#ff6b6b',fontSize:13,textAlign:'center',background:'#331111',padding:8,borderRadius:8}}>{authError}</p>}
+        <button onClick={authMode==='signup'?doSignup:doLogin} style={{padding:14,borderRadius:12,border:'none',background:'#FE2C55',color:'#fff',fontWeight:'bold',fontSize:16,marginTop:4}}>{authMode==='signup'?'Tengeneza Akaunti 🎉':'Ingia 👋'}</button>
         <button onClick={()=>{setShowAuth(false); setNotice('Umeingia kama Mgeni.')}} style={{padding:12,borderRadius:12,border:'1px solid #555',background:'transparent',color:'#fff'}}>Endelea kama Mgeni 👀</button>
+        <p style={{fontSize:12,opacity:0.6,textAlign:'center'}}>{authMode==='signup'?'Tayari una akaunti? Bonyeza Login juu.':'Huna akaunti? Bonyeza Sign Up juu.'}</p>
       </div>
     </div>
   )
@@ -360,7 +371,6 @@ function VibraTikTok(){
           </div>
           <Button className={'action-button '+(liked?'is-active':'')} onClick={toggleLike} style={{marginTop:12}}>♥ {likes}</Button>
           <Button className="action-button" onClick={()=>setPanel('Comments')}>💬<br/>{commentCount}</Button>
-          {/* SAVE - SASA INAONYESHA KAMA IMESAVE NA IDADI */}
           <Button className={'action-button '+(saved?'is-active':'')} onClick={toggleSave} style={{background:saved?'#FE2C55':'',color:saved?'#fff':''}}>{saved?'✅':'🔖'}<br/>{savedIds.length}</Button>
           <Button className="action-button" onClick={shareVideo}>↗<br/>Share</Button>
           <Button className="action-button" onClick={()=>setPanel('Lyrics')}>🎵</Button>
