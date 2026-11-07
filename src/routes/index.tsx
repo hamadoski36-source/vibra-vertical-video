@@ -1,4 +1,4 @@
-// VERSION - BUTTONS ZIMEREKEBISHWA + SAUTI
+// VERSION - BUTTONS CHINI KAMA TIKTOK + SAUTI IMEFUNGULIWA
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
@@ -25,7 +25,6 @@ type VibraUser = { name: string; email: string; pass: string }
 
 const inputStyle: React.CSSProperties = { padding:14, borderRadius:12, border:'2px solid #ddd', background:'#fff', color:'#000', fontSize:16, width:'100%', boxSizing:'border-box', outline:'none' }
 const labelStyle: React.CSSProperties = { color:'#fff', fontSize:13, fontWeight:'bold', textAlign:'left', marginBottom:-4 }
-// BUTTONS NDOGO - HAZIKATWI TENA
 const actionBtn: React.CSSProperties = { width:52, height:52, minWidth:52, padding:0, fontSize:11, lineHeight:'1.1', borderRadius:12, background:'rgba(0,0,0,0.55)', color:'#fff', border:'1px solid rgba(255,255,255,0.2)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, whiteSpace:'nowrap', overflow:'hidden' }
 
 function VibraTikTok(){
@@ -41,7 +40,8 @@ function VibraTikTok(){
   const [tab,setTab]=useState('foryou')
   const [view,setView]=useState('home')
   const [search,setSearch]=useState('')
-  const [soundEnabled,setSoundEnabled]=useState(false)
+  // SAUTI: Tunaiwasha moja kwa moja, tunakumbuka kama uliwahi kuiwasha
+  const [soundEnabled,setSoundEnabled]=useState(()=>{ try{ return localStorage.getItem('vibra_sound')!=='off' }catch{ return true } })
   const [tappedSound,setTappedSound]=useState(false)
   const [panel,setPanel]=useState('')
   const [comment,setComment]=useState('')
@@ -88,6 +88,20 @@ function VibraTikTok(){
       else{ setShowAuth(true) }
     }catch{ setShowAuth(true) }
   },[])
+
+  // FUNGU SAUTI MARA YA KWANZA UKIGUSA POPOTE
+  useEffect(()=>{
+    const unlock=()=>{
+      const v=videoRef.current
+      if(v && soundEnabled){
+        v.muted=false; v.volume=1; v.play().catch(()=>{})
+        setTappedSound(true)
+      }
+    }
+    document.addEventListener('touchstart', unlock)
+    document.addEventListener('click', unlock)
+    return ()=>{ document.removeEventListener('touchstart', unlock); document.removeEventListener('click', unlock) }
+  },[soundEnabled])
 
   function doSignup(){
     if(!authName.trim() || !authEmail.trim() || !authPass.trim()){ setAuthError('Jaza Jina, Email na Password zote'); return }
@@ -156,16 +170,15 @@ function VibraTikTok(){
   const shareUrl=encodeURIComponent(window.location.href)
   const shareMsg=encodeURIComponent(shareText)
 
-  // ===== SAUTI - UKIBONYEZA VIDEO INAWAKA =====
   function toggleSound(){
     const v=videoRef.current
-    if(v){
-      const next=!soundEnabled
-      setSoundEnabled(next); setTappedSound(true)
-      v.muted=!next; v.volume=1
-      if(next){ v.play().catch(()=>{}) }
-      setNotice(next?'Sauti imewashwa 🔊':'Sauti imezimwa 🔇')
-    }
+    if(!v) return
+    const next=!soundEnabled
+    setSoundEnabled(next); setTappedSound(true)
+    localStorage.setItem('vibra_sound', next?'on':'off')
+    v.muted=!next; v.volume=1
+    if(next){ v.play().catch(()=>{}) }
+    setNotice(next?'Sauti imewashwa 🔊':'Sauti imezimwa 🔇')
   }
 
   function toggleLike(){
@@ -209,19 +222,19 @@ function VibraTikTok(){
   useEffect(()=>{
     const video=videoRef.current
     if(!video) return
-    if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){ video.pause(); video.muted=true; return }
+    if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){ video.pause(); return }
+    // HATUZIMI SAUTI TENA HAPA - TUNAIACHA KAMA ULICHOWEKA
     video.muted=!soundEnabled
     video.volume=1
     video.play().catch(()=>{})
   },[current,soundEnabled,idx,view,panel])
 
   useEffect(()=>{
-    const stop=()=>{ const v=videoRef.current; if(v){ v.pause(); v.muted=true } }
-    const onHide=()=>{ if(document.hidden){ stop(); setSoundEnabled(false) } }
+    const stop=()=>{ const v=videoRef.current; if(v){ v.pause() } }
+    const onHide=()=>{ if(document.hidden){ stop() } }
     document.addEventListener('visibilitychange',onHide)
     window.addEventListener('pagehide',stop)
-    window.addEventListener('blur',stop)
-    return ()=>{ document.removeEventListener('visibilitychange',onHide); window.removeEventListener('pagehide',stop); window.removeEventListener('blur',stop) }
+    return ()=>{ document.removeEventListener('visibilitychange',onHide); window.removeEventListener('pagehide',stop) }
   },[])
 
   async function startLive(){
@@ -358,7 +371,7 @@ function VibraTikTok(){
   return(
     <div data-ready={hydrated} className="vibra-app home-bottom-scroll bg-video text-video-text" style={{overflow:'hidden'}}>
       {authScreen}
-      <div ref={stageRef} className={'home-video-stage '+(idx%feed.length)} style={{overflow:'hidden'}}>
+      <div ref={stageRef} className={'home-video-stage '+(idx%feed.length)} style={{overflow:'hidden',position:'relative'}}>
         {uploadPanel}
         <div style={{position:'absolute',top:0,left:0,right:0,zIndex:10,padding:'0 8px'}}>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
@@ -371,21 +384,21 @@ function VibraTikTok(){
             {authUser?<button onClick={()=>setView('me')} style={{background:'#333',color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11}}>{name}</button>:<button onClick={()=>setShowAuth(true)} style={{background:'#FE2C55',color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11,fontWeight:'bold'}}>Login / Sign Up</button>}
           </div>
         </div>
-        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay muted={!soundEnabled} onClick={toggleSound} />:<p className="p-6 text-center">No videos yet.</p>}
+        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay onClick={toggleSound} />:<p className="p-6 text-center">No videos yet.</p>}
 
-        {/* SAUTI - SASA IPO NDANI, HAIKATIWI */}
-        <div style={{position:'absolute',right:70,top:92,zIndex:70}}>
+        {/* SAUTI - JUU KULIA LAKINI NDANI */}
+        <div style={{position:'absolute',right:12,top:92,zIndex:70}}>
           <button onClick={toggleSound} style={{width:44,height:44,borderRadius:'50%',background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',fontSize:18}}>{soundEnabled?'🔊':'🔇'}</button>
         </div>
-        {!soundEnabled&&!tappedSound&&(
-          <button onClick={toggleSound} style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:60,background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',padding:'12px 18px',borderRadius:30,fontSize:14,fontWeight:'bold'}}>🔇 Bonyeza kwa Sauti 🔊</button>
+        {!soundEnabled&&(
+          <button onClick={toggleSound} style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:60,background:'rgba(0,0,0,0.75)',color:'#fff',border:'1px solid #fff',padding:'12px 18px',borderRadius:30,fontSize:14,fontWeight:'bold'}}>🔇 Bonyeza kwa Sauti 🔊</button>
         )}
 
-        <div className="feed-caption absolute left-3" style={{bottom:90,right:70}}><p className="font-bold" style={{fontSize:13}}>{name}</p><p style={{fontSize:12}}>{current?.caption}</p></div>
+        <div className="feed-caption absolute left-3" style={{bottom:110,right:70}}><p className="font-bold" style={{fontSize:13}}>{name}</p><p style={{fontSize:12}}>{current?.caption}</p></div>
 
-        {/* BUTTONS ZA RIGHT - SASA ZIKO NDANI, FONT NDOGO */}
-        <div style={{position:'absolute',right:8,top:130,bottom:110,zIndex:50,display:'flex',flexDirection:'column',gap:6,alignItems:'center',width:52}}>
-          <div style={{position:'relative',width:48,height:48,marginBottom:10}}>
+        {/* BUTTONS ZA RIGHT - SASA ZIMESHUKA CHINI KAMA TIKTOK */}
+        <div style={{position:'absolute',right:8,bottom:115,top:'auto',zIndex:50,display:'flex',flexDirection:'column',gap:7,alignItems:'center',width:52,justifyContent:'flex-end'}}>
+          <div style={{position:'relative',width:48,height:48,marginBottom:6}}>
             <button onClick={()=>setView('me')} style={{width:48,height:48,borderRadius:'50%',overflow:'hidden',border:'2px solid #fff',background:'#333',padding:0,cursor:'pointer'}}>
               {profileAvatar?<img src={profileAvatar} alt="Creator" style={{width:'100%',height:'100%',objectFit:'cover'}} />:<span style={{fontSize:22}}>👤</span>}
             </button>
@@ -397,7 +410,7 @@ function VibraTikTok(){
           <button onClick={shareVideo} style={actionBtn}>↗<span style={{fontSize:10}}>Share</span></button>
           <button onClick={()=>setPanel('Lyrics')} style={actionBtn}>🎵<span style={{fontSize:10}}>Song</span></button>
           <button onClick={startLive} style={actionBtn}>🔴<span style={{fontSize:10}}>LIVE</span></button>
-          <div style={{transform:'scale(0.85)',transformOrigin:'top center'}}><VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} /></div>
+          <div style={{transform:'scale(0.85)',transformOrigin:'bottom center'}}><VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} /></div>
         </div>
       </div>
       <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex justify-around p-3">
