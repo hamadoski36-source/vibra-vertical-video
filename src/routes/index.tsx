@@ -1,4 +1,4 @@
-// VIBRA FINAL - YOTE MPYA - STATUS + VOICE NOTE + CHAT - RANGI VIBRA TU
+// VIBRA WORLDWIDE - FINAL COMPLETE - BLUE TICKS + DELETE + TYPING + STATUS + VOICE NOTE
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
@@ -22,8 +22,8 @@ export const Route = createFileRoute('/')({
 
 type Clip = { id?: number | string; url: string; caption: string; thumb?: string }
 type VibraUser = { name: string; email: string; pass: string }
-type ChatMsg = { from: 'me' | 'them'; text: string; time: string; audioUrl?: string; mediaType?: 'voice'|'image'|'video' }
-type Chat = { id: string; name: string; avatar: string; last: string; time: string; unread: number; online: boolean; isGroup?: boolean; messages: ChatMsg[] }
+type ChatMsg = { from: 'me' | 'them'; text: string; time: string; audioUrl?: string; mediaType?: 'voice'|'image'|'video'; seen?: boolean }
+type Chat = { id: string; name: string; avatar: string; last: string; time: string; unread: number; online: boolean; isGroup?: boolean; messages: ChatMsg[]; typing?: boolean; lastSeen?: string }
 type StatusItem = { id: string; name: string; avatar: string; img: string; caption: string; time: string; seen: boolean; mediaType?: 'image'|'video'|'text' }
 
 const PINK = '#FE2C55'
@@ -222,7 +222,7 @@ function VibraTikTok(){
   const [authPass,setAuthPass]=useState('')
   const [authError,setAuthError]=useState('')
   const [showPass,setShowPass]=useState(false)
-  // CHAT + STATUS + VOICE NOTE - YOTE MPYA!
+  // CHAT + STATUS + BLUE TICKS + DELETE + TYPING - FINAL!
   const [chatSearch,setChatSearch]=useState('')
   const [selectedChatId,setSelectedChatId]=useState<string|null>(null)
   const [chatInput,setChatInput]=useState('')
@@ -232,12 +232,13 @@ function VibraTikTok(){
   const voiceRecRef=useRef<MediaRecorder|null>(null)
   const voiceChunksRef=useRef<Blob[]>([])
   const voiceStreamRef=useRef<MediaStream|null>(null)
+  const [showDeleteMenu,setShowDeleteMenu]=useState<number|null>(null)
   const [chats,setChats]=useState<Chat[]>([
-    { id:'aisha', name:'Aisha Mkomani', avatar:'https://i.pravatar.cc/150?img=47', last:'Pole! Nimefika Old Town, tuko sawa 😊', time:'Now', unread:2, online:true, messages:[{from:'them',text:'Pole! Nimefika Old Town, tuko sawa 😊',time:'09:40'},{from:'them',text:'Video yako ya Sunset kali sana! 🔥',time:'09:41'},{from:'me',text:'Asante! Karibu Vibra ❤️',time:'09:42'}] },
-    { id:'juma', name:'Juma Kilindini', avatar:'https://i.pravatar.cc/150?img=12', last:'Sawa, nimepanga dhow ride kesho asubuhi 🌊', time:'09:12', unread:0, online:true, messages:[{from:'them',text:'Sawa, nimepanga dhow ride kesho asubuhi 🌊',time:'09:12'},{from:'me',text:'Poa! Nitaweka video yake Vibra!',time:'09:13'}] },
-    { id:'neema', name:'Mama Neema • Nyali', avatar:'https://i.pravatar.cc/150?img=32', last:'Asante kwa picha! Beach imekuwa poa Leo', time:'Yesterday', unread:0, online:false, messages:[{from:'them',text:'Asante kwa picha! Beach imekuwa poa Leo',time:'Yesterday'}] },
-    { id:'said', name:'Said - Old Town', avatar:'https://i.pravatar.cc/150?img=53', last:'Vibra iko poa sana! Love the new update ✨', time:'Yesterday', unread:0, online:false, messages:[{from:'them',text:'Vibra iko poa sana! Love the new update ✨',time:'Yesterday'}] },
-    { id:'pwani', name:'Pwani Crew 🌴', avatar:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&h=150&fit=crop', last:'Zawadi: Tutakutana Fort Jesus at 5pm?', time:'Mon', unread:0, online:true, isGroup:true, messages:[{from:'them',text:'Zawadi: Tutakutana Fort Jesus at 5pm?',time:'Mon'},{from:'me',text:'Sawa! Nitaleta kamera 📷',time:'Mon'}] },
+    { id:'aisha', name:'Aisha Mkomani', avatar:'https://i.pravatar.cc/150?img=47', last:'Poa sana! 🔥', time:'Now', unread:0, online:true, lastSeen:'Online', messages:[{from:'them',text:'Pole! Nimefika Old Town, tuko sawa 😊',time:'09:40', seen:true},{from:'them',text:'Video yako ya Sunset kali sana! 🔥',time:'09:41', seen:true},{from:'me',text:'Asante! Karibu Vibra ❤️',time:'09:42', seen:true}] },
+    { id:'juma', name:'Juma Kilindini', avatar:'https://i.pravatar.cc/150?img=12', last:'Sawa, nimepanga dhow ride kesho asubuhi 🌊', time:'09:12', unread:0, online:true, lastSeen:'Online', messages:[{from:'them',text:'Sawa, nimepanga dhow ride kesho asubuhi 🌊',time:'09:12', seen:true},{from:'me',text:'Poa! Nitaweka video yake Vibra!',time:'09:13', seen:true}] },
+    { id:'neema', name:'Mama Neema • Nyali', avatar:'https://i.pravatar.cc/150?img=32', last:'Asante kwa picha! Beach imekuwa poa Leo', time:'Yesterday', unread:0, online:false, lastSeen:'Last seen 1h ago', messages:[{from:'them',text:'Asante kwa picha! Beach imekuwa poa Leo',time:'Yesterday', seen:true}] },
+    { id:'said', name:'Said - Old Town', avatar:'https://i.pravatar.cc/150?img=53', last:'Vibra iko poa sana! Love the new update ✨', time:'Yesterday', unread:0, online:false, lastSeen:'Last seen 2h ago', messages:[{from:'them',text:'Vibra iko poa sana! Love the new update ✨',time:'Yesterday', seen:true}] },
+    { id:'pwani', name:'Pwani Crew 🌴', avatar:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&h=150&fit=crop', last:'Poa sana! 🔥', time:'Now', unread:0, online:true, lastSeen:'Online', isGroup:true, messages:[{from:'them',text:'Zawadi: Tutakutana Fort Jesus at 5pm?',time:'Mon', seen:true},{from:'me',text:'Sawa! Nitaleta kamera 📷',time:'Mon', seen:true}] },
   ])
   const [statuses,setStatuses]=useState<StatusItem[]>([
     { id:'s1', name:'Aisha Mkomani', avatar:'https://i.pravatar.cc/150?img=47', img:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=800&fit=crop', caption:'Old Town vibes! 🌊 #Mombasa', time:'12 min ago', seen:false, mediaType:'image' },
@@ -249,20 +250,48 @@ function VibraTikTok(){
   function sendChatMsg(){
     if(!chatInput.trim() || !selectedChat) return
     const text=chatInput.trim(); const time=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
-    setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:text, time:'Now', unread:0, messages:[...c.messages, {from:'me',text,time}]} : c))
+    setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:text, time:'Now', unread:0, messages:[...c.messages, {from:'me',text,time, seen:false}]} : c))
     setChatInput('')
+    // Blue ticks: baada ya 1s imefika, baada ya 3s imesomwa
+    setTimeout(()=>{ setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, messages: c.messages.map(m=> m.text===text && m.from==='me' ? {...m, seen:false} : m)} : c)) }, 1000)
+    // Typing...
+    setTimeout(()=>{ setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, typing:true} : c)) }, 1200)
     setTimeout(()=>{
       const replies=['Poa sana! 🔥','Sawa, tuko pamoja!','Hahaha 😂','Nimeipenda hiyo! ❤️','Twende Mombasa! 🌊']
       const reply=replies[Math.floor(Math.random()*replies.length)]
-      setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:reply, time:'Now', messages:[...c.messages, {from:'them',text:reply,time}]} : c))
-    }, 1200)
+      setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:reply, time:'Now', typing:false, messages:[...c.messages.map(m=> m.from==='me' ? {...m, seen:true} : m), {from:'them',text:reply,time, seen:true}]} : c))
+    }, 3000)
+  }
+  // Akiingia kwenye Chat, ujumbe wake wote uwe Blue (amesoma)
+  useEffect(()=>{
+    if(!selectedChatId) return
+    const t = setTimeout(()=>{
+      setChats(prev=>prev.map(c=> c.id===selectedChatId ? {...c, messages: c.messages.map(m=> m.from==='me' ? {...m, seen:true} : m)} : c))
+    }, 2000)
+    return ()=>clearTimeout(t)
+  },[selectedChatId])
+  function deleteMsg(msgIndex:number){
+    if(!selectedChat) return
+    if(!confirm('Ufute ujumbe huu?')) return
+    setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, messages: c.messages.filter((_,i)=>i!==msgIndex)} : c))
+    setShowDeleteMenu(null)
+    setNotice('Ujumbe umefutwa! 🗑️')
+  }
+  function deleteChat(chatId:string){
+    if(!confirm('Ufute Chat hii yote?')) return
+    setChats(prev=>prev.filter(c=>c.id!==chatId))
+    setSelectedChatId(null)
+    setNotice('Chat imefutwa! 🗑️')
+  }
+  function deleteStatus(statusId:string){
+    if(!confirm('Ufute Status hii?')) return
+    setStatuses(prev=>prev.filter(s=>s.id!==statusId))
+    setViewStatus(null)
+    setNotice('Status imefutwa! 🗑️')
   }
   async function toggleVoiceNote(){
     if(!selectedChat) return
-    if(isRecordingVoice){
-      try{ voiceRecRef.current?.stop() }catch{}
-      return
-    }
+    if(isRecordingVoice){ try{ voiceRecRef.current?.stop() }catch{}; return }
     try{
       const stream = await navigator.mediaDevices.getUserMedia({audio:true})
       voiceStreamRef.current = stream
@@ -276,9 +305,10 @@ function VibraTikTok(){
         if(blob.size < 1000){ setIsRecordingVoice(false); setNotice('Voice Note fupi sana, jaribu tena'); return }
         const url = URL.createObjectURL(blob)
         const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
-        setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:'🎤 Voice Note', time:'Now', unread:0, messages:[...c.messages, {from:'me', text:'🎤 Voice Note', time, audioUrl:url, mediaType:'voice'}]} : c))
+        setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:'🎤 Voice Note', time:'Now', unread:0, messages:[...c.messages, {from:'me', text:'🎤 Voice Note', time, audioUrl:url, mediaType:'voice', seen:false}]} : c))
         setIsRecordingVoice(false)
         setNotice('Voice Note imetumwa! 🎤')
+        setTimeout(()=>{ setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, messages: c.messages.map(m=> m.from==='me' ? {...m, seen:true} : m)} : c)) }, 2500)
       }
       rec.start()
       setIsRecordingVoice(true)
@@ -291,10 +321,10 @@ function VibraTikTok(){
     const url = URL.createObjectURL(file)
     const isVid = file.type.startsWith('video')
     const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
-    setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last: isVid?'🎥 Video':'📷 Picha', time:'Now', messages:[...c.messages, {from:'me', text: isVid?'🎥 Video':'📷 Picha', time, audioUrl:url, mediaType: isVid?'video':'image'}]} : c))
+    setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last: isVid?'🎥 Video':'📷 Picha', time:'Now', messages:[...c.messages, {from:'me', text: isVid?'🎥 Video':'📷 Picha', time, audioUrl:url, mediaType: isVid?'video':'image', seen:false}]} : c))
     setNotice(isVid?'Video imetumwa! 🎥':'Picha imetumwa! 📷')
   }
-  function addStatus(file?:File, textCaption?:string){
+  function addStatus(file?:File){
     if(file){
       const url = URL.createObjectURL(file)
       const isVid = file.type.startsWith('video')
@@ -302,7 +332,7 @@ function VibraTikTok(){
       setStatuses(prev=>[{id:'me'+Date.now(), name:'My Status', avatar: profileAvatar || 'https://i.pravatar.cc/150?img=68', img:url, caption:cap, time:'Sasa hivi', seen:false, mediaType: isVid?'video':'image'}, ...prev])
       setNotice(isVid?'Status ya Video imewekwa! ✅':'Status ya Picha imewekwa! ✅')
     } else {
-      const t = textCaption || prompt('Andika Status yako:','Mombasa Vibes! 🌊')
+      const t = prompt('Andika Status yako:','Mombasa Vibes! 🌊')
       if(!t) return
       setStatuses(prev=>[{id:'me'+Date.now(), name:'My Status', avatar: profileAvatar || 'https://i.pravatar.cc/150?img=68', img:'', caption:t, time:'Sasa hivi', seen:false, mediaType:'text'}, ...prev])
       setNotice('Status ya Maandishi imewekwa! ✅')
@@ -406,13 +436,13 @@ function VibraTikTok(){
     </div>
   )
 
-  // ===== CHAT + STATUS - YOTE MPYA =====
+  // ===== CHAT + STATUS - FINAL COMPLETE =====
   if(view==='chat'){
     const filteredChats = chatSearch ? chats.filter(c=>c.name.toLowerCase().includes(chatSearch.toLowerCase())) : chats
     if(viewStatus){
       return <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:'#000',color:'#fff',position:'relative'}}>
         {viewStatus.mediaType === 'video' ? <video src={viewStatus.img} autoPlay loop controls style={{flex:1,width:'100%',objectFit:'cover'}} /> : viewStatus.mediaType === 'text' ? <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',background:GRADIENT_BTN,padding:20}}><h2 style={{color:'#fff',fontSize:28,textAlign:'center',lineHeight:1.4}}>{viewStatus.caption}</h2></div> : <img src={viewStatus.img} style={{flex:1,width:'100%',objectFit:'cover'}} />}
-        <div style={{position:'absolute',top:0,left:0,right:0,padding:12,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)'}}><button onClick={()=>setViewStatus(null)} style={{background:'none',border:'none',color:'#fff',fontSize:22}}>✕</button><img src={viewStatus.avatar} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} /><div><b style={vibraText}>{viewStatus.name}</b><p style={{fontSize:11,margin:0,color:TEAL}}>{viewStatus.time}</p></div></div>
+        <div style={{position:'absolute',top:0,left:0,right:0,padding:12,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)'}}><button onClick={()=>setViewStatus(null)} style={{background:'none',border:'none',color:'#fff',fontSize:22}}>✕</button><img src={viewStatus.avatar} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} /><div style={{flex:1}}><b style={vibraText}>{viewStatus.name}</b><p style={{fontSize:11,margin:0,color:TEAL}}>{viewStatus.time}</p></div>{viewStatus.name==='My Status' && <button onClick={()=>deleteStatus(viewStatus.id)} style={{background:PINK,border:'none',color:'#fff',padding:'6px 12px',borderRadius:20,fontWeight:'bold'}}>🗑️ Futa</button>}</div>
         <div style={{position:'absolute',bottom:80,left:12,right:12}}><p style={{background:GRADIENT_BTN,padding:'10px 12px',borderRadius:12,fontSize:14,color:'#fff'}}>{viewStatus.caption}</p></div>
         <div style={{padding:12,background:'#111',display:'flex',gap:8}}><input placeholder="Reply kwa Status..." style={{flex:1,padding:12,borderRadius:24,border:`1px solid ${TEAL}`,background:'#222',color:'#fff'}} /><button onClick={()=>{ setViewStatus(null); setNotice('Reply imetumwa kwa '+viewStatus.name) }} style={{background:GRADIENT_BTN,border:'none',color:'#fff',padding:'10px 16px',borderRadius:24,fontWeight:'bold'}}>❤️ Reply</button></div>
       </div>
@@ -422,18 +452,25 @@ function VibraTikTok(){
         <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px',background:'#111',borderBottom:`1px solid ${PINK}`}}>
           <button onClick={()=>setSelectedChatId(null)} style={{background:'none',border:'none',color:TEAL,fontSize:20}}>←</button>
           <img src={selectedChat.avatar} style={{width:42,height:42,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} />
-          <div style={{flex:1}}><b style={vibraText}>{selectedChat.name}</b><p style={{fontSize:11,margin:0,color: selectedChat.online ? TEAL : PINK}}>{selectedChat.online ? '● Online' : '○ Offline'}</p></div>
+          <div style={{flex:1}}><b style={vibraText}>{selectedChat.name}</b><p style={{fontSize:11,margin:0,color: selectedChat.typing ? TEAL : selectedChat.online ? TEAL : PINK}}>{selectedChat.typing ? '✍️ anaandika...' : selectedChat.online ? '● Online' : '○ '+selectedChat.lastSeen}</p></div>
           <button onClick={()=>setNotice('Video Call inakuja Version 2!')} style={{background:'none',border:'none',fontSize:20}}>📹</button>
           <button onClick={()=>setNotice('Voice Call inakuja Version 2!')} style={{background:'none',border:'none',fontSize:20}}>📞</button>
+          <button onClick={()=>deleteChat(selectedChat.id)} style={{background:'none',border:'none',fontSize:20}}>🗑️</button>
         </div>
         <div style={{flex:1,overflowY:'auto',padding:12,display:'flex',flexDirection:'column',gap:8,background:'#0a0a0a'}}>
           {selectedChat.messages.map((m,i)=>(
-            <div key={i} style={{alignSelf: m.from==='me'?'flex-end':'flex-start',maxWidth:'80%',background: m.from==='me' ? GRADIENT_BTN : '#222',color:'#fff',padding:'10px 12px',borderRadius: m.from==='me' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',fontSize:14, border: m.from==='me' ? `1px solid ${TEAL}` : `1px solid ${PINK}`}}>
+            <div key={i} style={{position:'relative',alignSelf: m.from==='me'?'flex-end':'flex-start',maxWidth:'80%',background: m.from==='me' ? GRADIENT_BTN : '#222',color:'#fff',padding:'10px 12px',borderRadius: m.from==='me' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',fontSize:14, border: m.from==='me' ? `1px solid ${TEAL}` : `1px solid ${PINK}`}}>
               {m.mediaType==='voice' && m.audioUrl ? <audio src={m.audioUrl} controls style={{width:200}} /> : m.mediaType==='video' && m.audioUrl ? <video src={m.audioUrl} controls style={{width:200,borderRadius:10}} /> : m.mediaType==='image' && m.audioUrl ? <img src={m.audioUrl} style={{width:200,borderRadius:10}} /> : m.text}
-              <div style={{fontSize:10,opacity:0.7,textAlign:'right',marginTop:2}}>{m.time} {m.from==='me' ? '✓✓' : ''}</div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginTop:2}}>
+                <span style={{fontSize:10,opacity:0.7}}>{m.time}</span>
+                {m.from==='me' && <span style={{fontSize:14,fontWeight:'bold', color: m.seen ? TEAL : '#fff'}}>{m.seen ? '✓✓' : '✓✓'}</span>}
+                {m.from==='me' && <button onClick={()=>deleteMsg(i)} style={{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',borderRadius:10,padding:'2px 6px',fontSize:10}}>🗑️ Futa</button>}
+              </div>
+              {m.from==='me' && <div style={{fontSize:8,opacity:0.6,textAlign:'right'}}>{m.seen ? 'Imesomwa 💙' : 'Imetumwa'}</div>}
             </div>
           ))}
-          <p style={{textAlign:'center',fontSize:11,marginTop:10, ...vibraText}}>🔒 Ujumbe umelindwa • Vibra Chat</p>
+          {selectedChat.typing && <div style={{alignSelf:'flex-start',background:'#222',padding:'8px 12px',borderRadius:16,fontSize:13,color:TEAL}}>✍️ {selectedChat.name} anaandika... •••</div>}
+          <p style={{textAlign:'center',fontSize:11,marginTop:10, ...vibraText}}>🔒 Ujumbe umelindwa • Vibra Chat • 💙 Blue = Imesomwa</p>
         </div>
         <div style={{display:'flex',gap:6,padding:10,background:'#111',alignItems:'center'}}>
           <label style={{background:GRADIENT_BTN,border:'none',color:'#fff',width:40,height:40,borderRadius:'50%',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>📷<input type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(f) sendChatMedia(f) }} /></label>
@@ -464,11 +501,14 @@ function VibraTikTok(){
           </div>
           <p style={vibraTextPink}>Recent Status</p>
           {statuses.map(s=>(
-            <button key={s.id} onClick={()=>{ setViewStatus(s); setStatuses(prev=>prev.map(x=> x.id===s.id ? {...x, seen:true} : x)) }} style={{width:'100%',display:'flex',gap:12,alignItems:'center',padding:'10px 0',background:'none',border:'none',color:'#fff',textAlign:'left'}}>
-              <img src={s.avatar} style={{width:54,height:54,borderRadius:'50%',objectFit:'cover',border: s.seen ? '2px solid #555' : `3px solid ${PINK}`, padding:2}} />
-              <div style={{flex:1}}><b style={vibraText}>{s.name}</b><p style={{fontSize:12,margin:0,color:TEAL}}>{s.time} • {s.mediaType==='video'?'🎥 Video':s.mediaType==='text'?'✍️ Maandishi':'📷 Picha'} • {s.caption.slice(0,30)}</p></div>
-              {!s.seen && <span style={{background:PINK,width:10,height:10,borderRadius:'50%'}} />}
-            </button>
+            <div key={s.id} style={{display:'flex',gap:12,alignItems:'center',padding:'10px 0'}}>
+              <button onClick={()=>{ setViewStatus(s); setStatuses(prev=>prev.map(x=> x.id===s.id ? {...x, seen:true} : x)) }} style={{flex:1,display:'flex',gap:12,alignItems:'center',background:'none',border:'none',color:'#fff',textAlign:'left'}}>
+                <img src={s.avatar} style={{width:54,height:54,borderRadius:'50%',objectFit:'cover',border: s.seen ? '2px solid #555' : `3px solid ${PINK}`, padding:2}} />
+                <div style={{flex:1}}><b style={vibraText}>{s.name}</b><p style={{fontSize:12,margin:0,color:TEAL}}>{s.time} • {s.mediaType==='video'?'🎥 Video':s.mediaType==='text'?'✍️ Maandishi':'📷 Picha'} • {s.caption.slice(0,30)}</p></div>
+                {!s.seen && <span style={{background:PINK,width:10,height:10,borderRadius:'50%'}} />}
+              </button>
+              {s.name==='My Status' && <button onClick={()=>deleteStatus(s.id)} style={{background:PINK,color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:12}}>🗑️</button>}
+            </div>
           ))}
         </div>
       ) : (
@@ -481,13 +521,16 @@ function VibraTikTok(){
       </div>
       <div style={{flex:1,overflowY:'auto',padding:'4px 0 0'}}>
         {filteredChats.map(c=>(
-          <button key={c.id} onClick={()=>{ setSelectedChatId(c.id); setChats(prev=>prev.map(x=> x.id===c.id ? {...x, unread:0} : x)) }} style={{width:'100%',display:'flex',gap:12,alignItems:'center',padding:'12px 16px',background:'none',border:'none',color:'#fff',textAlign:'left',cursor:'pointer'}}>
-            <div style={{position:'relative'}}><img src={c.avatar} style={{width:54,height:54,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} onError={(e)=>{ (e.currentTarget as any).src='https://i.pravatar.cc/150?img=68' }} />{c.online && <span style={{position:'absolute',bottom:2,right:2,width:12,height:12,borderRadius:'50%',background:TEAL,border:'2px solid #000'}} />}</div>
-            <div style={{flex:1,minWidth:0}}><div style={{display:'flex',justifyContent:'space-between'}}><b style={vibraText}>{c.name}</b><span style={{fontSize:11,color:TEAL}}>{c.time}</span></div><p style={{fontSize:13,margin:'2px 0 0',color:'#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.last}</p></div>
-            {c.unread>0 && <span style={{background:GRADIENT_BTN,color:'#fff',minWidth:22,height:22,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:'bold',padding:'0 6px'}}>{c.unread}</span>}
-          </button>
+          <div key={c.id} style={{display:'flex',alignItems:'center',padding:'12px 16px'}}>
+            <button onClick={()=>{ setSelectedChatId(c.id); setChats(prev=>prev.map(x=> x.id===c.id ? {...x, unread:0} : x)) }} style={{flex:1,display:'flex',gap:12,alignItems:'center',background:'none',border:'none',color:'#fff',textAlign:'left',cursor:'pointer'}}>
+              <div style={{position:'relative'}}><img src={c.avatar} style={{width:54,height:54,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} onError={(e)=>{ (e.currentTarget as any).src='https://i.pravatar.cc/150?img=68' }} />{c.online && <span style={{position:'absolute',bottom:2,right:2,width:12,height:12,borderRadius:'50%',background:TEAL,border:'2px solid #000'}} />}</div>
+              <div style={{flex:1,minWidth:0}}><div style={{display:'flex',justifyContent:'space-between'}}><b style={vibraText}>{c.name}</b><span style={{fontSize:11,color:TEAL}}>{c.time}</span></div><p style={{fontSize:13,margin:'2px 0 0',color: c.typing ? TEAL : '#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.typing ? '✍️ anaandika...' : c.last}</p><p style={{fontSize:10,margin:0,color:TEAL}}>{c.online ? '● Online' : '○ '+c.lastSeen}</p></div>
+              {c.unread>0 && <span style={{background:GRADIENT_BTN,color:'#fff',minWidth:22,height:22,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:'bold',padding:'0 6px'}}>{c.unread}</span>}
+            </button>
+            <button onClick={()=>deleteChat(c.id)} style={{background:'none',border:'none',fontSize:16}}>🗑️</button>
+          </div>
         ))}
-        <button onClick={()=>{ const n=prompt('Jina la rafiki mpya?'); if(n){ const id='chat'+Date.now(); setChats(prev=>[{id, name:n, avatar:'https://i.pravatar.cc/150?img=68', last:'Sema! Karibu Vibra Chat 👋', time:'Now', unread:0, online:true, messages:[{from:'them',text:'Sema! Karibu Vibra Chat 👋',time:'Now'}]}, ...prev]); setSelectedChatId(id) } }} style={{width:'90%',margin:'16px 5%',padding:12,borderRadius:24,border:`1px dashed ${PINK}`,background:'transparent',color:PINK,fontWeight:'bold'}}>+ Chat Mpya</button>
+        <button onClick={()=>{ const n=prompt('Jina la rafiki mpya?'); if(n){ const id='chat'+Date.now(); setChats(prev=>[{id, name:n, avatar:'https://i.pravatar.cc/150?img=68', last:'Sema! Karibu Vibra Chat 👋', time:'Now', unread:0, online:true, lastSeen:'Online', messages:[{from:'them',text:'Sema! Karibu Vibra Chat 👋',time:'Now', seen:true}]}, ...prev]); setSelectedChatId(id) } }} style={{width:'90%',margin:'16px 5%',padding:12,borderRadius:24,border:`1px dashed ${PINK}`,background:'transparent',color:PINK,fontWeight:'bold'}}>+ Chat Mpya</button>
       </div>
       </>
       )}
