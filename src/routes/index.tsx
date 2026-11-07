@@ -1,4 +1,4 @@
-// VIBRA MPYA - 8 GUESTS GRID INATOKA MARA MOJA + GIFTS + BATTLE
+// VIBRA MPYA MWISHO - TIKTOK REAL + LIVE REAL JITSI + 8 GUESTS + GIFTS + BATTLE
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
@@ -174,7 +174,6 @@ function VibraTikTok(){
   const [liveOverlayPos,setLiveOverlayPos]=useState({ x: 50, y: 25 })
   const [liveOverlaySize,setLiveOverlaySize]=useState(180)
   const [liveOverlayType,setLiveOverlayType]=useState<'image'|'video'>('image')
-  // GIFTS + 8 GUESTS GRID + BATTLE - FIXED
   const [liveCoins,setLiveCoins]=useState(500)
   const [giftAnim,setGiftAnim]=useState('')
   const [giftFrom,setGiftFrom]=useState('')
@@ -189,6 +188,8 @@ function VibraTikTok(){
   const [myScore,setMyScore]=useState(0)
   const [guestScore,setGuestScore]=useState(0)
   const [battleWinner,setBattleWinner]=useState('')
+  const [realLive,setRealLive]=useState(false)
+  const [roomName,setRoomName]=useState('')
   const hasGuest = guests.some(g=>g!=='')
   const guestName = guestNames[0]
   const photoRef=useRef<HTMLInputElement>(null)
@@ -212,7 +213,7 @@ function VibraTikTok(){
   const following = followingIds.length
 
   useEffect(()=>{ try{ const cur=localStorage.getItem('vibra_current_user'); const savedUsers=localStorage.getItem('vibra_users'); if(cur){ const u=JSON.parse(cur); setAuthUser(u); setName(u.name.startsWith('@')?u.name:'@'+u.name.replace('@','')); setAuthName(u.name); setShowAuth(false) } else if(savedUsers && JSON.parse(savedUsers).length>0){ setAuthMode('login'); setShowAuth(true) } else { setShowAuth(true) } }catch{ setShowAuth(true) } },[])
-  useEffect(()=>{ if(!notice) return; const t=setTimeout(()=>setNotice(''), 2500); return ()=>clearTimeout(t) },[notice])
+  useEffect(()=>{ if(!notice) return; const t=setTimeout(()=>setNotice(''), 3000); return ()=>clearTimeout(t) },[notice])
   function doSignup(){ if(!authName.trim() || !authEmail.trim() || !authPass.trim()){ setAuthError('Jaza Jina, Email na Password zote'); return }; if(authPass.length<4){ setAuthError('Password iwe angalau herufi 4'); return }; try{ const users: VibraUser[] = JSON.parse(localStorage.getItem('vibra_users')||'[]'); if(users.find(u=>u.email.toLowerCase()===authEmail.toLowerCase())){ setAuthError('Hii Email tayari imeshatumika. Bonyeza Login.'); return }; const newUser: VibraUser = { name: authName.trim(), email: authEmail.trim().toLowerCase(), pass: authPass }; users.push(newUser); localStorage.setItem('vibra_users', JSON.stringify(users)); localStorage.setItem('vibra_current_user', JSON.stringify(newUser)); localStorage.setItem('vibra_session', 'active'); localStorage.setItem('vibra_name', '@'+authName.trim().replace('@','')); setAuthUser(newUser); setName('@'+authName.trim().replace('@','')); setAuthError(''); setShowAuth(false); setNotice('Karibu Vibra!') }catch{ setAuthError('Imeshindwa kuhifadhi.') } }
   function doLogin(){ if(!authEmail.trim() || !authPass.trim()){ setAuthError('Jaza Email na Password'); return }; try{ const users: VibraUser[] = JSON.parse(localStorage.getItem('vibra_users')||'[]'); const found=users.find(u=>u.email.toLowerCase()===authEmail.trim().toLowerCase() && u.pass===authPass); if(!found){ setAuthError('Email au Password si sahihi.'); return }; localStorage.setItem('vibra_current_user', JSON.stringify(found)); localStorage.setItem('vibra_session', 'active'); localStorage.setItem('vibra_name', '@'+found.name.replace('@','')); setAuthUser(found); setName('@'+found.name.replace('@','')); setAuthError(''); setShowAuth(false); setNotice('Karibu tena!') }catch{ setAuthError('Imeshindwa kuingia.') } }
   function doLogout(){ if(!confirm('Una uhakika unataka kutoka?')) return; localStorage.removeItem('vibra_current_user'); localStorage.removeItem('vibra_session'); setAuthUser(null); setShowAuth(true); setView('home'); setNotice('Umetoka.') }
@@ -273,7 +274,7 @@ function VibraTikTok(){
     setTimeout(()=>setGiftAnim(''), 2500)
   }
   function startBattle(){
-    if(!hasGuest){ setNotice('Weka Guest kwanza! Bonyeza + kwenye slot'); return }
+    if(!hasGuest && !realLive){ setNotice('Weka Guest kwanza! Bonyeza + kwenye slot au LIVE REAL'); return }
     setBattleOn(true); setBattleTime(60); setMyScore(0); setGuestScore(0); setBattleWinner(''); setNotice('⚔️ BATTLE IMEANZA! 60s!')
   }
   useEffect(()=>{
@@ -282,17 +283,23 @@ function VibraTikTok(){
     const t=setTimeout(()=>setBattleTime(v=>v-1),1000); return ()=>clearTimeout(t)
   },[battleOn,battleTime])
   useEffect(()=>{
-    if(!battleOn || !hasGuest) return
+    if(!battleOn || (!hasGuest && !realLive)) return
     const iv=setInterval(()=>{ if(Math.random()>0.4){ const g=GIFTS[Math.floor(Math.random()*4)]; setGuestScore(s=>s+g.cost); setLiveChats(v=>[...v, `🎁 ${guestNames[Math.floor(Math.random()*guestNames.length)]} kapata ${g.emoji} ${g.name}`]) } },4000)
     return ()=>clearInterval(iv)
-  },[battleOn,hasGuest])
+  },[battleOn,hasGuest,realLive])
 
   async function startLive(){
     if(!authUser){ setShowAuth(true); return }
     setPanel('LIVE')
     try{ const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); liveStream.current=stream; setLiveOn(true); setTimeout(()=>{ if(liveRef.current){ liveRef.current.srcObject=stream; liveRef.current.play().catch(()=>{}) } },100) }catch{ setNotice('Ruhusu kamera: Allow'); setLiveOn(false) }
   }
-  function stopLive(){ liveStream.current?.getTracks().forEach(t=>t.stop()); liveStream.current=null; setLiveOn(false); setPanel(''); setLiveOverlay(''); setBattleOn(false); setGuests(['','','','','','','','']); setShowGiftBar(false); setTalking(0); setShowGuests(false) }
+  function startRealLive(){
+    const clean = name.replace('@','').replace(/[^a-zA-Z0-9]/g,'') || 'MrVibra'
+    const room = 'Vibra-' + clean + '-' + Math.floor(Math.random()*9999)
+    setRoomName(room); setRealLive(true); setPanel('LIVE')
+    setNotice('Tuma link hii kwa marafiki: meet.jit.si/' + room)
+  }
+  function stopLive(){ liveStream.current?.getTracks().forEach(t=>t.stop()); liveStream.current=null; setLiveOn(false); setPanel(''); setLiveOverlay(''); setBattleOn(false); setGuests(['','','','','','','','']); setShowGiftBar(false); setTalking(0); setShowGuests(false); setRealLive(false); setRoomName('') }
 
   async function uploadVideo(file:File|Blob|undefined, forcedCaption?:string){
     if(!file) return; if(file instanceof File && !file.type.startsWith('video/')){setNotice('Chagua video.');return}; if(uploading) return; setUploading(true)
@@ -328,94 +335,4 @@ function VibraTikTok(){
         <div style={{position:'absolute',top:0,left:0,right:0,zIndex:10,padding:'0 8px'}}><div style={{display:'flex',gap:8,alignItems:'center'}}><input ref={searchRef} aria-label="Search videos" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Find related content..." style={{fontSize:13}} /><button onClick={()=>setShowCamera(true)} style={{background:'#222',color:'#fff',border:'1px solid #fff',width:38,height:38,borderRadius:'50%',fontSize:16}}>📷</button><span className="text-xs whitespace-nowrap" style={{fontSize:11}}>{coins} Coins</span></div><div style={{display:'flex',justifyContent:'center',gap:8,marginTop:8,alignItems:'center'}}><Button variant="ghost" onClick={()=>{setTab('following');setIdx(0)}} style={{fontWeight:tab==='following'?'bold':'normal',fontSize:13,padding:'6px 10px'}}>Following</Button><Button variant="ghost" onClick={()=>{setTab('foryou');setIdx(0)}} style={{fontWeight:tab==='foryou'?'bold':'normal',fontSize:13,padding:'6px 10px'}}>For You</Button>{authUser?<button onClick={()=>setView('me')} style={{background:'#333',color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11}}>{name}</button>:<button onClick={()=>setShowAuth(true)} style={{background:'#FE2C55',color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11,fontWeight:'bold'}}>Login / Sign Up</button>}</div></div>
         {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay preload="auto" onClick={toggleSound} />:<p className="p-6 text-center" style={{paddingTop:180}}>Hakuna video.</p>}
         <div style={{position:'absolute',right:12,top:92,zIndex:70}}><button onClick={toggleSound} style={{width:44,height:44,borderRadius:'50%',background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',fontSize:18}}>{soundEnabled?'🔊':'🔇'}</button></div>
-        {!soundEnabled&&(<button onClick={toggleSound} style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:60,background:'rgba(0,0,0,0.75)',color:'#fff',border:'1px solid #fff',padding:'12px 18px',borderRadius:30,fontSize:14,fontWeight:'bold'}}>🔇 Bonyeza kwa Sauti 🔊</button>)}
-        <div style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',zIndex:40,display:'flex',flexDirection:'column',gap:8,opacity:0.8}}><button onClick={prevVideo} style={{width:32,height:32,borderRadius:'50%',background:'rgba(0,0,0,0.5)',color:'#fff',border:'1px solid #fff',fontSize:12}}>↑</button><button onClick={nextVideo} style={{width:32,height:32,borderRadius:'50%',background:'rgba(0,0,0,0.5)',color:'#fff',border:'1px solid #fff',fontSize:12}}>↓</button></div>
-        <div style={{position:'absolute',left:12,bottom:110,right:70,zIndex:45}}><p style={{fontWeight:'bold',fontSize:14,color:'#fff',textShadow:'0 1px 4px #000'}}>{name}</p><p style={{fontSize:13,lineHeight:'1.4',marginTop:4,color:'#fff',textShadow:'0 1px 4px #000'}}>{current?renderCaption(current.caption):''}</p></div>
-        <div style={{position:'absolute',right:8,bottom:115,top:'auto',zIndex:50,display:'flex',flexDirection:'column',gap:7,alignItems:'center',width:52,justifyContent:'flex-end'}}><div style={{position:'relative',width:48,height:48,marginBottom:6}}><button onClick={()=>setView('me')} style={{width:48,height:48,borderRadius:'50%',overflow:'hidden',border:'2px solid #fff',background:'#333',padding:0,cursor:'pointer'}}>{profileAvatar?<img src={profileAvatar} alt="Creator" style={{width:'100%',height:'100%',objectFit:'cover'}} />:<span style={{fontSize:22}}>👤</span>}</button><button onClick={toggleFollow} style={{position:'absolute',bottom:-8,left:'50%',transform:'translateX(-50%)',width:20,height:20,borderRadius:'50%',background:isFollowing?'#fff':'#FE2C55',color:isFollowing?'#FE2C55':'#fff',border:'none',fontSize:12,fontWeight:'bold',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>{isFollowing?'✓':'+'}</button></div><button onClick={toggleLike} style={{...actionBtn, background:liked?'#FE2C55':'rgba(0,0,0,0.55)'}}>♥<span style={{fontSize:10}}>{likes}</span></button><button onClick={()=>setPanel('Comments')} style={actionBtn}>💬<span style={{fontSize:10}}>{commentCount}</span></button><button onClick={toggleSave} style={{...actionBtn, background:saved?'#FE2C55':'rgba(0,0,0,0.55)'}}>{saved?'✅':'🔖'}<span style={{fontSize:10}}>{savedIds.length}</span></button><button onClick={shareVideo} style={actionBtn}>↗<span style={{fontSize:10}}>Share</span></button><button onClick={()=>setPanel('Lyrics')} style={actionBtn}>🎵<span style={{fontSize:10}}>Song</span></button><button onClick={startLive} style={actionBtn}>🔴<span style={{fontSize:10}}>LIVE</span></button><div style={{transform:'scale(0.85)',transformOrigin:'bottom center'}}><VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} /></div></div>
-      </div>
-      <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex justify-around p-3"><Button variant="ghost" onClick={()=>{setView('home');setSearch('')}} style={{fontSize:12}}>Home</Button><Button variant="ghost" onClick={()=>searchRef.current?.focus()} style={{fontSize:12}}>Search</Button><Button variant="ghost" aria-label="Upload" onClick={()=>setShowCamera(true)} style={{fontSize:16}}>+</Button><Button variant="ghost" onClick={startLive} style={{fontSize:12}}>LIVE</Button><Button variant="ghost" onClick={()=>setView('me')} style={{fontSize:12}}>👤 Me</Button></nav>
-      <VibraBanner placement="home" />
-      {panel==='Share'&&(<div style={{position:'fixed',inset:0,zIndex:999,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'flex-end'}} onClick={()=>setPanel('')}><div style={{background:'#fff',color:'#000',width:'100%',borderRadius:'20px 20px 0 0',padding:20}} onClick={e=>e.stopPropagation()}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><b>Share hii video</b><button onClick={()=>setPanel('')} style={{fontSize:20,border:'none',background:'none'}}>✕</button></div><p style={{fontSize:13,marginTop:6}}>{current?.caption||'Share hii video'}</p><div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:14}}><a href={'https://wa.me/?text='+shareMsg} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#25D366',color:'#fff',padding:'14px 4px',borderRadius:12}}>💬<br/>WhatsApp</a><a href={'https://www.facebook.com/sharer/sharer.php?u='+shareUrl} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#1877F2',color:'#fff',padding:'14px 4px',borderRadius:12}}>📘<br/>Facebook</a><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:'linear-gradient(45deg,#f09433,#dc2743,#bc1888)',color:'#fff',padding:'14px 4px',borderRadius:12}}>📸<br/>Instagram</a><a href={'https://chatgpt.com/?q='+encodeURIComponent('Nisaidie caption nzuri ya video hii: '+(current?.caption||''))} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#10a37f',color:'#fff',padding:'14px 4px',borderRadius:12}}>🤖<br/>ChatGPT</a><a href="https://www.capcut.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:'#000',color:'#fff',padding:'14px 4px',borderRadius:12}}>✂️<br/>CapCut</a><button onClick={copyLink} style={{background:'#333',color:'#fff',padding:'14px 4px',borderRadius:12,border:'none'}}>🔗<br/>Copy Link</button></div></div></div>)}
-      {panel==='LIVE'&&(
-        <div style={{position:'fixed',inset:0,zIndex:999,background:'#000',display:'flex',flexDirection:'column'}}>
-          <div style={{display:'flex',justifyContent:'space-between',padding:10,color:'#fff',alignItems:'center',gap:6,flexWrap:'wrap'}}>
-            <b style={{fontSize:13}}>🔴 LIVE - {name} | 🪙 {liveCoins} | 🎁 {totalGifts}</b>
-            <div style={{display:'flex',gap:5,alignItems:'center'}}>
-              <label style={{background:'#333',color:'#fff',padding:'6px 8px',borderRadius:20,fontSize:11,cursor:'pointer',whiteSpace:'nowrap'}}>🖼️ Picha Juu<input type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(!f) return; const url=URL.createObjectURL(f); setLiveOverlay(url); setLiveOverlayType(f.type.startsWith('video')?'video':'image'); setLiveOverlayPos({x:50,y:25}); setLiveOverlaySize(180) }} /></label>
-              <button onClick={()=>{ setShowGuests(v=>!v); setNotice(showGuests ? 'Guests wamefichwa' : 'Chagua Guest - bonyeza + kwenye slot') }} style={{background: showGuests ? '#FE2C55' : '#333',color:'#fff',padding:'6px 8px',borderRadius:20,fontSize:11,border:'none'}}>👥 Guests 8</button>
-              <button onClick={stopLive} style={{color:'#fff',background:'none',border:'none',fontSize:20}}>✕</button>
-            </div>
-          </div>
-
-          {(battleOn || battleWinner) && (
-            <div style={{padding:'8px 12px',background: battleWinner ? '#FFD700' : '#111',color: battleWinner ? '#000' : '#fff'}}>
-              {battleWinner ? <p style={{textAlign:'center',fontWeight:'bold',fontSize:14}}>🏆 {battleWinner} ameshinda Battle! {name} {myScore} - {guestScore} {guestName}</p> : (
-                <>
-                  <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:'bold'}}><span>{name} {myScore}</span><span>⏱️ {battleTime}s ⚔️ BATTLE</span><span>{guestScore} {guestName}</span></div>
-                  <div style={{display:'flex',height:10,borderRadius:10,overflow:'hidden',marginTop:4,background:'#333'}}><div style={{width: `${myScore+guestScore===0?50:(myScore/(myScore+guestScore))*100}%`,background:'#FE2C55'}} /><div style={{flex:1,background:'#25F4EE'}} /></div>
-                </>
-              )}
-            </div>
-          )}
-
-          <div style={{flex:1,position:'relative',background:'#111',display:'flex',overflow:'hidden'}}>
-            {/* WEWE KUSHOTO */}
-            <div style={{flex:1, position:'relative', borderRight: showGuests?'2px solid #FE2C55':'none', minWidth: showGuests?'45%':'100%'}}>
-              <video ref={liveRef} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover'}} />
-              <span onClick={()=>{setTalking(0); setLiveChats(v=>[...v, `🎤 ${name} anaongea sasa!`])}} style={{position:'absolute',top:8,left:8,background: talking===0 ? '#00FF00' : 'rgba(0,0,0,0.6)',color: talking===0 ? '#000' : '#fff',padding:'4px 8px',borderRadius:12,fontSize:11,cursor:'pointer'}}>{name} 🎤 {talking===0?'Anaongea':''} {battleOn?`• ${myScore}`:''}</span>
-              {!liveOn&&<p style={{position:'absolute',color:'#fff',textAlign:'center',padding:20,top:'40%'}}>Inafungua kamera...</p>}
-            </div>
-
-            {/* 8 GUESTS GRID KULIA - INATOKA MARA MOJA */}
-            {showGuests && (
-              <div style={{flex:1,display:'grid',gridTemplateColumns:'1fr 1fr',gridTemplateRows:'1fr 1fr 1fr 1fr',gap:2,background:'#000',padding:2,minWidth:'55%'}}>
-                {guests.map((g,i)=>(
-                  <div key={i} style={{position:'relative',background:'#222',borderRadius:8,overflow:'hidden',border: talking===i+1 ? '3px solid #00FF00' : '1px solid #333',minHeight:50}}>
-                    {g ? <img src={g} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <label style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',color:'#888',fontSize:22,cursor:'pointer'}}>👤 +<input type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(!f) return; const url=URL.createObjectURL(f); setGuests(prev=>prev.map((x,idx)=>idx===i?url:x)); const n=prompt('Jina la Guest '+(i+1)+'?','@Guest'+(i+1)); if(n) setGuestNames(prev=>prev.map((x,idx)=>idx===i?n:x)); setNotice('Guest '+(i+1)+' amejiunga!') }} /></label>}
-                    <span style={{position:'absolute',bottom:2,left:4,color:'#fff',fontSize:9,background:'rgba(0,0,0,0.6)',padding:'2px 5px',borderRadius:8}}>{guestNames[i]}</span>
-                    {g && <span onClick={()=>{ setTalking(i+1); setLiveChats(v=>[...v, `🎤 ${guestNames[i]} anaongea sasa!`])}} style={{position:'absolute',top:2,right:2,background: talking===i+1 ? '#00FF00' : '#333',color: talking===i+1 ? '#000' : '#fff',padding:'2px 6px',borderRadius:10,fontSize:9,cursor:'pointer'}}>🎤 {talking===i+1?'Anaongea':'Ongea'}</span>}
-                    {g && <span onClick={()=>setGuests(prev=>prev.map((x,idx)=>idx===i?'':x))} style={{position:'absolute',top:2,left:2,background:'#FE2C55',color:'#fff',width:18,height:18,borderRadius:'50%',fontSize:10,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>✕</span>}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* PICHA JUU - WAKATI HAKUNA GUESTS */}
-            {liveOverlay && !showGuests && (
-              <div onTouchMove={(e)=>{ const rect=e.currentTarget.parentElement?.getBoundingClientRect(); if(!rect) return; const t=e.touches[0]; setLiveOverlayPos({ x: ((t.clientX-rect.left)/rect.width)*100, y: ((t.clientY-rect.top)/rect.height)*100 }) }} style={{position:'absolute',left:`${liveOverlayPos.x}%`,top:`${liveOverlayPos.y}%`,transform:'translate(-50%,-50%)',width:liveOverlaySize,height:liveOverlaySize*1.4,borderRadius:12,overflow:'hidden',border:'3px solid #fff',boxShadow:'0 4px 20px rgba(0,0,0,0.6)',zIndex:20,touchAction:'none'}}>{liveOverlayType==='video' ? <video src={liveOverlay} autoPlay loop muted playsInline style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <img src={liveOverlay} style={{width:'100%',height:'100%',objectFit:'cover'}} />}<button onClick={()=>setLiveOverlay('')} style={{position:'absolute',top:2,right:2,background:'#FE2C55',color:'#fff',border:'none',borderRadius:'50%',width:24,height:24}}>✕</button></div>
-            )}
-            {giftAnim && <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:30,pointerEvents:'none'}}><div style={{fontSize:110}}>{giftAnim}</div><p style={{background:'rgba(0,0,0,0.7)',color:'#fff',padding:'8px 16px',borderRadius:20,fontWeight:'bold'}}>🎁 {giftFrom}</p></div>}
-            <div style={{position:'absolute',left:10,bottom:10,color:'#fff',fontSize:13,zIndex:15}}>{liveChats.slice(-3).map((c,i)=><p key={i} style={{textShadow:'0 1px 3px #000'}}>{c}</p>)}</div>
-            {liveOverlay && !showGuests && (<div style={{position:'absolute',bottom:60,right:10,display:'flex',gap:6,zIndex:25}}><button onClick={()=>setLiveOverlaySize(s=>Math.max(100,s-30))} style={{background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',width:32,height:32,borderRadius:'50%'}}>-</button><button onClick={()=>setLiveOverlaySize(s=>Math.min(320,s+30))} style={{background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',width:32,height:32,borderRadius:'50%'}}>+</button></div>)}
-          </div>
-
-          {showGiftBar && (
-            <div style={{background:'#111',padding:'10px 12px',borderTop:'1px solid #333'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}><span style={{color:'#fff',fontSize:12}}>🎁 Tuma Gift - Una 🪙 {liveCoins} Coins</span><button onClick={()=>setShowGiftBar(false)} style={{background:'none',border:'none',color:'#fff'}}>✕</button></div>
-              <div style={{display:'flex',gap:8,overflowX:'auto'}}>
-                {GIFTS.map(g=>(
-                  <button key={g.name} onClick={()=>sendGift(g,'me')} style={{background:'#222',border:'1px solid #444',borderRadius:12,padding:'10px 12px',minWidth:70,textAlign:'center',color:'#fff'}}>
-                    <div style={{fontSize:28}}>{g.emoji}</div><div style={{fontSize:11}}>{g.name}</div><div style={{fontSize:11,color:'#FFD700'}}>🪙 {g.cost}</div>
-                  </button>
-                ))}
-              </div>
-              {battleOn && <p style={{color:'#25F4EE',fontSize:12,marginTop:6}}>⚔️ Battle inaendelea - Gift zako zinaenda kwa {name}!</p>}
-            </div>
-          )}
-
-          <div style={{padding:10,background:'#000',display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-            <input value={liveMsg} onChange={e=>setLiveMsg(e.target.value)} placeholder="Andika LIVE chat..." style={{flex:1,minWidth:120,padding:10,borderRadius:20,border:'none'}} />
-            <button onClick={()=>setShowGiftBar(v=>!v)} style={{background:'#FFD700',color:'#000',border:'none',padding:'10px 12px',borderRadius:20,fontWeight:'bold',fontSize:12}}>🎁 Gift</button>
-            {hasGuest && !battleOn && <button onClick={startBattle} style={{background:'#FE2C55',color:'#fff',border:'none',padding:'10px 12px',borderRadius:20,fontWeight:'bold',fontSize:12}}>⚔️ Battle!</button>}
-            {battleOn && <button onClick={()=>{setBattleOn(false); setBattleWinner('')}} style={{background:'#333',color:'#fff',border:'none',padding:'10px 12px',borderRadius:20,fontSize:12}}>Stop Battle</button>}
-            <Button onClick={()=>{if(!liveMsg.trim()) return; setLiveChats(v=>[...v,liveMsg]); setLiveMsg('')}}>Send</Button>
-            <Button onClick={stopLive} style={{background:'#FE2C55'}}>Maliza LIVE</Button>
-          </div>
-        </div>
-      )}
-      <VibraSheet title={panel} open={panel==='Comments'||panel==='Lyrics'||panel==='Rewards'} onClose={()=>setPanel('')}>{panel==='Lyrics'?<p className="lyrics-copy">{current?.caption||'No lyrics'}</p>:panel==='Comments'?<div><p style={{fontWeight:'bold'}}>{commentCount} Comments</p>{(comments[clipKey]||[]).map((text,i)=><p key={i} style={{padding:'8px 0',borderBottom:'1px solid #eee'}}>{renderCaption(text)}</p>)}<input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Add comment..." /><Button onClick={addComment}>Send</Button></div>:<p>Coins: {coins}</p>}</VibraSheet>
-      {notice&&<div style={noticeStyle}>{notice}</div>}
-      {uploadInput}
-    </div>
-  )
-}
+        {!soundEnabled&&(<button onClick={toggleSound} style={{position:'absolute',left:'50
