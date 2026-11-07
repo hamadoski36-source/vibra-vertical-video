@@ -54,7 +54,6 @@ function VibraTikTok(){
   const [cloudError,setCloudError]=useState('Checking cloud configuration.')
   const [uploading,setUploading]=useState(false)
   const [uploadProgress,setUploadProgress]=useState(0)
-  const [pendingFile,setPendingFile]=useState<File>()
   const [caption,setCaption]=useState('')
   const [coins,setCoins]=useState(0)
   const [notice,setNotice]=useState('')
@@ -64,25 +63,25 @@ function VibraTikTok(){
   const [dp,setDp]=useState('')
   const [bio,setBio]=useState('Mombasa Vibes | Kamata')
   const [name,setName]=useState('@MrVibra')
-  const [showEdit2,setShowEdit2]=useState(false)
-  const videos=useRef<Record<string,HTMLVideoElement|null>>({})
   const uploadRef=useRef<HTMLInputElement>(null)
   const searchRef=useRef<HTMLInputElement>(null)
+  const playback=useRef({view:'home',source:'',soundEnabled:false,suspended:false,panel:'',showEdit:false,stageVisible:true})
   const followers = followingIds.length
   const following = followingIds.length
-  const sy=useRef(0)
 
   useEffect(()=>{
     let alive=true
     setCreatorAvatar(null);setAvatarFailed(false);setAvatarError(false)
-    if(user?.id) void readCreatorAvatar(user.id).then(url=>{if(alive) setCreatorAvatar(url)})
+    if(user?.id){void readCreatorAvatar(user.id).then(url=>{if(alive) setCreatorAvatar(url)})}
     return ()=>{alive=false}
   },[user?.id])
+
   const profileAvatar=avatarFailed?'':creatorAvatar||dp
 
   useEffect(()=>{
     setCoins(demoCoinBalance(localStorage.getItem('vibra_coins')))
-    setDp(localStorage.getItem('vibra_dp')||''); setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes | Kamata')
+    setDp(localStorage.getItem('vibra_dp')||'')
+    setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes | Kamata')
   },[])
 
   useEffect(()=>{
@@ -106,9 +105,10 @@ function VibraTikTok(){
   function toggleSave(){setSavedIds(v=>v.includes(clipKey)?v.filter(id=>id!==clipKey):[...v,clipKey])}
   function toggleFollow(){
     setFollowingIds(v=>{
-      const n=v.includes(clipKey)?v.filter(id=>id!==clipKey):[...v,clipKey]
+      const already=v.includes(clipKey)
+      const n=already?v.filter(id=>id!==clipKey):[...v,clipKey]
       localStorage.setItem('vibra_following',JSON.stringify(n))
-      setNotice(v.includes(clipKey)?'Ume-unfollow':'Umemfollow! Angalia tab ya Following')
+      setNotice(already?'Ume-unfollow':'Umemfollow! Angalia tab ya Following')
       return n
     })
   }
@@ -121,18 +121,22 @@ function VibraTikTok(){
     return ()=>observer.disconnect()
   },[view])
 
-  useEffect(()=>watchPlaybackLifecycle(()=>setSuspended(true),()=>setSuspended(false))
+  useEffect(()=>{
+    const off=watchPlaybackLifecycle(()=>setSuspended(true),()=>setSuspended(false))
+    return off
+  },[])
+
+  useEffect(()=>{
+    playback.current={view,source:current?.url||'',soundEnabled,suspended,panel,showEdit,stageVisible}
+  },[view,current,soundEnabled,suspended,panel,showEdit,stageVisible])
+
   useEffect(()=>{
     const video=videoRef.current
     if(!video) return
-    videos.current['active']=video
-    const active=()=>videoRef.current===video && playback.current.view===view
-    if(active()) void startActiveVideo(video,soundEnabled,active)
-    else silenceVideo(video)
-    return ()=>silenceVideo(video)
-  },[view,soundEnabled,idx])
-
-  const playback=useRef({view:'home',source:current?.url,soundEnabled,suspended,panel,showEdit,stageVisible})
+    const active=()=>videoRef.current===video && view==='home'
+    if(active()){void startActiveVideo(video,soundEnabled,active)} else {silenceVideo(video)}
+    return ()=>{silenceVideo(video)}
+  },[view,soundEnabled,idx,current])
 
   async function uploadVideo(file:File|undefined){
     if(!file) return
@@ -140,7 +144,7 @@ function VibraTikTok(){
     if(uploading) return
     setUploading(true);setUploadProgress(0)
     try{
-      if(cloudReady){const row=await uploadCloudVideo(file,name,caption);setUploadProgress(10)}
+      if(cloudReady){void await uploadCloudVideo(file,name,caption);setUploadProgress(10)}
       const clip:Clip={id:Date.now(),url:URL.createObjectURL(file),caption:caption||file.name,thumb:''}
       setMyVideos(list=>[clip,...list]);setSearch('');setIdx(0);setView('home')
     }catch(error){setNotice('Upload failed: '+(error instanceof Error?error.message:'Unknown'))}
@@ -162,14 +166,14 @@ function VibraTikTok(){
       }else{
         const dataUrl=await readLocalPhoto(file)
         setDp(dataUrl);localStorage.setItem('vibra_dp',dataUrl)
-        setNotice('Picha imehifadhiwa kwenye simu hii. Ingia kwenye akaunti ili ihifadhiwe milele.')
+        setNotice('Picha imehifadhiwa kwenye simu hii.')
       }
     }catch(error){setNotice('Picha haijahifadhiwa: '+(error instanceof Error?error.message:'Unknown'))}
     finally{setSavingPhoto(false)}
   }
 
   const saveProfile=()=>{localStorage.setItem('vibra_dp',dp);localStorage.setItem('vibra_bio',bio);localStorage.setItem('vibra_name',name);setShowEdit(false);setNotice('Profile imehifadhiwa!')}
-  const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>setPanel('')}><input type="file" accept="video/*" onChange={e=>uploadVideo(e.target.files?.[0])} /><input placeholder="Caption..." value={caption} onChange={e=>setCaption(e.target.value)} /><Button onClick={()=>uploadRef.current?.click()}>Chagua Video</Button></VibraSheet>
+  const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>setPanel('')}><input type="file" accept="video/*" onChange={e=>uploadVideo(e.target.files?.[0])} /><input placeholder="Caption..." value={caption} onChange={e=>setCaption(e.target.value)} /><Button onClick={()=>uploadRef.current?.click()}>Chagua Video</Button><p>{uploadProgress>0?('Uploading '+uploadProgress+'%'):''}</p><p>{cloudError}</p></VibraSheet>
   const profileVideos=cloudReady?[...myVideos.filter(v=>!v.url.startsWith('blob:')),...cloudClips]:myVideos
 
   function openClip(clip:Clip){const index=baseFeed.findIndex(entry=>entry.url===clip.url); if(index>=0){setIdx(index);setView('home')}}
@@ -211,7 +215,7 @@ function VibraTikTok(){
             <span className="text-xs whitespace-nowrap">{coins} Coins</span>
           </div>
           <div style={{display:'flex',justifyContent:'center',gap:24,marginTop:8}}>
-            <Button variant="ghost" onClick={()=>{setTab('following');setIdx(0);setNotice(tab==='following'?'':'Following: watu ulio wafollow')}} style={{fontWeight:tab==='following'?'bold':'normal'}}>Following</Button>
+            <Button variant="ghost" onClick={()=>{setTab('following');setIdx(0)}} style={{fontWeight:tab==='following'?'bold':'normal'}}>Following</Button>
             <Button variant="ghost" onClick={()=>{setTab('foryou');setIdx(0)}} style={{fontWeight:tab==='foryou'?'bold':'normal'}}>For You</Button>
           </div>
         </div>
