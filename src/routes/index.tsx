@@ -1,4 +1,4 @@
-// VIBRA MPYA KABISA - NA TIKTOK CAMERA
+// VIBRA MPYA KABISA - NA FACE EFFECTS
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
@@ -65,7 +65,7 @@ function renderCaption(text:string){
   return <span>{parts.map((p,i)=> p.startsWith('#') ? <span key={i} style={{color:'#25F4EE',fontWeight:'bold'}}>{p} </span> : <span key={i}>{p}</span> )}</span>
 }
 
-// ===== TIKTOK CAMERA - JUU KULIA NA RECORD =====
+// ===== TIKTOK CAMERA + FACE EFFECTS - MPYA YOTE =====
 function VibraCamera({ onDone, onClose }: { onDone: (file: Blob, caption: string) => void, onClose: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -80,6 +80,9 @@ function VibraCamera({ onDone, onClose }: { onDone: (file: Blob, caption: string
   const [timer, setTimer] = useState(0)
   const [countdown, setCountdown] = useState(0)
   const [effect, setEffect] = useState('beauty')
+  const [faceEffect, setFaceEffect] = useState('none')
+  const [facePos, setFacePos] = useState({ x: 50, y: 35 })
+  const [faceSize, setFaceSize] = useState(90)
   const [caption, setCaption] = useState('')
   const [timeLeft, setTimeLeft] = useState(0)
   const [recordedUrl, setRecordedUrl] = useState('')
@@ -143,8 +146,22 @@ function VibraCamera({ onDone, onClose }: { onDone: (file: Blob, caption: string
   }
   const filterStyle = effects[effect] || 'none'
 
+  const renderFace = () => {
+    if (faceEffect === 'dog') return <div style={{ textAlign: 'center', lineHeight: 0.9 }}><div style={{ fontSize: faceSize }}>🐶</div><div style={{ fontSize: 28, marginTop: -8 }}>👅</div></div>
+    if (faceEffect === 'glasses') return <div style={{ fontSize: faceSize }}>😎</div>
+    if (faceEffect === 'crown') return <div style={{ textAlign: 'center' }}><div style={{ fontSize: faceSize * 0.8 }}>👑</div><div style={{ fontSize: 40, marginTop: -15 }}>😎</div></div>
+    if (faceEffect === 'rabbit') return <div style={{ fontSize: faceSize }}>🐰</div>
+    if (faceEffect === 'clown') return <div style={{ fontSize: faceSize }}>🤡</div>
+    if (faceEffect === 'fire') return <div style={{ fontSize: faceSize }}>🔥😎🔥</div>
+    if (faceEffect === 'heart') return <div style={{ textAlign: 'center' }}><div style={{ fontSize: faceSize }}>😍</div><div style={{ fontSize: 28 }}>💖💖💖</div></div>
+    if (faceEffect === 'alien') return <div style={{ fontSize: faceSize }}>👽</div>
+    if (faceEffect === 'cat') return <div style={{ fontSize: faceSize }}>🐱</div>
+    return null
+  }
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', display: 'flex', flexDirection: 'column' }}>
+      {/* JUU KULIA */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 12px', color: '#fff', zIndex: 10 }}>
         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24 }}>✕</button>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -155,21 +172,54 @@ function VibraCamera({ onDone, onClose }: { onDone: (file: Blob, caption: string
           <button onClick={() => setSpeed(s => s === 1 ? 2 : s === 2 ? 0.5 : 1)} style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid #fff', color: '#fff', padding: '6px 8px', borderRadius: 20, fontSize: 12, fontWeight: 'bold' }}>{speed}x</button>
         </div>
       </div>
+      {/* VIDEO + FACE EFFECT */}
       <div style={{ flex: 1, position: 'relative', background: '#111', overflow: 'hidden' }}>
         {!recordedUrl ? (
           <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', filter: filterStyle, transform: facing === 'user' ? 'scaleX(-1)' : 'none' }} />
         ) : (
           <video src={recordedUrl} controls autoPlay loop style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
+        {faceEffect !== 'none' && !recordedUrl && (
+          <div
+            onTouchMove={(e) => {
+              const rect = e.currentTarget.parentElement?.getBoundingClientRect()
+              if (!rect) return
+              const t = e.touches[0]
+              setFacePos({ x: ((t.clientX - rect.left) / rect.width) * 100, y: ((t.clientY - rect.top) / rect.height) * 100 })
+            }}
+            style={{ position: 'absolute', left: `${facePos.x}%`, top: `${facePos.y}%`, transform: 'translate(-50%, -50%)', zIndex: 20, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))', touchAction: 'none' }}>
+            {renderFace()}
+          </div>
+        )}
+        {faceEffect !== 'none' && !recordedUrl && (
+          <p style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '6px 12px', borderRadius: 20, fontSize: 12, whiteSpace: 'nowrap', zIndex: 21 }}>👆 Shika uso usogeze - weka juu ya uso wako</p>
+        )}
         {countdown > 0 && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 100, color: '#fff', fontWeight: 'bold', background: 'rgba(0,0,0,0.4)' }}>{countdown}</div>}
         {isRecording && <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', background: '#FE2C55', color: '#fff', padding: '6px 14px', borderRadius: 20, fontWeight: 'bold' }}>🔴 {timeLeft}s - Inarekodi...</div>}
       </div>
+      {/* EFFECTS - MISTARI 2 */}
       {!recordedUrl && (
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 12px', background: '#000' }}>
-          {[['normal','Normal'],['beauty','Beauty ✨'],['bw','B&W'],['warm','Warm ☀️'],['cool','Cool ❄️'],['vivid','Vivid 🌈']].map(([key,label]) => (
-            <button key={key} onClick={() => { setEffect(key); setBeauty(key === 'beauty') }} style={{ background: effect === key ? '#FE2C55' : '#222', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13 }}>{label}</button>
-          ))}
-        </div>
+        <>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 12px 4px', background: '#000', alignItems: 'center' }}>
+            <span style={{ color: '#888', fontSize: 12, whiteSpace: 'nowrap' }}>Rangi:</span>
+            {[['normal','Normal'],['beauty','Beauty ✨'],['bw','B&W'],['warm','Warm ☀️'],['cool','Cool ❄️'],['vivid','Vivid 🌈']].map(([key,label]) => (
+              <button key={key} onClick={() => { setEffect(key); setBeauty(key === 'beauty') }} style={{ background: effect === key ? '#FE2C55' : '#222', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13 }}>{label}</button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 12px 6px', background: '#000', alignItems: 'center' }}>
+            <span style={{ color: '#888', fontSize: 12, whiteSpace: 'nowrap' }}>Uso:</span>
+            {[['none','❌ Hakuna'],['dog','🐶 Mbwa'],['cat','🐱 Paka'],['glasses','😎 Miwani'],['crown','👑 Taji'],['rabbit','🐰 Sungura'],['clown','🤡 Clown'],['fire','🔥 Moto'],['heart','😍 Moyo'],['alien','👽 Alien']].map(([key,label]) => (
+              <button key={key} onClick={() => setFaceEffect(key)} style={{ background: faceEffect === key ? '#FE2C55' : '#333', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13 }}>{label}</button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '0 12px 8px', background: '#000' }}>
+            <span style={{ color: '#888', fontSize: 12 }}>Ukubwa wa uso:</span>
+            <button onClick={() => setFaceSize(s => Math.max(40, s - 20))} style={{ background: '#333', color: '#fff', border: 'none', width: 30, height: 30, borderRadius: '50%' }}>-</button>
+            <span style={{ color: '#fff', fontSize: 12 }}>{faceSize}</span>
+            <button onClick={() => setFaceSize(s => Math.min(180, s + 20))} style={{ background: '#333', color: '#fff', border: 'none', width: 30, height: 30, borderRadius: '50%' }}>+</button>
+            <button onClick={() => { setFacePos({ x: 50, y: 35 }); setFaceSize(90) }} style={{ background: '#333', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 20, fontSize: 12, marginLeft: 'auto' }}>🔄 Rudisha katikati</button>
+          </div>
+        </>
       )}
       {recordedUrl && (
         <div style={{ padding: '12px', background: '#000' }}>
