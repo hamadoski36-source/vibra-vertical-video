@@ -1,4 +1,4 @@
-// VERSION - SIGN UP INPUTS ZINAZOONEKANA
+// VERSION - BUTTONS ZIMEREKEBISHWA + SAUTI
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
@@ -25,6 +25,8 @@ type VibraUser = { name: string; email: string; pass: string }
 
 const inputStyle: React.CSSProperties = { padding:14, borderRadius:12, border:'2px solid #ddd', background:'#fff', color:'#000', fontSize:16, width:'100%', boxSizing:'border-box', outline:'none' }
 const labelStyle: React.CSSProperties = { color:'#fff', fontSize:13, fontWeight:'bold', textAlign:'left', marginBottom:-4 }
+// BUTTONS NDOGO - HAZIKATWI TENA
+const actionBtn: React.CSSProperties = { width:52, height:52, minWidth:52, padding:0, fontSize:11, lineHeight:'1.1', borderRadius:12, background:'rgba(0,0,0,0.55)', color:'#fff', border:'1px solid rgba(255,255,255,0.2)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, whiteSpace:'nowrap', overflow:'hidden' }
 
 function VibraTikTok(){
   const hydrated = useHydrated()
@@ -40,6 +42,7 @@ function VibraTikTok(){
   const [view,setView]=useState('home')
   const [search,setSearch]=useState('')
   const [soundEnabled,setSoundEnabled]=useState(false)
+  const [tappedSound,setTappedSound]=useState(false)
   const [panel,setPanel]=useState('')
   const [comment,setComment]=useState('')
   const [comments,setComments]=useState<Record<string,string[]>>({})
@@ -153,6 +156,18 @@ function VibraTikTok(){
   const shareUrl=encodeURIComponent(window.location.href)
   const shareMsg=encodeURIComponent(shareText)
 
+  // ===== SAUTI - UKIBONYEZA VIDEO INAWAKA =====
+  function toggleSound(){
+    const v=videoRef.current
+    if(v){
+      const next=!soundEnabled
+      setSoundEnabled(next); setTappedSound(true)
+      v.muted=!next; v.volume=1
+      if(next){ v.play().catch(()=>{}) }
+      setNotice(next?'Sauti imewashwa 🔊':'Sauti imezimwa 🔇')
+    }
+  }
+
   function toggleLike(){
     if(!authUser){ setShowAuth(true); return }
     setLikedIds(v=>{
@@ -196,6 +211,7 @@ function VibraTikTok(){
     if(!video) return
     if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){ video.pause(); video.muted=true; return }
     video.muted=!soundEnabled
+    video.volume=1
     video.play().catch(()=>{})
   },[current,soundEnabled,idx,view,panel])
 
@@ -257,7 +273,6 @@ function VibraTikTok(){
   const savedVideos=allVideosForSaved.filter(v=>savedIds.includes(String(v.id??v.url)))
   function openClip(clip:Clip){const index=baseFeed.findIndex(entry=>entry.url===clip.url); if(index>=0){setIdx(index);setView('home')} else { setMyVideos(prev=>[clip,...prev]); setIdx(0); setView('home') }}
 
-  // ===== AUTH SCREEN ILIYOREKEBISHWA - INPUTS NYEUPE ZINAZOONEKANA =====
   const authScreen = showAuth && (
     <div style={{position:'fixed',inset:0,zIndex:1000,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',padding:20,paddingTop:40,color:'#fff',overflowY:'auto'}}>
       <div style={{fontSize:50}}>🎬</div>
@@ -282,7 +297,6 @@ function VibraTikTok(){
         {authError&&<p style={{color:'#ff6b6b',fontSize:13,textAlign:'center',background:'#331111',padding:8,borderRadius:8}}>{authError}</p>}
         <button onClick={authMode==='signup'?doSignup:doLogin} style={{padding:14,borderRadius:12,border:'none',background:'#FE2C55',color:'#fff',fontWeight:'bold',fontSize:16,marginTop:4}}>{authMode==='signup'?'Tengeneza Akaunti 🎉':'Ingia 👋'}</button>
         <button onClick={()=>{setShowAuth(false); setNotice('Umeingia kama Mgeni.')}} style={{padding:12,borderRadius:12,border:'1px solid #555',background:'transparent',color:'#fff'}}>Endelea kama Mgeni 👀</button>
-        <p style={{fontSize:12,opacity:0.6,textAlign:'center'}}>{authMode==='signup'?'Tayari una akaunti? Bonyeza Login juu.':'Huna akaunti? Bonyeza Sign Up juu.'}</p>
       </div>
     </div>
   )
@@ -342,48 +356,56 @@ function VibraTikTok(){
   }
 
   return(
-    <div data-ready={hydrated} className="vibra-app home-bottom-scroll bg-video text-video-text">
+    <div data-ready={hydrated} className="vibra-app home-bottom-scroll bg-video text-video-text" style={{overflow:'hidden'}}>
       {authScreen}
-      <div ref={stageRef} className={'home-video-stage '+(idx%feed.length)}>
+      <div ref={stageRef} className={'home-video-stage '+(idx%feed.length)} style={{overflow:'hidden'}}>
         {uploadPanel}
-        <div style={{position:'absolute',top:0,left:0,right:0,zIndex:10}}>
+        <div style={{position:'absolute',top:0,left:0,right:0,zIndex:10,padding:'0 8px'}}>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
-            <input ref={searchRef} aria-label="Search videos" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." />
-            <span className="text-xs whitespace-nowrap">{coins} Coins</span>
+            <input ref={searchRef} aria-label="Search videos" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." style={{fontSize:13}} />
+            <span className="text-xs whitespace-nowrap" style={{fontSize:11}}>{coins} Coins</span>
           </div>
-          <div style={{display:'flex',justifyContent:'center',gap:10,marginTop:8,alignItems:'center'}}>
-            <Button variant="ghost" onClick={()=>{setTab('following');setIdx(0)}} style={{fontWeight:tab==='following'?'bold':'normal'}}>Following</Button>
-            <Button variant="ghost" onClick={()=>{setTab('foryou');setIdx(0)}} style={{fontWeight:tab==='foryou'?'bold':'normal'}}>For You</Button>
-            {authUser?<button onClick={()=>setView('me')} style={{background:'#333',color:'#fff',border:'none',padding:'6px 12px',borderRadius:20,fontSize:12}}>{name}</button>:<button onClick={()=>setShowAuth(true)} style={{background:'#FE2C55',color:'#fff',border:'none',padding:'6px 12px',borderRadius:20,fontSize:12,fontWeight:'bold'}}>Login / Sign Up</button>}
+          <div style={{display:'flex',justifyContent:'center',gap:8,marginTop:8,alignItems:'center'}}>
+            <Button variant="ghost" onClick={()=>{setTab('following');setIdx(0)}} style={{fontWeight:tab==='following'?'bold':'normal',fontSize:13,padding:'6px 10px'}}>Following</Button>
+            <Button variant="ghost" onClick={()=>{setTab('foryou');setIdx(0)}} style={{fontWeight:tab==='foryou'?'bold':'normal',fontSize:13,padding:'6px 10px'}}>For You</Button>
+            {authUser?<button onClick={()=>setView('me')} style={{background:'#333',color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11}}>{name}</button>:<button onClick={()=>setShowAuth(true)} style={{background:'#FE2C55',color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11,fontWeight:'bold'}}>Login / Sign Up</button>}
           </div>
         </div>
-        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay muted={!soundEnabled} onClick={()=>setSoundEnabled(v=>!v)} />:<p className="p-6 text-center">No videos yet.</p>}
-        <div style={{position:'absolute',right:12,top:95,zIndex:70}}>
-          <button onClick={()=>setSoundEnabled(v=>!v)} style={{width:48,height:48,borderRadius:'50%',background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',fontSize:20}}>{soundEnabled?'🔊':'🔇'}</button>
+        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay muted={!soundEnabled} onClick={toggleSound} />:<p className="p-6 text-center">No videos yet.</p>}
+
+        {/* SAUTI - SASA IPO NDANI, HAIKATIWI */}
+        <div style={{position:'absolute',right:70,top:92,zIndex:70}}>
+          <button onClick={toggleSound} style={{width:44,height:44,borderRadius:'50%',background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',fontSize:18}}>{soundEnabled?'🔊':'🔇'}</button>
         </div>
-        <div className="feed-caption absolute left-3 right-20" style={{bottom:90}}><p className="font-bold">{name}</p><p>{current?.caption}</p></div>
-        <div className="action-stack right-3 bottom-32 flex flex-col gap-2" style={{alignItems:'center'}}>
-          <div style={{position:'relative',width:56,height:56}}>
-            <button onClick={()=>setView('me')} style={{width:56,height:56,borderRadius:'50%',overflow:'hidden',border:'2px solid #fff',background:'#333',padding:0,cursor:'pointer'}}>
-              {profileAvatar?<img src={profileAvatar} alt="Creator" style={{width:'100%',height:'100%',objectFit:'cover'}} />:<span style={{fontSize:26}}>👤</span>}
+        {!soundEnabled&&!tappedSound&&(
+          <button onClick={toggleSound} style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:60,background:'rgba(0,0,0,0.7)',color:'#fff',border:'1px solid #fff',padding:'12px 18px',borderRadius:30,fontSize:14,fontWeight:'bold'}}>🔇 Bonyeza kwa Sauti 🔊</button>
+        )}
+
+        <div className="feed-caption absolute left-3" style={{bottom:90,right:70}}><p className="font-bold" style={{fontSize:13}}>{name}</p><p style={{fontSize:12}}>{current?.caption}</p></div>
+
+        {/* BUTTONS ZA RIGHT - SASA ZIKO NDANI, FONT NDOGO */}
+        <div style={{position:'absolute',right:8,top:130,bottom:110,zIndex:50,display:'flex',flexDirection:'column',gap:6,alignItems:'center',width:52}}>
+          <div style={{position:'relative',width:48,height:48,marginBottom:10}}>
+            <button onClick={()=>setView('me')} style={{width:48,height:48,borderRadius:'50%',overflow:'hidden',border:'2px solid #fff',background:'#333',padding:0,cursor:'pointer'}}>
+              {profileAvatar?<img src={profileAvatar} alt="Creator" style={{width:'100%',height:'100%',objectFit:'cover'}} />:<span style={{fontSize:22}}>👤</span>}
             </button>
-            <button onClick={toggleFollow} style={{position:'absolute',bottom:-9,left:'50%',transform:'translateX(-50%)',width:24,height:24,borderRadius:'50%',background:isFollowing?'#fff':'#FE2C55',color:isFollowing?'#FE2C55':'#fff',border:'none',fontSize:15,fontWeight:'bold',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>{isFollowing?'✓':'+'}</button>
+            <button onClick={toggleFollow} style={{position:'absolute',bottom:-8,left:'50%',transform:'translateX(-50%)',width:20,height:20,borderRadius:'50%',background:isFollowing?'#fff':'#FE2C55',color:isFollowing?'#FE2C55':'#fff',border:'none',fontSize:12,fontWeight:'bold',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>{isFollowing?'✓':'+'}</button>
           </div>
-          <Button className={'action-button '+(liked?'is-active':'')} onClick={toggleLike} style={{marginTop:12}}>♥ {likes}</Button>
-          <Button className="action-button" onClick={()=>setPanel('Comments')}>💬<br/>{commentCount}</Button>
-          <Button className={'action-button '+(saved?'is-active':'')} onClick={toggleSave} style={{background:saved?'#FE2C55':'',color:saved?'#fff':''}}>{saved?'✅':'🔖'}<br/>{savedIds.length}</Button>
-          <Button className="action-button" onClick={shareVideo}>↗<br/>Share</Button>
-          <Button className="action-button" onClick={()=>setPanel('Lyrics')}>🎵</Button>
-          <Button className="action-button" onClick={startLive}>LIVE</Button>
-          <VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} />
+          <button onClick={toggleLike} style={{...actionBtn, background:liked?'#FE2C55':'rgba(0,0,0,0.55)'}}>♥<span style={{fontSize:10}}>{likes}</span></button>
+          <button onClick={()=>setPanel('Comments')} style={actionBtn}>💬<span style={{fontSize:10}}>{commentCount}</span></button>
+          <button onClick={toggleSave} style={{...actionBtn, background:saved?'#FE2C55':'rgba(0,0,0,0.55)'}}>{saved?'✅':'🔖'}<span style={{fontSize:10}}>{savedIds.length}</span></button>
+          <button onClick={shareVideo} style={actionBtn}>↗<span style={{fontSize:10}}>Share</span></button>
+          <button onClick={()=>setPanel('Lyrics')} style={actionBtn}>🎵<span style={{fontSize:10}}>Song</span></button>
+          <button onClick={startLive} style={actionBtn}>🔴<span style={{fontSize:10}}>LIVE</span></button>
+          <div style={{transform:'scale(0.85)',transformOrigin:'top center'}}><VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} /></div>
         </div>
       </div>
       <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex justify-around p-3">
-        <Button variant="ghost" onClick={()=>{setView('home');setSearch('')}}>Home</Button>
-        <Button variant="ghost" onClick={()=>searchRef.current?.focus()}>Search</Button>
-        <Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>+</Button>
-        <Button variant="ghost" onClick={startLive}>LIVE</Button>
-        <Button variant="ghost" onClick={()=>setView('me')}>👤 Me</Button>
+        <Button variant="ghost" onClick={()=>{setView('home');setSearch('')}} style={{fontSize:12}}>Home</Button>
+        <Button variant="ghost" onClick={()=>searchRef.current?.focus()} style={{fontSize:12}}>Search</Button>
+        <Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()} style={{fontSize:16}}>+</Button>
+        <Button variant="ghost" onClick={startLive} style={{fontSize:12}}>LIVE</Button>
+        <Button variant="ghost" onClick={()=>setView('me')} style={{fontSize:12}}>👤 Me</Button>
       </nav>
       <VibraBanner placement="home" />
       {panel==='Share'&&(
