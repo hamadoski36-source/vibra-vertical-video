@@ -5,8 +5,6 @@ import { demoCoinBalance } from '@/lib/vibra-rewards'
 import { Button } from '@/components/ui/button'
 import { VibraSheet } from '@/components/vibra-sheet'
 import { VibraRewards } from '@/components/vibra-rewards'
-import { VideoProgress } from '@/components/video-progress'
-import { startActiveVideo, silenceVideo, watchPlaybackLifecycle } from '@/lib/vibra-playback'
 import { VibraShare } from '@/components/vibra-share'
 import { clipShare, type ClipShare } from '@/lib/vibra-sharing'
 import { VibraBanner } from '@/components/vibra-banner'
@@ -34,13 +32,11 @@ function VibraTikTok(){
   const [avatarError,setAvatarError]=useState(false)
   const videoRef=useRef<HTMLVideoElement>(null)
   const stageRef=useRef<HTMLDivElement>(null)
-  const [stageVisible,setStageVisible]=useState(true)
   const [idx,setIdx]=useState(0)
   const [tab,setTab]=useState('foryou')
   const [view,setView]=useState('home')
   const [search,setSearch]=useState('')
   const [soundEnabled,setSoundEnabled]=useState(false)
-  const [suspended,setSuspended]=useState(false)
   const [panel,setPanel]=useState('')
   const [selectedShare,setSelectedShare]=useState<ClipShare|null>(null)
   const [comment,setComment]=useState('')
@@ -51,9 +47,7 @@ function VibraTikTok(){
   const [cloudClips,setCloudClips]=useState<Clip[]>([])
   const [myVideos,setMyVideos]=useState<Clip[]>([])
   const [cloudReady,setCloudReady]=useState(false)
-  const [cloudError,setCloudError]=useState('Checking cloud configuration.')
   const [uploading,setUploading]=useState(false)
-  const [uploadProgress,setUploadProgress]=useState(0)
   const [caption,setCaption]=useState('')
   const [coins,setCoins]=useState(0)
   const [notice,setNotice]=useState('')
@@ -65,7 +59,6 @@ function VibraTikTok(){
   const [name,setName]=useState('@MrVibra')
   const uploadRef=useRef<HTMLInputElement>(null)
   const searchRef=useRef<HTMLInputElement>(null)
-  const playback=useRef({view:'home',source:'',soundEnabled:false,suspended:false,panel:'',showEdit:false,stageVisible:true})
   const followers = followingIds.length
   const following = followingIds.length
 
@@ -86,7 +79,7 @@ function VibraTikTok(){
 
   useEffect(()=>{
     let alive=true
-    readCloudVideos().then(rows=>{if(!alive) return; setCloudClips(rows.map((r:CloudVideo)=>({id:r.id,url:r.video_url,caption:r.caption||''}))); setCloudReady(true)}).catch(()=>{if(alive) setCloudError('Cloud not ready, showing local videos.')})
+    readCloudVideos().then(rows=>{if(!alive) return; setCloudClips(rows.map((r:CloudVideo)=>({id:r.id,url:r.video_url,caption:r.caption||''}))); setCloudReady(true)}).catch(()=>{})
     return ()=>{alive=false}
   },[])
 
@@ -114,37 +107,17 @@ function VibraTikTok(){
   }
 
   useEffect(()=>{
-    const stage=stageRef.current
-    if(!stage||typeof IntersectionObserver==='undefined') return
-    const observer=new IntersectionObserver(entries=>{for(const entry of entries) setStageVisible(entry.isIntersecting)})
-    observer.observe(stage)
-    return ()=>observer.disconnect()
-  },[view])
-
-  useEffect(()=>{
-    const off=watchPlaybackLifecycle(()=>setSuspended(true),()=>setSuspended(false))
-    return off
-  },[])
-
-  useEffect(()=>{
-    playback.current={view,source:current?.url||'',soundEnabled,suspended,panel,showEdit,stageVisible}
-  },[view,current,soundEnabled,suspended,panel,showEdit,stageVisible])
-
-  useEffect(()=>{
     const video=videoRef.current
-    if(!video) return
-    const active=()=>videoRef.current===video && view==='home'
-    if(active()){void startActiveVideo(video,soundEnabled,active)} else {silenceVideo(video)}
-    return ()=>{silenceVideo(video)}
-  },[view,soundEnabled,idx,current])
+    if(video){video.muted=!soundEnabled; video.play().catch(()=>{})}
+  },[current,soundEnabled,idx,view])
 
   async function uploadVideo(file:File|undefined){
     if(!file) return
     if(!file.type.startsWith('video/')){setNotice('Choose a video file.');return}
     if(uploading) return
-    setUploading(true);setUploadProgress(0)
+    setUploading(true)
     try{
-      if(cloudReady){void await uploadCloudVideo(file,name,caption);setUploadProgress(10)}
+      if(cloudReady){void await uploadCloudVideo(file,name,caption)}
       const clip:Clip={id:Date.now(),url:URL.createObjectURL(file),caption:caption||file.name,thumb:''}
       setMyVideos(list=>[clip,...list]);setSearch('');setIdx(0);setView('home')
     }catch(error){setNotice('Upload failed: '+(error instanceof Error?error.message:'Unknown'))}
@@ -173,7 +146,7 @@ function VibraTikTok(){
   }
 
   const saveProfile=()=>{localStorage.setItem('vibra_dp',dp);localStorage.setItem('vibra_bio',bio);localStorage.setItem('vibra_name',name);setShowEdit(false);setNotice('Profile imehifadhiwa!')}
-  const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>setPanel('')}><input type="file" accept="video/*" onChange={e=>uploadVideo(e.target.files?.[0])} /><input placeholder="Caption..." value={caption} onChange={e=>setCaption(e.target.value)} /><Button onClick={()=>uploadRef.current?.click()}>Chagua Video</Button><p>{uploadProgress>0?('Uploading '+uploadProgress+'%'):''}</p><p>{cloudError}</p></VibraSheet>
+  const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>setPanel('')}><input type="file" accept="video/*" onChange={e=>uploadVideo(e.target.files?.[0])} /><input placeholder="Caption..." value={caption} onChange={e=>setCaption(e.target.value)} /><Button onClick={()=>uploadRef.current?.click()}>Chagua Video</Button></VibraSheet>
   const profileVideos=cloudReady?[...myVideos.filter(v=>!v.url.startsWith('blob:')),...cloudClips]:myVideos
 
   function openClip(clip:Clip){const index=baseFeed.findIndex(entry=>entry.url===clip.url); if(index>=0){setIdx(index);setView('home')}}
@@ -219,10 +192,9 @@ function VibraTikTok(){
             <Button variant="ghost" onClick={()=>{setTab('foryou');setIdx(0)}} style={{fontWeight:tab==='foryou'?'bold':'normal'}}>For You</Button>
           </div>
         </div>
-        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline muted={!soundEnabled} />:<p className="p-6 text-center">{tab==='following'?'Hujafollow mtu bado. Bonyeza Follow kwenye video yoyote.':'No videos yet.'}</p>}
+        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay muted={!soundEnabled} />:<p className="p-6 text-center">{tab==='following'?'Hujafollow mtu bado. Bonyeza Follow kwenye video yoyote.':'No videos yet.'}</p>}
         <div className="absolute right-3 top-24 z-[60]"><Button className="action-button" aria-label="Open profile" onClick={()=>setView('me')}>Me</Button></div>
         <div className="feed-caption absolute left-3 right-20"><p className="font-bold">{name}</p><p>{current?.caption}</p></div>
-        {current&&<VideoProgress clipId="active" source={current.url} videoRef={videoRef} />}
         <div className="action-stack right-3 bottom-32 flex flex-col gap-2">
           <Button className={'action-button '+(isFollowing?'is-active':'')} aria-label="Follow creator" onClick={toggleFollow}>{isFollowing?'Following ✓':'Follow +'}</Button>
           <Button className={'action-button '+(liked?'is-active':'')} aria-label="Like video" onClick={toggleLike}>♥ {likes}</Button>
