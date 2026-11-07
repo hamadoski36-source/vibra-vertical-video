@@ -111,10 +111,27 @@ function VibraTikTok(){
   }
   function copyLink(){navigator.clipboard?.writeText(window.location.href).then(()=>setNotice('Link imekopiwa! Tuma popote.')).catch(()=>setNotice(window.location.href))}
 
+  // SAUTI: inacheza tu ukiwa Home, inakata ukitoka
   useEffect(()=>{
     const video=videoRef.current
-    if(video){video.muted=!soundEnabled; video.play().catch(()=>{})}
-  },[current,soundEnabled,idx,view])
+    if(!video) return
+    if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){
+      video.pause(); video.muted=true; return
+    }
+    video.muted=!soundEnabled
+    video.play().catch(()=>{})
+  },[current,soundEnabled,idx,view,panel])
+
+  // SAUTI IKATE UKITOKA KWENYE APP / UKIFUNGA SIMU / UKIBADILISHA TAB
+  useEffect(()=>{
+    const stop=()=>{ const v=videoRef.current; if(v){ v.pause(); v.muted=true } }
+    const onHide=()=>{ if(document.hidden){ stop(); setSoundEnabled(false) } }
+    const onPageHide=()=>{ stop(); setSoundEnabled(false) }
+    document.addEventListener('visibilitychange',onHide)
+    window.addEventListener('pagehide',onPageHide)
+    window.addEventListener('blur',onPageHide)
+    return ()=>{ document.removeEventListener('visibilitychange',onHide); window.removeEventListener('pagehide',onPageHide); window.removeEventListener('blur',onPageHide) }
+  },[])
 
   async function uploadVideo(file:File|undefined){
     if(!file) return
@@ -154,10 +171,8 @@ function VibraTikTok(){
   const uploadPanel=<VibraSheet title="Upload" open={panel==='Upload'} onClose={()=>setPanel('')}><input type="file" accept="video/*" onChange={e=>uploadVideo(e.target.files?.[0])} /><input placeholder="Caption..." value={caption} onChange={e=>setCaption(e.target.value)} /><Button onClick={()=>uploadRef.current?.click()}>Chagua Video</Button></VibraSheet>
   const profileVideos=cloudReady?[...myVideos.filter(v=>!v.url.startsWith('blob:')),...cloudClips]:myVideos
   const savedVideos=baseFeed.filter(v=>savedIds.includes(String(v.id??v.url)))
-
   function openClip(clip:Clip){const index=baseFeed.findIndex(entry=>entry.url===clip.url); if(index>=0){setIdx(index);setView('home')}}
 
-  // ME PAGE MPYA - VIZURI KAMA TIKTOK
   if(view==='me'){
     const listToShow=meTab==='saved'?savedVideos:meTab==='liked'?baseFeed.filter(v=>likedIds.includes(String(v.id??v.url))):profileVideos
     return <div data-ready={hydrated} className="vibra-app bg-video text-video-text" style={{overflowY:'auto'}}>
