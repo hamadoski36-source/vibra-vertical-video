@@ -1,4 +1,4 @@
-// VIBRA FINAL FIX HARAKA - JITSI AUTO-JOIN + YOTE REAL
+// VIBRA FINAL - FFmuc LIVE - HAKUNA MODERATOR - INAINGIA MOJA KWA MOJA
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
@@ -299,7 +299,7 @@ function VibraTikTok(){
     const clean = name.replace('@','').replace(/[^a-zA-Z0-9]/g,'') || 'MrVibra'
     const room = 'Vibra-' + clean + '-' + Math.floor(Math.random()*9999)
     setRoomName(room); setRealLive(true); setPanel('LIVE'); setJitsiKey(k=>k+1)
-    setNotice('Tuma link hii kwa marafiki: meet.jit.si/' + room + ' - Bonyeza Join in browser!')
+    setNotice('Tuma link hii kwa marafiki: meet.ffmuc.net/' + room + ' - Ina ingia moja kwa moja, hakuna Log-in!')
   }
   function stopLive(){ liveStream.current?.getTracks().forEach(t=>t.stop()); liveStream.current=null; setLiveOn(false); setPanel(''); setLiveOverlay(''); setBattleOn(false); setGuests(['','','','','','','','']); setShowGiftBar(false); setTalking(0); setShowGuests(false); setRealLive(false); setRoomName('') }
 
@@ -319,7 +319,7 @@ function VibraTikTok(){
   const allVideosForSaved=[...baseFeed, ...myVideos, ...cloudClips].filter((v,i,arr)=>arr.findIndex(x=>String(x.id??x.url)===String(v.id??v.url))===i)
   const savedVideos=allVideosForSaved.filter(v=>savedIds.includes(String(v.id??v.url)))
   function openClip(clip:Clip){const index=baseFeed.findIndex(entry=>entry.url===clip.url); if(index>=0){setIdx(index);setView('home')} else { setMyVideos(prev=>[clip,...prev]); setIdx(0); setView('home') }}
-  const jitsiUrl = roomName ? `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.requireDisplayName=false&userInfo.displayName=${encodeURIComponent(name)}` : ''
+  const jitsiUrl = roomName ? `https://meet.ffmuc.net/${roomName}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.requireDisplayName=false&userInfo.displayName=${encodeURIComponent(name)}` : ''
 
   const authScreen = showAuth && (
     <div style={{position:'fixed',inset:0,zIndex:1000,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',padding:20,paddingTop:40,color:'#fff',overflowY:'auto'}}>
@@ -374,7 +374,7 @@ function VibraTikTok(){
         <div style={{position:'fixed',inset:0,zIndex:999,background:'#000',display:'flex',flexDirection:'column'}}>
           <div style={{display:'flex',gap:6,padding:8,background:'#111',flexWrap:'wrap',alignItems:'center'}}>
             <button onClick={startRealLive} style={{background:'#00FF00',color:'#000',border:'none',padding:'8px 12px',borderRadius:20,fontWeight:'bold',fontSize:12}}>📡 LIVE REAL - Watu Waingie!</button>
-            {roomName && <button onClick={()=>{ navigator.clipboard?.writeText('https://meet.jit.si/'+roomName); setNotice('Link imekopiwa! Mtumie rafiki!') }} style={{background:'#333',color:'#fff',border:'none',padding:'8px 12px',borderRadius:20,fontSize:12}}>🔗 Copy Link: meet.jit.si/{roomName}</button>}
+            {roomName && <button onClick={()=>{ navigator.clipboard?.writeText('https://meet.ffmuc.net/'+roomName); setNotice('Link imekopiwa! Mtumie rafiki!') }} style={{background:'#333',color:'#fff',border:'none',padding:'8px 12px',borderRadius:20,fontSize:12}}>🔗 Copy Link: meet.ffmuc.net/{roomName}</button>}
             {realLive && <button onClick={()=>setRealLive(false)} style={{background:'#FE2C55',color:'#fff',border:'none',padding:'8px 12px',borderRadius:20,fontSize:12}}>Back kwa Picha</button>}
             {realLive && <button onClick={()=>{ setJitsiKey(k=>k+1); setNotice('Inarefresh LIVE...') }} style={{background:'#25F4EE',color:'#000',border:'none',padding:'8px 12px',borderRadius:20,fontWeight:'bold',fontSize:12}}>🔄 Refresh LIVE</button>}
             {realLive && <a href={jitsiUrl} target="_blank" rel="noreferrer" style={{background:'#fff',color:'#000',padding:'8px 12px',borderRadius:20,fontWeight:'bold',fontSize:12,textDecoration:'none'}}>↗ Fungua LIVE Nje</a>}
@@ -400,7 +400,7 @@ function VibraTikTok(){
           {realLive ? (
             <div style={{flex:1,position:'relative',background:'#000'}}>
               <iframe key={jitsiKey} src={jitsiUrl} allow="camera; microphone; fullscreen; display-capture; autoplay" style={{width:'100%',height:'100%',border:'none'}} />
-              <p style={{position:'absolute',top:8,left:8,background:'rgba(0,0,0,0.7)',color:'#fff',padding:'6px 10px',borderRadius:20,fontSize:11}}>📡 LIVE REAL - Kama inauliza Join, bonyeza Join in browser - Allow Kamera!</p>
+              <p style={{position:'absolute',top:8,left:8,background:'rgba(0,0,0,0.7)',color:'#fff',padding:'6px 10px',borderRadius:20,fontSize:11}}>📡 LIVE REAL - Ina ingia moja kwa moja, hakuna Log-in!</p>
             </div>
           ) : (
           <div style={{flex:1,position:'relative',background:'#111',display:'flex',overflow:'hidden'}}>
