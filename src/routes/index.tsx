@@ -5,12 +5,9 @@ import { demoCoinBalance } from '@/lib/vibra-rewards'
 import { Button } from '@/components/ui/button'
 import { VibraSheet } from '@/components/vibra-sheet'
 import { VibraRewards } from '@/components/vibra-rewards'
-import { VibraShare } from '@/components/vibra-share'
-import { clipShare, type ClipShare } from '@/lib/vibra-sharing'
 import { VibraBanner } from '@/components/vibra-banner'
 import { useAuth } from '@/hooks/use-auth'
 import { readCreatorAvatar, readLocalPhoto, saveCreatorAvatar } from '@/lib/vibra-profile'
-import { VibraLive } from '@/components/vibra-live'
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -29,8 +26,9 @@ function VibraTikTok(){
   const { user } = useAuth()
   const [creatorAvatar,setCreatorAvatar]=useState<string|null>(null)
   const [avatarFailed,setAvatarFailed]=useState(false)
-  const [avatarError,setAvatarError]=useState(false)
   const videoRef=useRef<HTMLVideoElement>(null)
+  const liveRef=useRef<HTMLVideoElement>(null)
+  const liveStream=useRef<MediaStream|null>(null)
   const stageRef=useRef<HTMLDivElement>(null)
   const [idx,setIdx]=useState(0)
   const [tab,setTab]=useState('foryou')
@@ -38,9 +36,8 @@ function VibraTikTok(){
   const [search,setSearch]=useState('')
   const [soundEnabled,setSoundEnabled]=useState(false)
   const [panel,setPanel]=useState('')
-  const [selectedShare,setSelectedShare]=useState<ClipShare|null>(null)
   const [comment,setComment]=useState('')
-  const [comments,setComments]=useState<Record<string,string[]>>({})
+  const [comments,setComments]=useState<Record<string,string[]>>({ 'empty': ['😭😩 dont let go'] })
   const [savedIds,setSavedIds]=useState<string[]>([])
   const [likedIds,setLikedIds]=useState<string[]>([])
   const [followingIds,setFollowingIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('vibra_following')||'[]')}catch{return[]}})
@@ -54,6 +51,9 @@ function VibraTikTok(){
   const [showEdit,setShowEdit]=useState(false)
   const [savingPhoto,setSavingPhoto]=useState(false)
   const [meTab,setMeTab]=useState('videos')
+  const [liveOn,setLiveOn]=useState(false)
+  const [liveMsg,setLiveMsg]=useState('')
+  const [liveChats,setLiveChats]=useState<string[]>(['Karibu LIVE!','🔥🔥','Mombasa!'])
   const photoRef=useRef<HTMLInputElement>(null)
   const [dp,setDp]=useState('')
   const [bio,setBio]=useState('Mombasa Vibes | Kamata')
@@ -65,7 +65,7 @@ function VibraTikTok(){
 
   useEffect(()=>{
     let alive=true
-    setCreatorAvatar(null);setAvatarFailed(false);setAvatarError(false)
+    setCreatorAvatar(null);setAvatarFailed(false)
     if(user?.id){void readCreatorAvatar(user.id).then(url=>{if(alive) setCreatorAvatar(url)})}
     return ()=>{alive=false}
   },[user?.id])
@@ -76,6 +76,7 @@ function VibraTikTok(){
     setDp(localStorage.getItem('vibra_dp')||'')
     setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes | Kamata')
     setName(localStorage.getItem('vibra_name')||'@MrVibra')
+    try{ const saved=JSON.parse(localStorage.getItem('vibra_comments')||'{}'); if(Object.keys(saved).length>0) setComments(saved) }catch{}
   },[])
 
   useEffect(()=>{
@@ -94,6 +95,7 @@ function VibraTikTok(){
   const saved=savedIds.includes(clipKey)
   const isFollowing=followingIds.includes(clipKey)
   const likes=246+(liked?1:0)
+  const commentCount=(comments[clipKey]||[]).length
   const shareText=(current?.caption||'Angalia hii video kwenye Vibra!')+' '+window.location.href
   const shareUrl=encodeURIComponent(window.location.href)
   const shareMsg=encodeURIComponent(shareText)
@@ -110,28 +112,48 @@ function VibraTikTok(){
     })
   }
   function copyLink(){navigator.clipboard?.writeText(window.location.href).then(()=>setNotice('Link imekopiwa! Tuma popote.')).catch(()=>setNotice(window.location.href))}
+  function addComment(){
+    if(!comment.trim()) return
+    setComments(v=>{
+      const n={...v,[clipKey]:[...(v[clipKey]||[]),comment.trim()]}
+      localStorage.setItem('vibra_comments',JSON.stringify(n))
+      return n
+    })
+    setComment(''); setNotice('Comment imetumwa! Sasa ni '+(commentCount+1))
+  }
 
-  // SAUTI: inacheza tu ukiwa Home, inakata ukitoka
+  // SAUTI
   useEffect(()=>{
     const video=videoRef.current
     if(!video) return
-    if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){
-      video.pause(); video.muted=true; return
-    }
+    if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){ video.pause(); video.muted=true; return }
     video.muted=!soundEnabled
     video.play().catch(()=>{})
   },[current,soundEnabled,idx,view,panel])
 
-  // SAUTI IKATE UKITOKA KWENYE APP / UKIFUNGA SIMU / UKIBADILISHA TAB
   useEffect(()=>{
     const stop=()=>{ const v=videoRef.current; if(v){ v.pause(); v.muted=true } }
     const onHide=()=>{ if(document.hidden){ stop(); setSoundEnabled(false) } }
-    const onPageHide=()=>{ stop(); setSoundEnabled(false) }
     document.addEventListener('visibilitychange',onHide)
-    window.addEventListener('pagehide',onPageHide)
-    window.addEventListener('blur',onPageHide)
-    return ()=>{ document.removeEventListener('visibilitychange',onHide); window.removeEventListener('pagehide',onPageHide); window.removeEventListener('blur',onPageHide) }
+    window.addEventListener('pagehide',stop)
+    window.addEventListener('blur',stop)
+    return ()=>{ document.removeEventListener('visibilitychange',onHide); window.removeEventListener('pagehide',stop); window.removeEventListener('blur',stop) }
   },[])
+
+  // LIVE MPYA - kamera moja kwa moja
+  async function startLive(){
+    setPanel('LIVE')
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true})
+      liveStream.current=stream
+      setLiveOn(true)
+      setTimeout(()=>{ if(liveRef.current){ liveRef.current.srcObject=stream; liveRef.current.play().catch(()=>{}) } },100)
+    }catch{ setNotice('Ruhusu kamera: Bonyeza alama ya kamera juu kwenye address bar -> Allow'); setLiveOn(false) }
+  }
+  function stopLive(){
+    liveStream.current?.getTracks().forEach(t=>t.stop())
+    liveStream.current=null; setLiveOn(false); setPanel('')
+  }
 
   async function uploadVideo(file:File|undefined){
     if(!file) return
@@ -146,8 +168,7 @@ function VibraTikTok(){
     finally{setUploading(false)}
   }
 
-  function shareVideo(){if(!current) return; setSelectedShare(clipShare(current)); setPanel('Share')}
-  const sharePanel=selectedShare?<VibraShare share={selectedShare} onClose={()=>setSelectedShare(null)} />:null
+  function shareVideo(){if(!current) return; setPanel('Share')}
   const uploadInput=<input ref={uploadRef} type="file" accept="video/*" style={{display:'none'}} onChange={e=>uploadVideo(e.target.files?.[0])} />
 
   async function choosePhoto(file:File|undefined){
@@ -157,7 +178,7 @@ function VibraTikTok(){
       if(user?.id){
         const url=await saveCreatorAvatar(user.id,file)
         setCreatorAvatar(url);setAvatarFailed(false);setDp(url);localStorage.setItem('vibra_dp',url)
-        setNotice('Picha imehifadhiwa kwenye akaunti yako!')
+        setNotice('Picha imehifadhiwa!')
       }else{
         const dataUrl=await readLocalPhoto(file)
         setDp(dataUrl);localStorage.setItem('vibra_dp',dataUrl)
@@ -182,7 +203,6 @@ function VibraTikTok(){
           <Button variant="ghost" className="profile-avatar bg-video-glass" style={{width:110,height:110,borderRadius:'50%',overflow:'hidden',fontSize:40}} onClick={()=>photoRef.current?.click()}>{profileAvatar?<img src={profileAvatar} alt="Profile" style={{width:'100%',height:'100%',objectFit:'cover'}} />:'👤'}</Button>
           <span style={{position:'absolute',bottom:0,right:0,background:'#fff',color:'#000',borderRadius:'50%',width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center'}}>+</span>
         </div>
-        {avatarError&&<p className="text-sm" role="status">Logo yako haijapakiwa.</p>}
         <h1 className="font-bold" style={{fontSize:22,marginTop:10}}>{name}</h1>
         <p style={{opacity:0.8}}>{bio}</p>
         <div style={{display:'flex',gap:10,justifyContent:'center',marginTop:12}}>
@@ -196,32 +216,31 @@ function VibraTikTok(){
           <div><p style={{fontWeight:'bold',fontSize:18}}>{coins}</p><p style={{opacity:0.7}}>Coins</p></div>
         </div>
         <div style={{display:'flex',justifyContent:'center',gap:20,marginTop:16,borderBottom:'1px solid #333',paddingBottom:8}}>
-          <Button variant="ghost" onClick={()=>setMeTab('videos')} style={{fontWeight:meTab==='videos'?'bold':'normal',borderBottom:meTab==='videos'?'2px solid #fff':'none'}}>🎬 Videos</Button>
-          <Button variant="ghost" onClick={()=>setMeTab('liked')} style={{fontWeight:meTab==='liked'?'bold':'normal',borderBottom:meTab==='liked'?'2px solid #fff':'none'}}>❤️ Liked</Button>
-          <Button variant="ghost" onClick={()=>setMeTab('saved')} style={{fontWeight:meTab==='saved'?'bold':'normal',borderBottom:meTab==='saved'?'2px solid #fff':'none'}}>🔖 Saved</Button>
+          <Button variant="ghost" onClick={()=>setMeTab('videos')} style={{fontWeight:meTab==='videos'?'bold':'normal'}}>🎬 Videos</Button>
+          <Button variant="ghost" onClick={()=>setMeTab('liked')} style={{fontWeight:meTab==='liked'?'bold':'normal'}}>❤️ Liked</Button>
+          <Button variant="ghost" onClick={()=>setMeTab('saved')} style={{fontWeight:meTab==='saved'?'bold':'normal'}}>🔖 Saved</Button>
         </div>
       </section>
       <section className="p-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,paddingBottom:100}}>
         {listToShow.map(v=>(
           <button key={v.url} onClick={()=>openClip(v)} style={{position:'relative',aspectRatio:'9/16',overflow:'hidden',borderRadius:10,background:'#222',border:'none',padding:0}}>
             <video src={v.url} muted playsInline style={{width:'100%',height:'100%',objectFit:'cover'}} />
-            <span style={{position:'absolute',left:6,bottom:6,right:6,color:'#fff',fontSize:11,textAlign:'left',textShadow:'0 1px 4px #000',overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}}>{v.caption||'Video'}</span>
+            <span style={{position:'absolute',left:6,bottom:6,right:6,color:'#fff',fontSize:11,textAlign:'left',textShadow:'0 1px 4px #000'}}>{v.caption||'Video'}</span>
             <span style={{position:'absolute',top:6,right:6,fontSize:12}}>▶️</span>
           </button>
         ))}
       </section>
-      {listToShow.length===0&&<p className="p-6 text-center" style={{paddingBottom:100}}>{meTab==='videos'?'Hakuna video bado. Bonyeza + kupakia.':meTab==='liked'?'Hujalike video bado.':'Hujasave video bado.'}</p>}
+      {listToShow.length===0&&<p className="p-6 text-center">Hakuna video bado.</p>}
       <VibraBanner placement="profile" />
       <VibraSheet title="Edit Profile" open={showEdit} onClose={()=>setShowEdit(false)}>
         <input ref={photoRef} type="file" accept="image/*" aria-label="Choose profile photo" onChange={e=>choosePhoto(e.target.files?.[0])} />
         <Button type="button" className="sheet-command w-full" disabled={savingPhoto} onClick={()=>photoRef.current?.click()}>{savingPhoto?'Inapakia...':'📸 Badilisha Picha'}</Button>
-        <input aria-label="Username" value={name} onChange={e=>setName(e.target.value)} placeholder="@Jina lako" />
-        <input aria-label="Bio" value={bio} onChange={e=>setBio(e.target.value)} placeholder="Bio yako..." />
+        <input aria-label="Username" value={name} onChange={e=>setName(e.target.value)} />
+        <input aria-label="Bio" value={bio} onChange={e=>setBio(e.target.value)} />
         <Button onClick={saveProfile}>Save Profile</Button>
       </VibraSheet>
       {uploadPanel}{notice&&<p className="vibra-notice">{notice}</p>}
-      <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex justify-around p-3"><Button variant="ghost" onClick={()=>setView('home')}>Home</Button><Button variant="ghost" onClick={()=>searchRef.current?.focus()}>Search</Button><Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>+</Button><Button variant="ghost" aria-label="LIVE tab" onClick={()=>setPanel('LIVE')}>LIVE</Button><Button variant="ghost" onClick={()=>setView('me')}>Me</Button></nav>
-      <VibraLive open={panel==='LIVE'} onClose={()=>setPanel('')} />
+      <nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex justify-around p-3"><Button variant="ghost" onClick={()=>setView('home')}>Home</Button><Button variant="ghost" onClick={()=>searchRef.current?.focus()}>Search</Button><Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>+</Button><Button variant="ghost" onClick={startLive}>LIVE</Button><Button variant="ghost" onClick={()=>setView('me')}>Me</Button></nav>
     </div>
   }
 
@@ -229,7 +248,6 @@ function VibraTikTok(){
     <div data-ready={hydrated} className="vibra-app home-bottom-scroll bg-video text-video-text">
       <div ref={stageRef} className={'home-video-stage '+(idx%feed.length)}>
         {uploadPanel}
-        {sharePanel}
         <div style={{position:'absolute',top:0,left:0,right:0,zIndex:10}}>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
             <input ref={searchRef} aria-label="Search videos" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search..." />
@@ -240,18 +258,22 @@ function VibraTikTok(){
             <Button variant="ghost" onClick={()=>{setTab('foryou');setIdx(0)}} style={{fontWeight:tab==='foryou'?'bold':'normal'}}>For You</Button>
           </div>
         </div>
-        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay muted={!soundEnabled} onClick={()=>setSoundEnabled(v=>!v)} />:<p className="p-6 text-center">{tab==='following'?'Hujafollow mtu bado. Bonyeza Follow kwenye video yoyote.':'No videos yet.'}</p>}
-        <div className="absolute right-3 top-24 z-[60]"><Button className="action-button" aria-label="Open profile" onClick={()=>setView('me')}>Me</Button></div>
+        {current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay muted={!soundEnabled} onClick={()=>setSoundEnabled(v=>!v)} />:<p className="p-6 text-center">No videos yet.</p>}
         <div style={{position:'absolute',left:12,bottom:110,zIndex:70}}><Button className="action-button" onClick={()=>setSoundEnabled(v=>!v)}>{soundEnabled?'🔊 Sauti ON':'🔇 Bonyeza Sauti'}</Button></div>
         <div className="feed-caption absolute left-3 right-20"><p className="font-bold">{name}</p><p>{current?.caption}</p></div>
-        <div className="action-stack right-3 bottom-32 flex flex-col gap-2">
-          <Button className={'action-button '+(isFollowing?'is-active':'')} aria-label="Follow creator" onClick={toggleFollow}>{isFollowing?'Following ✓':'Follow +'}</Button>
-          <Button className={'action-button '+(liked?'is-active':'')} aria-label="Like video" onClick={toggleLike}>♥ {likes}</Button>
-          <Button className="action-button" aria-label="Comments" onClick={()=>setPanel('Comments')}>💬</Button>
-          <Button className={'action-button '+(saved?'is-active':'')} aria-label="Save video" onClick={toggleSave}>🔖</Button>
-          <Button className="action-button" aria-label="Share video" onClick={shareVideo}>↗ Share</Button>
-          <Button className="action-button" aria-label="Lyrics" onClick={()=>setPanel('Lyrics')}>🎵</Button>
-          <Button className="action-button" aria-label="LIVE" onClick={()=>setPanel('LIVE')}>LIVE</Button>
+        <div className="action-stack right-3 bottom-32 flex flex-col gap-2" style={{alignItems:'center'}}>
+          <div style={{position:'relative',width:52,height:52}}>
+            <button onClick={()=>setView('me')} style={{width:52,height:52,borderRadius:'50%',overflow:'hidden',border:'2px solid #fff',background:'#333',padding:0,cursor:'pointer'}}>
+              {profileAvatar?<img src={profileAvatar} alt="Creator" style={{width:'100%',height:'100%',objectFit:'cover'}} />:<span style={{fontSize:24}}>👤</span>}
+            </button>
+            <button onClick={toggleFollow} style={{position:'absolute',bottom:-8,left:'50%',transform:'translateX(-50%)',width:22,height:22,borderRadius:'50%',background:isFollowing?'#fff':'#FE2C55',color:isFollowing?'#FE2C55':'#fff',border:'none',fontSize:14,fontWeight:'bold',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>{isFollowing?'✓':'+'}</button>
+          </div>
+          <Button className={'action-button '+(liked?'is-active':'')} onClick={toggleLike} style={{marginTop:10}}>♥ {likes}</Button>
+          <Button className="action-button" onClick={()=>setPanel('Comments')}>💬 {commentCount}</Button>
+          <Button className={'action-button '+(saved?'is-active':'')} onClick={toggleSave}>🔖</Button>
+          <Button className="action-button" onClick={shareVideo}>↗ Share</Button>
+          <Button className="action-button" onClick={()=>setPanel('Lyrics')}>🎵</Button>
+          <Button className="action-button" onClick={startLive}>LIVE</Button>
           <VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} />
         </div>
       </div>
@@ -259,26 +281,49 @@ function VibraTikTok(){
         <Button variant="ghost" onClick={()=>{setView('home');setSearch('')}}>Home</Button>
         <Button variant="ghost" onClick={()=>searchRef.current?.focus()}>Search</Button>
         <Button variant="ghost" aria-label="Upload" onClick={()=>uploadRef.current?.click()}>+</Button>
-        <Button variant="ghost" aria-label="LIVE tab" onClick={()=>setPanel('LIVE')}>LIVE</Button>
+        <Button variant="ghost" onClick={startLive}>LIVE</Button>
         <Button variant="ghost" onClick={()=>setView('me')}>👤 Me</Button>
       </nav>
       <VibraBanner placement="home" />
-      <VibraLive open={panel==='LIVE'} onClose={()=>setPanel('')} />
-      <VibraSheet title="Share" open={panel==='Share'} onClose={()=>setPanel('')}>
-        <p style={{textAlign:'center',fontWeight:'bold'}}>{current?.caption||'Share hii video'}</p>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:12}}>
-          <a href={'https://wa.me/?text='+shareMsg} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#25D366',color:'#fff',padding:'12px 4px',borderRadius:12}}>💬<br/>WhatsApp</a>
-          <a href={'https://www.facebook.com/sharer/sharer.php?u='+shareUrl} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#1877F2',color:'#fff',padding:'12px 4px',borderRadius:12}}>📘<br/>Facebook</a>
-          <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:'linear-gradient(45deg,#f09433,#dc2743,#bc1888)',color:'#fff',padding:'12px 4px',borderRadius:12}}>📸<br/>Instagram</a>
-          <a href={'https://chatgpt.com/?q='+encodeURIComponent('Nisaidie caption nzuri ya video hii: '+(current?.caption||''))} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#10a37f',color:'#fff',padding:'12px 4px',borderRadius:12}}>🤖<br/>ChatGPT</a>
-          <a href="https://www.capcut.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:'#000',color:'#fff',padding:'12px 4px',borderRadius:12}}>✂️<br/>CapCut</a>
-          <button onClick={copyLink} style={{background:'#333',color:'#fff',padding:'12px 4px',borderRadius:12,border:'none'}}>🔗<br/>Copy Link</button>
+
+      {/* SHARE OVERLAY MPYA - juu kabisa, haiwezi kufichwa */}
+      {panel==='Share'&&(
+        <div style={{position:'fixed',inset:0,zIndex:999,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'flex-end'}} onClick={()=>setPanel('')}>
+          <div style={{background:'#fff',color:'#000',width:'100%',borderRadius:'20px 20px 0 0',padding:20}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><b>Share hii video</b><button onClick={()=>setPanel('')} style={{fontSize:20,border:'none',background:'none'}}>✕</button></div>
+            <p style={{fontSize:13,marginTop:6}}>{current?.caption||'Share hii video'}</p>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:14}}>
+              <a href={'https://wa.me/?text='+shareMsg} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#25D366',color:'#fff',padding:'14px 4px',borderRadius:12}}>💬<br/>WhatsApp</a>
+              <a href={'https://www.facebook.com/sharer/sharer.php?u='+shareUrl} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#1877F2',color:'#fff',padding:'14px 4px',borderRadius:12}}>📘<br/>Facebook</a>
+              <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:'linear-gradient(45deg,#f09433,#dc2743,#bc1888)',color:'#fff',padding:'14px 4px',borderRadius:12}}>📸<br/>Instagram</a>
+              <a href={'https://chatgpt.com/?q='+encodeURIComponent('Nisaidie caption nzuri ya video hii: '+(current?.caption||''))} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#10a37f',color:'#fff',padding:'14px 4px',borderRadius:12}}>🤖<br/>ChatGPT</a>
+              <a href="https://www.capcut.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:'#000',color:'#fff',padding:'14px 4px',borderRadius:12}}>✂️<br/>CapCut</a>
+              <button onClick={copyLink} style={{background:'#333',color:'#fff',padding:'14px 4px',borderRadius:12,border:'none'}}>🔗<br/>Copy Link</button>
+            </div>
+            <p style={{fontSize:12,opacity:0.7,marginTop:10,textAlign:'center'}}>Instagram na CapCut: Link imekopiwa, fungua App, paste huko.</p>
+          </div>
         </div>
-        <p style={{fontSize:12,opacity:0.7,marginTop:10,textAlign:'center'}}>Instagram na CapCut: Link imekopiwa, fungua App, paste huko.</p>
-        <Button onClick={()=>setPanel('')}>Funga</Button>
-      </VibraSheet>
+      )}
+
+      {/* LIVE OVERLAY MPYA */}
+      {panel==='LIVE'&&(
+        <div style={{position:'fixed',inset:0,zIndex:999,background:'#000',display:'flex',flexDirection:'column'}}>
+          <div style={{display:'flex',justifyContent:'space-between',padding:12,color:'#fff'}}><b>🔴 LIVE - {name}</b><button onClick={stopLive} style={{color:'#fff',background:'none',border:'none',fontSize:20}}>✕</button></div>
+          <div style={{flex:1,position:'relative',background:'#111',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <video ref={liveRef} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover'}} />
+            {!liveOn&&<p style={{position:'absolute',color:'#fff',textAlign:'center',padding:20}}>Inafungua kamera...<br/>Kama haifunguki, bonyeza alama ya kamera juu -> Allow</p>}
+            <div style={{position:'absolute',left:10,bottom:10,color:'#fff',fontSize:13}}>{liveChats.map((c,i)=><p key={i}>{c}</p>)}</div>
+          </div>
+          <div style={{padding:12,background:'#000',display:'flex',gap:8}}>
+            <input value={liveMsg} onChange={e=>setLiveMsg(e.target.value)} placeholder="Andika LIVE chat..." style={{flex:1,padding:10,borderRadius:20,border:'none'}} />
+            <Button onClick={()=>{if(!liveMsg.trim()) return; setLiveChats(v=>[...v,liveMsg]); setLiveMsg('')}}>Send</Button>
+            <Button onClick={stopLive} style={{background:'#FE2C55'}}>Maliza LIVE</Button>
+          </div>
+        </div>
+      )}
+
       <VibraSheet title={panel} open={panel==='Comments'||panel==='Lyrics'||panel==='Rewards'} onClose={()=>setPanel('')}>
-        {panel==='Lyrics'?<p className="lyrics-copy">{current?.caption||'No lyrics'}</p>:panel==='Comments'?<div>{(comments[clipKey]||[]).map((text,i)=><p key={i}>{text}</p>)}<input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Add comment..." /><Button onClick={()=>{if(!comment) return; setComments(v=>({...v,[clipKey]:[...(v[clipKey]||[]),comment]})); setComment('')}}>Send</Button></div>:<p>Coins: {coins}</p>}
+        {panel==='Lyrics'?<p className="lyrics-copy">{current?.caption||'No lyrics'}</p>:panel==='Comments'?<div><p style={{fontWeight:'bold'}}>{commentCount} Comments</p>{(comments[clipKey]||[]).map((text,i)=><p key={i} style={{padding:'8px 0',borderBottom:'1px solid #eee'}}>{text}</p>)}<input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Add comment..." /><Button onClick={addComment}>Send - {commentCount+1}</Button></div>:<p>Coins: {coins}</p>}
       </VibraSheet>
       {notice&&<p className="vibra-notice">{notice}</p>}
       {uploadInput}
