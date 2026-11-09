@@ -51,6 +51,13 @@ function setS(k, v) {
     localStorage.setItem(k, JSON.stringify(v))
   } catch {}
 }
+function cleanName(n) {
+  if (!n) return 'Mgeni'
+  return String(n).replace(/^@+/, '').trim() || 'Mgeni'
+}
+function isBlobExpired(url) {
+  return String(url || '').startsWith('blob:')
+}
 
 function VibraTikTok() {
   const [user, setUser] = useState(() => getS('vibra_user', null))
@@ -61,7 +68,7 @@ function VibraTikTok() {
   const [touchY, setTouchY] = useState(0)
   const mainVideoRef = useRef(null)
   const [clips, setClips] = useState(() => {
-    const saved = getS('vibra_my_videos', [])
+    const saved = getS('vibra_my_videos', []).filter((v) => !isBlobExpired(v.url))
     return [...saved, ...DEMO_VIDEOS]
   })
   const [likedIds, setLikedIds] = useState(() => getS('vibra_liked', []))
@@ -104,6 +111,7 @@ function VibraTikTok() {
   const [battleScoreOpp, setBattleScoreOpp] = useState(980)
   const [battleTime, setBattleTime] = useState(180)
   const [battleOppName, setBattleOppName] = useState('Aisha')
+  const [playingMeId, setPlayingMeId] = useState('')
   const [battlePeople] = useState([
     { name: 'Aisha', avatar: 'https://i.pravatar.cc/150?img=47', score: 850, live: true },
     { name: 'Juma', avatar: 'https://i.pravatar.cc/150?img=12', score: 720, live: true },
@@ -143,6 +151,7 @@ function VibraTikTok() {
     ])
   )
   const fileRef = useRef(null)
+  const myName = cleanName(user?.name)
 
   const stopAllSound = () => {
     const all = document.querySelectorAll('video')
@@ -174,10 +183,12 @@ function VibraTikTok() {
   useEffect(() => setS('vibra_live_saved', liveSaved), [liveSaved])
   useEffect(() => {
     if (!user) return
-    setS('vibra_user', user)
+    const fixedUser = { ...user, name: cleanName(user.name) }
+    if (fixedUser.name !== user.name) setUser(fixedUser)
+    setS('vibra_user', fixedUser)
     setAccounts((p) => {
-      const ex = p.find((a) => a.email === user.email)
-      return ex ? p : [...p, user]
+      const ex = p.find((a) => a.email === fixedUser.email)
+      return ex ? p : [...p, fixedUser]
     })
   }, [user])
   useEffect(() => {
@@ -190,9 +201,6 @@ function VibraTikTok() {
     const t = setInterval(() => setBattleTime((x) => (x > 0 ? x - 1 : 180)), 1000)
     return () => clearInterval(t)
   }, [battleOn])
-  useEffect(() => {
-    return () => stopAllSound()
-  }, [])
 
   const saveToSupabase = async (videoUrlToSave, cap) => {
     try {
@@ -202,7 +210,7 @@ function VibraTikTok() {
         body: JSON.stringify({
           video_url: videoUrlToSave,
           caption: cap,
-          creator_name: user?.name || 'Mimi',
+          creator_name: myName,
           user_email: user?.email || 'me@vibra.com',
           likes_count: 0,
         }),
@@ -211,7 +219,8 @@ function VibraTikTok() {
   }
   const saveMyVideoLocal = (nc) => {
     try {
-      const old = getS('vibra_my_videos', [])
+      if (isBlobExpired(nc.url)) return
+      const old = getS('vibra_my_videos', []).filter((x) => !isBlobExpired(x.url))
       const filtered = old.filter((x) => x.id !== nc.id)
       setS('vibra_my_videos', [nc, ...filtered].slice(0, 20))
     } catch {}
@@ -263,17 +272,15 @@ function VibraTikTok() {
   const saveRecordedVideo = () => {
     if (!recordedUrl) return
     const cap = caption.trim() || 'Video niliyorecord na Filter ' + FILTERS[activeFilter].name
-    const nc = { id: 'my' + Date.now(), url: recordedUrl, caption: cap, creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
+    const nc = { id: 'my' + Date.now(), url: recordedUrl, caption: cap, creator: myName, creator_email: user?.email || 'me@vibra.com', likes: 0 }
     setClips((p) => [nc, ...p])
-    saveMyVideoLocal(nc)
-    saveToSupabase(recordedUrl, cap)
     setRecordedUrl('')
     setShowCamera(false)
     stopCamera()
     setView('home')
     setTab('foryou')
     setIdx(0)
-    alert('Video IMESAVE KWELI! Sasa hata ukitoka na kurudi utaiona!')
+    alert('Video IMESAVE kwa muda huu! MUHIMU: Video ya kurecord ni ya muda tu. Ili ibaki milele, tumia PAKIA KWA LINK au Chagua Video Kutoka Simu!')
   }
   const toggleFacing = async () => {
     stopCamera()
@@ -311,11 +318,10 @@ function VibraTikTok() {
     rec.onstop = () => {
       const blob = new Blob(liveChunksRef.current, { type: 'video/webm' })
       const url = URL.createObjectURL(blob)
-      const saved = { id: 'live' + Date.now(), url, caption: 'LIVE yangu iliyosave - ' + new Date().toLocaleString(), creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
+      const saved = { id: 'live' + Date.now(), url, caption: 'LIVE yangu iliyosave - ' + new Date().toLocaleString(), creator: myName, creator_email: user?.email || 'me@vibra.com', likes: 0 }
       setLiveSaved((p) => [saved, ...p])
       setClips((p) => [saved, ...p])
-      saveMyVideoLocal(saved)
-      alert('LIVE IMESAVE KWELI! Ipo kwenye Videos zako sasa!')
+      alert('LIVE IMESAVE kwa muda huu!')
     }
     rec.start()
     setLiveRecording(true)
@@ -335,11 +341,11 @@ function VibraTikTok() {
             id: String(v.id || 'sb' + i),
             url: v.video_url || v.url || DEMO_VIDEOS[0].url,
             caption: v.caption || v.title || 'Vibra Video',
-            creator: v.creator_name || 'Vibra Creator',
+            creator: cleanName(v.creator_name) || 'Vibra Creator',
             creator_email: v.user_email || 'creator@vibra.com',
             likes: Number(v.likes_count || v.likes || 0),
-          }))
-          const mySaved = getS('vibra_my_videos', [])
+          })).filter((x) => !isBlobExpired(x.url))
+          const mySaved = getS('vibra_my_videos', []).filter((x) => !isBlobExpired(x.url))
           const all = [...mySaved, ...m, ...DEMO_VIDEOS]
           const seen = {}
           const uniq = all.filter((x) => {
@@ -368,7 +374,7 @@ function VibraTikTok() {
           rc.forEach((c) => {
             const vid = String(c.video_id)
             if (!gc[vid]) gc[vid] = []
-            gc[vid].push({ name: c.user_name || 'Mtu', text: c.comment_text || c.text || '' })
+            gc[vid].push({ name: cleanName(c.user_name) || 'Mtu', text: c.comment_text || c.text || '' })
           })
           setGlobalComments((p) => ({ ...p, ...gc }))
         }
@@ -408,10 +414,10 @@ function VibraTikTok() {
     if (nl) {
       setCoins((c) => c + 5)
       setCreatorCoins((c) => c + 1)
-      if (current.creator_email !== user?.email) pushNotif(current.creator_email, 'like', (user?.name || 'Mtu') + ' amekulike video yako', user?.name || 'Mtu')
+      if (current.creator_email !== user?.email) pushNotif(current.creator_email, 'like', (myName || 'Mtu') + ' amekulike video yako', myName || 'Mtu')
     }
     try {
-      if (nl) await fetch(SUPABASE_URL + '/rest/v1/vibra_likes', { method: 'POST', headers: SB_HEADERS, body: JSON.stringify({ video_id: current.id, user_email: user?.email || 'guest@vibra.com', user_name: user?.name || 'Guest' }) })
+      if (nl) await fetch(SUPABASE_URL + '/rest/v1/vibra_likes', { method: 'POST', headers: SB_HEADERS, body: JSON.stringify({ video_id: current.id, user_email: user?.email || 'guest@vibra.com', user_name: myName || 'Guest' }) })
     } catch {}
   }
   const toggleFollow = () => {
@@ -422,7 +428,7 @@ function VibraTikTok() {
     }
     const nf = !isFollowing
     setFollowing((p) => (nf ? [...p, current.creator_email] : p.filter((x) => x !== current.creator_email)))
-    if (nf && current.creator_email !== user.email) pushNotif(current.creator_email, 'follow', user.name + ' amekufollow!', user.name)
+    if (nf && current.creator_email !== user.email) pushNotif(current.creator_email, 'follow', myName + ' amekufollow!', myName)
   }
   const toggleSave = () => {
     if (!current) return
@@ -441,7 +447,7 @@ function VibraTikTok() {
       alert('Weka jina na email!')
       return
     }
-    const u = { name: loginName.trim(), email: loginEmail.trim().toLowerCase(), pass: loginPass }
+    const u = { name: cleanName(loginName.trim()), email: loginEmail.trim().toLowerCase(), pass: loginPass }
     setUser(u)
     setShowLogin(false)
     setShowSwitch(false)
@@ -459,7 +465,7 @@ function VibraTikTok() {
       alert('Weka link ya video au caption!')
       return
     }
-    const nc = { id: 'my' + Date.now(), url: videoUrl.trim() || DEMO_VIDEOS[0].url, caption: caption.trim() || 'Video yangu mpya!', creator: user.name, creator_email: user.email, likes: 0 }
+    const nc = { id: 'my' + Date.now(), url: videoUrl.trim() || DEMO_VIDEOS[0].url, caption: caption.trim() || 'Video yangu mpya!', creator: myName, creator_email: user.email, likes: 0 }
     setClips((p) => [nc, ...p])
     saveMyVideoLocal(nc)
     saveToSupabase(nc.url, nc.caption)
@@ -469,24 +475,24 @@ function VibraTikTok() {
     setTab('foryou')
     setIdx(0)
     setView('home')
-    alert('Video imepakiwa na IMESAVE! Ukitoka na kurudi utaiona!')
+    alert('Video imepakiwa na IMESAVE MILELE! Ukitoka na kurudi utaiona!')
   }
   const handleFile = (e) => {
     const f = e.target.files?.[0]
     if (!f) return
+    alert('Video kutoka Galari ni ya muda tu kwenye simu. Ili ibaki milele, tumia PAKIA KWA LINK!')
     const url = URL.createObjectURL(f)
-    const nc = { id: 'my' + Date.now(), url, caption: caption.trim() || f.name, creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
+    const nc = { id: 'my' + Date.now(), url, caption: caption.trim() || f.name, creator: myName, creator_email: user?.email || 'me@vibra.com', likes: 0 }
     setClips((p) => [nc, ...p])
-    saveMyVideoLocal(nc)
     setShowCamera(false)
     setTab('foryou')
     setIdx(0)
     setView('home')
-    alert('Video imepakiwa kutoka simu na IMESAVE!')
+    alert('Video imepakiwa kutoka simu!')
   }
   const addComment = () => {
     if (!commentText.trim() || !current) return
-    const c = { name: user?.name || 'Mgeni', text: commentText.trim() }
+    const c = { name: myName || 'Mgeni', text: commentText.trim() }
     setComments({ ...comments, [current.id]: [...(comments[current.id] || []), c] })
     setGlobalComments((p) => ({ ...p, [current.id]: [...(p[current.id] || []), c] }))
     setCommentText('')
@@ -551,10 +557,18 @@ function VibraTikTok() {
   const addNewChat = () => {
     const name = prompt('Jina la rafiki mpya? (mf: Neema)')
     if (!name) return
-    const newChat = { id: 'chat' + Date.now(), name, avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70), last: 'Hey! Karibu Vibra', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), unread: 0, online: true, msgs: [{ from: 'them', text: 'Hey! Karibu Vibra', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'seen' }] }
+    const newChat = { id: 'chat' + Date.now(), name: cleanName(name), avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70), last: 'Hey! Karibu Vibra', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), unread: 0, online: true, msgs: [{ from: 'them', text: 'Hey! Karibu Vibra', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'seen' }] }
     setChats((p) => [newChat, ...p])
     setSelectedChatId(newChat.id)
     setChatTab('chats')
+  }
+  const deleteMyVideo = (id) => {
+    if (!confirm('Ufute video hii?')) return
+    setClips((p) => p.filter((x) => x.id !== id))
+    try {
+      const old = getS('vibra_my_videos', []).filter((x) => x.id !== id)
+      setS('vibra_my_videos', old)
+    } catch {}
   }
 
   if (showSettings) {
@@ -568,7 +582,7 @@ function VibraTikTok() {
           <div style={{ fontSize: 12, color: '#888', fontWeight: 700 }}>ACCOUNT</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #eee' }}>
             <span>Manage account</span>
-            <span style={{ background: PINK, color: '#fff', padding: '6px 12px', borderRadius: 15, fontSize: 13, fontWeight: 800 }}>@{user?.name || 'Guest'}</span>
+            <span style={{ background: PINK, color: '#fff', padding: '6px 12px', borderRadius: 15, fontSize: 13, fontWeight: 800 }}>@{myName}</span>
           </div>
           <div onClick={() => { setShowSettings(false); setShowSwitch(true) }} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #eee', cursor: 'pointer' }}>
             <span>Switch account</span>
@@ -593,6 +607,7 @@ function VibraTikTok() {
           <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Terms of Service</div>
           <div style={{ padding: '12px 0' }}>Privacy Policy</div>
           <button onClick={() => { if (confirm('Una uhakika unataka kutoka?')) { setUser(null); localStorage.removeItem('vibra_user'); setShowSettings(false) } }} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 14, borderRadius: 12, fontWeight: 900, marginTop: 10 }}>Log out</button>
+          <button onClick={() => { if (confirm('Futa video zote zilizoharibika?')) { setS('vibra_my_videos', []); setClips(DEMO_VIDEOS); alert('Zimefutwa! Sasa pakia upya kwa LINK!') } }} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 800, marginTop: 10 }}>Futa Video Zilizoharibika (Weusi)</button>
           <div style={{ textAlign: 'center', fontSize: 12, color: '#aaa', marginTop: 10 }}>v1.0.0 - Vibra Worldwide - Mombasa</div>
         </div>
       </div>
@@ -725,12 +740,12 @@ function VibraTikTok() {
       <div style={{ background: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'system-ui', paddingBottom: 80 }}>
         <div style={{ padding: 14, display: 'flex', justifyContent: 'space-between' }}>
           <span onClick={() => { stopAllSound(); setView('home') }} style={{ cursor: 'pointer', fontSize: 20 }}>←</span>
-          <b>@{user?.name || 'Mgeni'}</b>
+          <b>@{myName}</b>
           <span onClick={() => setShowSettings(true)} style={{ cursor: 'pointer', fontSize: 22 }}>☰</span>
         </div>
         <div style={{ textAlign: 'center', padding: '10px 16px' }}>
-          <div style={{ width: 88, height: 88, borderRadius: '50%', background: GRADIENT, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 900 }}>{(user?.name || 'V')[0].toUpperCase()}</div>
-          <div style={{ fontWeight: 900, fontSize: 20, marginTop: 8 }}>@{user?.name || 'Mgeni'}</div>
+          <div style={{ width: 88, height: 88, borderRadius: '50%', background: GRADIENT, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 900 }}>{(myName || 'V')[0].toUpperCase()}</div>
+          <div style={{ fontWeight: 900, fontSize: 20, marginTop: 8 }}>@{myName}</div>
           <div style={{ opacity: 0.6, fontSize: 13 }}>{user?.email || 'Ingia ili uone profile'}</div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 14 }}>
             <span><b>{following.length}</b><br /><span style={{ fontSize: 12, opacity: 0.6 }}>Following</span></span>
@@ -764,14 +779,43 @@ function VibraTikTok() {
           <span onClick={() => setMeTab('saved')} style={{ padding: '10px 0', fontWeight: 800, borderBottom: meTab === 'saved' ? '2px solid ' + PINK : 'none', cursor: 'pointer' }}>Saved ({savedVideos.length})</span>
         </div>
         <div style={{ padding: '8px 14px', fontSize: 13, color: '#00a884' }}>LIVE zilizosave: {liveSaved.length} - Ziko hapa kwenye Videos!</div>
+        {myVideos.length > 0 && (
+          <div style={{ margin: '0 14px 10px', background: '#1a1a1a', padding: 12, borderRadius: 12, fontSize: 13 }}>
+            <b>Bonyeza video yoyote kuicheza! ▶️</b>
+            <div style={{ opacity: 0.6, fontSize: 12, marginTop: 4 }}>Video za kurecord ni za muda tu. Ili zibaki milele, pakia kwa LINK!</div>
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, padding: 2 }}>
           {listToShow.map((v) => (
-            <div key={v.id} style={{ position: 'relative', aspectRatio: '9/16', background: '#222' }}>
-              <video src={v.url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 12 }}>❤️ {v.likes}</div>
+            <div key={v.id} onClick={() => {
+              if (playingMeId === v.id) {
+                setPlayingMeId('')
+                stopAllSound()
+              } else {
+                setPlayingMeId(v.id)
+                const idxInAll = clips.findIndex((x) => x.id === v.id)
+                if (idxInAll >= 0) {
+                  stopAllSound()
+                  setTab('foryou')
+                  setIdx(idxInAll)
+                  setView('home')
+                }
+              }
+            }} style={{ position: 'relative', aspectRatio: '9/16', background: GRADIENT, cursor: 'pointer', overflow: 'hidden' }}>
+              <video src={v.url + '#t=0.1'} muted playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#222' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.8))', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.caption}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                  <span style={{ fontSize: 12 }}>❤️ {v.likes + (globalLikes[v.id] || 0)}</span>
+                  <span style={{ fontSize: 18 }}>▶️</span>
+                </div>
+              </div>
+              {meTab === 'videos' && (
+                <span onClick={(e) => { e.stopPropagation(); deleteMyVideo(v.id) }} style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.7)', padding: '4px 7px', borderRadius: 10, fontSize: 12 }}>🗑️</span>
+              )}
             </div>
           ))}
-          {listToShow.length === 0 && <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 30, opacity: 0.6 }}>Hakuna video hapa bado</div>}
+          {listToShow.length === 0 && <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 30, opacity: 0.6 }}>Hakuna video hapa bado - Bonyeza + kupakia!</div>}
         </div>
       </div>
     )
@@ -792,7 +836,7 @@ function VibraTikTok() {
           </span>
           <span onClick={() => setPanel(panel === 'search' ? '' : 'search')} style={{ fontSize: 20, cursor: 'pointer' }}>🔍</span>
           {user ? (
-            <span onClick={() => { stopAllSound(); setView('me') }} style={{ width: 32, height: 32, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, cursor: 'pointer' }}>{user.name[0].toUpperCase()}</span>
+            <span onClick={() => { stopAllSound(); setView('me') }} style={{ width: 32, height: 32, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, cursor: 'pointer' }}>{myName[0].toUpperCase()}</span>
           ) : (
             <button onClick={() => setShowLogin(true)} style={{ background: PINK, color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 800 }}>Ingia</button>
           )}
@@ -960,7 +1004,7 @@ function VibraTikTok() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ flex: 1, background: GRADIENT, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ fontSize: 50 }}>👤</div>
-                <b>MIMI - @{user?.name || 'Mgeni'}</b>
+                <b>MIMI - @{myName}</b>
                 <div style={{ fontSize: 22, fontWeight: 900 }}>{battleScoreMe}</div>
                 <div style={{ fontSize: 12 }}>{battleScoreMe > battleScoreOpp ? 'UNAONGOZA!' : 'PIGANA!'}</div>
               </div>
@@ -1016,7 +1060,7 @@ function VibraTikTok() {
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
               <input value={liveMsg} onChange={(e) => setLiveMsg(e.target.value)} placeholder="Chat LIVE..." style={{ flex: 1, padding: 12, borderRadius: 20, border: 'none', background: '#222', color: '#fff', outline: 'none' }} />
-              <button onClick={() => { if (!liveMsg.trim()) return; setLiveChat((p) => [...p, { name: user?.name || 'Mimi', text: liveMsg }]); setLiveMsg('') }} style={{ background: PINK, color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 20, fontWeight: 800 }}>Tuma</button>
+              <button onClick={() => { if (!liveMsg.trim()) return; setLiveChat((p) => [...p, { name: myName, text: liveMsg }]); setLiveMsg('') }} style={{ background: PINK, color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 20, fontWeight: 800 }}>Tuma</button>
             </div>
           </div>
         </div>
@@ -1034,7 +1078,8 @@ function VibraTikTok() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: '#1a1a1a', padding: 24, borderRadius: 20, width: '100%', maxWidth: 360 }}>
             <div style={{ fontWeight: 900, fontSize: 22, textAlign: 'center' }}>Ingia Vibra 🔥</div>
-            <input value={loginName} onChange={(e) => setLoginName(e.target.value)} placeholder="Jina lako" style={{ width: '100%', padding: 13, borderRadius: 12, border: 'none', background: '#333', color: '#fff', marginTop: 16, outline: 'none', boxSizing: 'border-box' }} />
+            <div style={{ fontSize: 12, color: '#aaa', textAlign: 'center', marginTop: 6 }}>Andika jina bila @ - mf: Mr Vibra</div>
+            <input value={loginName} onChange={(e) => setLoginName(e.target.value)} placeholder="Jina lako - bila @" style={{ width: '100%', padding: 13, borderRadius: 12, border: 'none', background: '#333', color: '#fff', marginTop: 16, outline: 'none', boxSizing: 'border-box' }} />
             <input value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Email" style={{ width: '100%', padding: 13, borderRadius: 12, border: 'none', background: '#333', color: '#fff', marginTop: 10, outline: 'none', boxSizing: 'border-box' }} />
             <input value={loginPass} onChange={(e) => setLoginPass(e.target.value)} type="password" placeholder="Password" style={{ width: '100%', padding: 13, borderRadius: 12, border: 'none', background: '#333', color: '#fff', marginTop: 10, outline: 'none', boxSizing: 'border-box' }} />
             <button onClick={handleLogin} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 13, borderRadius: 12, fontWeight: 900, marginTop: 14 }}>INGIA</button>
@@ -1050,14 +1095,14 @@ function VibraTikTok() {
             <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {accounts.length === 0 && <div style={{ opacity: 0.6, fontSize: 13 }}>Hakuna akaunti nyingine - Ongeza mpya chini!</div>}
               {accounts.map((a) => (
-                <div key={a.email} onClick={() => { setUser(a); setS('vibra_user', a); setShowSwitch(false); alert('Ume-switch kwenda @' + a.name) }} style={{ display: 'flex', alignItems: 'center', gap: 12, background: user?.email === a.email ? '#333' : '#222', padding: 12, borderRadius: 12, cursor: 'pointer', border: user?.email === a.email ? '2px solid ' + PINK : 'none' }}>
-                  <span style={{ width: 38, height: 38, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{a.name[0].toUpperCase()}</span>
-                  <div style={{ flex: 1 }}><div style={{ fontWeight: 800 }}>{a.name} {user?.email === a.email && <span style={{ fontSize: 11, color: TEAL }}>Active</span>}</div><div style={{ fontSize: 12, opacity: 0.6 }}>{a.email}</div></div>
+                <div key={a.email} onClick={() => { setUser(a); setS('vibra_user', a); setShowSwitch(false); alert('Ume-switch kwenda @' + cleanName(a.name)) }} style={{ display: 'flex', alignItems: 'center', gap: 12, background: user?.email === a.email ? '#333' : '#222', padding: 12, borderRadius: 12, cursor: 'pointer', border: user?.email === a.email ? '2px solid ' + PINK : 'none' }}>
+                  <span style={{ width: 38, height: 38, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{cleanName(a.name)[0].toUpperCase()}</span>
+                  <div style={{ flex: 1 }}><div style={{ fontWeight: 800 }}>{cleanName(a.name)} {user?.email === a.email && <span style={{ fontSize: 11, color: TEAL }}>Active</span>}</div><div style={{ fontSize: 12, opacity: 0.6 }}>{a.email}</div></div>
                 </div>
               ))}
             </div>
             <div style={{ borderTop: '1px solid #333', marginTop: 14, paddingTop: 14 }}>
-              <input value={loginName} onChange={(e) => setLoginName(e.target.value)} placeholder="Jina la akaunti mpya" style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#333', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+              <input value={loginName} onChange={(e) => setLoginName(e.target.value)} placeholder="Jina la akaunti mpya - bila @" style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#333', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
               <input value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Email ya akaunti mpya" style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#333', color: '#fff', marginTop: 8, outline: 'none', boxSizing: 'border-box' }} />
               <button onClick={handleLogin} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 12, borderRadius: 10, fontWeight: 900, marginTop: 10 }}>+ ONGEZA NA SWITCH</button>
             </div>
@@ -1088,11 +1133,15 @@ function VibraTikTok() {
                 <div style={{ opacity: 0.6, fontSize: 13, marginTop: 6 }}>Kamera yako ya kweli itafunguka hapa - Chagua Filter na Sticker!</div>
                 <button onClick={startCamera} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 900, marginTop: 14 }}>WASHA KAMERA</button>
                 <div style={{ marginTop: 14, width: '100%' }}>
-                  <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="Au weka link ya video..." style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+                  <div style={{ background: '#1a1a1a', padding: 12, borderRadius: 12, fontSize: 13, textAlign: 'left', marginBottom: 10 }}>
+                    <b>ILI VIDEO IBAKI MILELE - Tumia LINK! 🔗</b>
+                    <div style={{ opacity: 0.6, fontSize: 12, marginTop: 4 }}>Video ya kurecord au Galari inapotea ukifunga app. Link inabaki milele!</div>
+                  </div>
+                  <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="Weka link ya video mp4..." style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
                   <textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Andika caption... #vibra" style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', marginTop: 8, outline: 'none', minHeight: 60, boxSizing: 'border-box' }} />
-                  <button onClick={handleUpload} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900, marginTop: 8 }}>PAKIA KWA LINK</button>
+                  <button onClick={handleUpload} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900, marginTop: 8 }}>PAKIA KWA LINK - INABAKI MILELE</button>
                   <input ref={fileRef} type="file" accept="video/*" onChange={handleFile} style={{ display: 'none' }} />
-                  <button onClick={() => fileRef.current?.click()} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 800, marginTop: 8 }}>Chagua Video Kutoka Simu</button>
+                  <button onClick={() => fileRef.current?.click()} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 800, marginTop: 8 }}>Chagua Video Kutoka Simu - Ya Muda Tu</button>
                 </div>
               </div>
             )}
