@@ -57,7 +57,9 @@ function VibraTikTok() {
   const [accounts, setAccounts] = useState(() => getS('vibra_accounts', []))
   const [tab, setTab] = useState('foryou')
   const [idx, setIdx] = useState(0)
-  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [soundEnabled, setSoundEnabled] = useState(false)
+  const [touchY, setTouchY] = useState(0)
+  const mainVideoRef = useRef(null)
   const [clips, setClips] = useState(() => {
     const saved = getS('vibra_my_videos', [])
     return [...saved, ...DEMO_VIDEOS]
@@ -142,6 +144,22 @@ function VibraTikTok() {
   )
   const fileRef = useRef(null)
 
+  const stopAllSound = () => {
+    const all = document.querySelectorAll('video')
+    all.forEach((v) => {
+      try {
+        v.pause()
+        v.muted = true
+      } catch {}
+    })
+    if (mainVideoRef.current) {
+      try {
+        mainVideoRef.current.pause()
+        mainVideoRef.current.muted = true
+      } catch {}
+    }
+  }
+
   useEffect(() => setS('vibra_liked', likedIds), [likedIds])
   useEffect(() => setS('vibra_following', following), [following])
   useEffect(() => setS('vibra_saved', savedIds), [savedIds])
@@ -172,6 +190,9 @@ function VibraTikTok() {
     const t = setInterval(() => setBattleTime((x) => (x > 0 ? x - 1 : 180)), 1000)
     return () => clearInterval(t)
   }, [battleOn])
+  useEffect(() => {
+    return () => stopAllSound()
+  }, [])
 
   const saveToSupabase = async (videoUrlToSave, cap) => {
     try {
@@ -408,9 +429,11 @@ function VibraTikTok() {
     setSavedIds((p) => (isSaved ? p.filter((x) => x !== current.id) : [...p, current.id]))
   }
   const next = () => {
+    stopAllSound()
     if (safeIdx < visibleClips.length - 1) setIdx(safeIdx + 1)
   }
   const prev = () => {
+    stopAllSound()
     if (safeIdx > 0) setIdx(safeIdx - 1)
   }
   const handleLogin = () => {
@@ -701,7 +724,7 @@ function VibraTikTok() {
     return (
       <div style={{ background: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'system-ui', paddingBottom: 80 }}>
         <div style={{ padding: 14, display: 'flex', justifyContent: 'space-between' }}>
-          <span onClick={() => setView('home')} style={{ cursor: 'pointer', fontSize: 20 }}>←</span>
+          <span onClick={() => { stopAllSound(); setView('home') }} style={{ cursor: 'pointer', fontSize: 20 }}>←</span>
           <b>@{user?.name || 'Mgeni'}</b>
           <span onClick={() => setShowSettings(true)} style={{ cursor: 'pointer', fontSize: 22 }}>☰</span>
         </div>
@@ -759,8 +782,8 @@ function VibraTikTok() {
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'linear-gradient(180deg, rgba(0,0,0,0.85), transparent)' }}>
         <div style={{ fontWeight: 900, fontSize: 22 }}>VIBRA<span style={{ color: PINK }}>●</span></div>
         <div style={{ display: 'flex', gap: 18, fontWeight: 700, fontSize: 15 }}>
-          <span onClick={() => { setTab('following'); setIdx(0) }} style={{ cursor: 'pointer', opacity: tab === 'following' ? 1 : 0.6, borderBottom: tab === 'following' ? '2px solid ' + PINK : 'none' }}>Following</span>
-          <span onClick={() => { setTab('foryou'); setIdx(0) }} style={{ cursor: 'pointer', opacity: tab === 'foryou' ? 1 : 0.6, borderBottom: tab === 'foryou' ? '2px solid ' + PINK : 'none' }}>For You</span>
+          <span onClick={() => { stopAllSound(); setTab('following'); setIdx(0) }} style={{ cursor: 'pointer', opacity: tab === 'following' ? 1 : 0.6, borderBottom: tab === 'following' ? '2px solid ' + PINK : 'none' }}>Following</span>
+          <span onClick={() => { stopAllSound(); setTab('foryou'); setIdx(0) }} style={{ cursor: 'pointer', opacity: tab === 'foryou' ? 1 : 0.6, borderBottom: tab === 'foryou' ? '2px solid ' + PINK : 'none' }}>For You</span>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <span style={{ background: '#222', padding: '5px 10px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>🪙 {coins}</span>
@@ -769,7 +792,7 @@ function VibraTikTok() {
           </span>
           <span onClick={() => setPanel(panel === 'search' ? '' : 'search')} style={{ fontSize: 20, cursor: 'pointer' }}>🔍</span>
           {user ? (
-            <span onClick={() => setView('me')} style={{ width: 32, height: 32, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, cursor: 'pointer' }}>{user.name[0].toUpperCase()}</span>
+            <span onClick={() => { stopAllSound(); setView('me') }} style={{ width: 32, height: 32, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, cursor: 'pointer' }}>{user.name[0].toUpperCase()}</span>
           ) : (
             <button onClick={() => setShowLogin(true)} style={{ background: PINK, color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 800 }}>Ingia</button>
           )}
@@ -805,11 +828,33 @@ function VibraTikTok() {
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
           <div style={{ fontSize: 50 }}>😔</div>
           <div style={{ fontWeight: 900, fontSize: 20, marginTop: 10 }}>Bado haujafollow mtu</div>
-          <button onClick={() => { setTab('foryou'); setIdx(0) }} style={{ marginTop: 16, background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 800 }}>Nenda For You</button>
+          <button onClick={() => { stopAllSound(); setTab('foryou'); setIdx(0) }} style={{ marginTop: 16, background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 800 }}>Nenda For You</button>
         </div>
       ) : (
-        <div style={{ height: '100vh', width: '100vw', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}>
-          <video key={current.id} src={current.url} autoPlay loop muted={!soundEnabled} playsInline onClick={(e) => (e.target.paused ? e.target.play() : e.target.pause())} style={{ width: '100vw', height: '100vh', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
+        <div
+          onTouchStart={(e) => setTouchY(e.touches[0].clientY)}
+          onTouchEnd={(e) => {
+            const diff = touchY - e.changedTouches[0].clientY
+            if (diff > 50) next()
+            if (diff < -50) prev()
+          }}
+          onWheel={(e) => {
+            if (e.deltaY > 20) next()
+            if (e.deltaY < -20) prev()
+          }}
+          style={{ height: '100vh', width: '100vw', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}
+        >
+          <video ref={mainVideoRef} key={current.id} src={current.url} autoPlay loop muted={!soundEnabled} playsInline onClick={(e) => {
+            if (!soundEnabled) {
+              setSoundEnabled(true)
+              e.target.muted = false
+              e.target.volume = 1
+              e.target.play()
+            } else {
+              if (e.target.paused) e.target.play()
+              else e.target.pause()
+            }
+          }} style={{ width: '100vw', height: '100vh', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
           {liveCreators.includes(current.creator) && (
             <div style={{ position: 'absolute', top: 70, left: 12, background: '#FF0000', padding: '6px 12px', borderRadius: 20, fontWeight: 900, fontSize: 13, zIndex: 30 }}>
               LIVE • Wanaangalia 342
@@ -820,7 +865,16 @@ function VibraTikTok() {
               Video hii inaongezeka • {displayLikes} likes
             </div>
           )}
-          <div onClick={() => setSoundEnabled(!soundEnabled)} style={{ position: 'absolute', top: 70, right: 16, background: 'rgba(0,0,0,0.6)', padding: '8px 12px', borderRadius: 20, cursor: 'pointer', zIndex: 30 }}>🔊 {soundEnabled ? 'ON' : 'OFF'}</div>
+          <div onClick={() => {
+            if (soundEnabled) {
+              stopAllSound()
+              setSoundEnabled(false)
+            } else {
+              setSoundEnabled(true)
+              const v = mainVideoRef.current
+              if (v) { v.muted = false; v.volume = 1; v.play() }
+            }
+          }} style={{ position: 'absolute', top: 70, right: 16, background: 'rgba(0,0,0,0.6)', padding: '8px 12px', borderRadius: 20, cursor: 'pointer', zIndex: 30 }}>🔊 {soundEnabled ? 'ON - Bonyeza kukata' : 'OFF - Bonyeza kuwasha'}</div>
           <div style={{ position: 'absolute', right: 12, bottom: 130, display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center', zIndex: 20 }}>
             <div style={{ position: 'relative' }}>
               <div onClick={toggleFollow} style={{ width: 52, height: 52, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 20, cursor: 'pointer', border: '2px solid #fff' }}>{current.creator[0].toUpperCase()}</div>
@@ -838,10 +892,10 @@ function VibraTikTok() {
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={toggleFollow} style={{ background: isFollowing ? '#fff' : PINK, color: isFollowing ? '#000' : '#fff', border: 'none', padding: '7px 16px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>{isFollowing ? 'Following ✓' : 'Follow'}</button>
               <button onClick={() => setPanel('comments')} style={{ background: '#222', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 700, fontSize: 13 }}>Comments ({allComments.length})</button>
-              <button onClick={() => setLiveOn(true)} style={{ background: '#FF0000', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>LIVE</button>
-              <button onClick={() => setBattleOn(true)} style={{ background: '#FFD700', color: '#000', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>BATTLE 8</button>
+              <button onClick={() => { stopAllSound(); setLiveOn(true) }} style={{ background: '#FF0000', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>LIVE</button>
+              <button onClick={() => { stopAllSound(); setBattleOn(true) }} style={{ background: '#FFD700', color: '#000', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>BATTLE 8</button>
             </div>
-            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>{safeIdx + 1} / {visibleClips.length} - FULL SCREEN</div>
+            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>{safeIdx + 1} / {visibleClips.length} - FULL SCREEN - Swipe juu au chini</div>
           </div>
           <div style={{ position: 'absolute', right: 12, bottom: 260, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 20 }}>
             <button onClick={prev} disabled={safeIdx === 0} style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', width: 36, height: 36, borderRadius: '50%', fontSize: 18, opacity: safeIdx === 0 ? 0.3 : 1 }}>↑</button>
@@ -969,11 +1023,11 @@ function VibraTikTok() {
       )}
 
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#000', borderTop: '1px solid #222', display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '10px 0 14px' }}>
-        <span onClick={() => { setView('home'); setTab('foryou'); setIdx(0); setPanel('') }} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>🏠</div>Home</span>
+        <span onClick={() => { stopAllSound(); setView('home'); setTab('foryou'); setIdx(0); setPanel('') }} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>🏠</div>Home</span>
         <span onClick={() => setPanel(panel === 'search' ? '' : 'search')} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>🔍</div>Discover</span>
-        <span onClick={() => { if (!user) setShowLogin(true); else setShowCamera(true) }} style={{ width: 48, height: 32, background: GRADIENT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, cursor: 'pointer' }}>+</span>
-        <span onClick={() => setView('chat')} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>💬</div>Chat</span>
-        <span onClick={() => { if (!user) setShowLogin(true); else setView('me') }} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>👤</div>Me</span>
+        <span onClick={() => { stopAllSound(); if (!user) setShowLogin(true); else setShowCamera(true) }} style={{ width: 48, height: 32, background: GRADIENT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, cursor: 'pointer' }}>+</span>
+        <span onClick={() => { stopAllSound(); setView('chat') }} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>💬</div>Chat</span>
+        <span onClick={() => { stopAllSound(); if (!user) setShowLogin(true); else setView('me') }} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>👤</div>Me</span>
       </div>
 
       {showLogin && (
