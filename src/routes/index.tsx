@@ -58,46 +58,10 @@ function VibraTikTok() {
   const [tab, setTab] = useState('foryou')
   const [idx, setIdx] = useState(0)
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const saveToSupabase = async (videoUrlToSave, cap) => {
-  try {
-    await fetch(SUPABASE_URL + '/rest/v1/vibra_videos', {
-      method: 'POST',
-      headers: SB_HEADERS,
-      body: JSON.stringify({
-        video_url: videoUrlToSave,
-        caption: cap,
-        creator_name: user?.name || 'Mimi',
-        user_email: user?.email || 'me@vibra.com',
-        likes_count: 0,
-      }),
-    })
-  } catch {}
-}
-const saveRecordedVideo = () => {
-  if (!recordedUrl) return
-  const cap = caption.trim() || 'Video niliyorecord na Filter ' + FILTERS[activeFilter].name
-  const nc = {
-    id: 'my' + Date.now(),
-    url: recordedUrl,
-    caption: cap,
-    creator: user?.name || 'Mimi',
-    creator_email: user?.email || 'me@vibra.com',
-    likes: 0,
-  }
-  setClips((p) => [nc, ...p])
-  saveToSupabase(recordedUrl, cap)
-  try {
-    const old = JSON.parse(localStorage.getItem('vibra_my_videos') || '[]')
-    localStorage.setItem('vibra_my_videos', JSON.stringify([nc, ...old].slice(0, 20)))
-  } catch {}
-  setRecordedUrl('')
-  setShowCamera(false)
-  stopCamera()
-  setView('home')
-  setTab('foryou')
-  setIdx(0)
-  alert('Video IMESAVE KWELI! Sasa hata ukitoka na kurudi utaiona!')
-}
+  const [clips, setClips] = useState(() => {
+    const saved = getS('vibra_my_videos', [])
+    return [...saved, ...DEMO_VIDEOS]
+  })
   const [likedIds, setLikedIds] = useState(() => getS('vibra_liked', []))
   const [globalLikes, setGlobalLikes] = useState(() => getS('vibra_global_likes', {}))
   const [following, setFollowing] = useState(() => getS('vibra_following', []))
@@ -209,6 +173,29 @@ const saveRecordedVideo = () => {
     return () => clearInterval(t)
   }, [battleOn])
 
+  const saveToSupabase = async (videoUrlToSave, cap) => {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/vibra_videos', {
+        method: 'POST',
+        headers: SB_HEADERS,
+        body: JSON.stringify({
+          video_url: videoUrlToSave,
+          caption: cap,
+          creator_name: user?.name || 'Mimi',
+          user_email: user?.email || 'me@vibra.com',
+          likes_count: 0,
+        }),
+      })
+    } catch {}
+  }
+  const saveMyVideoLocal = (nc) => {
+    try {
+      const old = getS('vibra_my_videos', [])
+      const filtered = old.filter((x) => x.id !== nc.id)
+      setS('vibra_my_videos', [nc, ...filtered].slice(0, 20))
+    } catch {}
+  }
+
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true })
@@ -254,22 +241,18 @@ const saveRecordedVideo = () => {
   }
   const saveRecordedVideo = () => {
     if (!recordedUrl) return
-    const nc = {
-      id: 'my' + Date.now(),
-      url: recordedUrl,
-      caption: caption.trim() || 'Video niliyorecord na Filter ' + FILTERS[activeFilter].name,
-      creator: user?.name || 'Mimi',
-      creator_email: user?.email || 'me@vibra.com',
-      likes: 0,
-    }
+    const cap = caption.trim() || 'Video niliyorecord na Filter ' + FILTERS[activeFilter].name
+    const nc = { id: 'my' + Date.now(), url: recordedUrl, caption: cap, creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
     setClips((p) => [nc, ...p])
+    saveMyVideoLocal(nc)
+    saveToSupabase(recordedUrl, cap)
     setRecordedUrl('')
     setShowCamera(false)
     stopCamera()
     setView('home')
     setTab('foryou')
     setIdx(0)
-    alert('Video imesave na kupakiwa!')
+    alert('Video IMESAVE KWELI! Sasa hata ukitoka na kurudi utaiona!')
   }
   const toggleFacing = async () => {
     stopCamera()
@@ -310,6 +293,7 @@ const saveRecordedVideo = () => {
       const saved = { id: 'live' + Date.now(), url, caption: 'LIVE yangu iliyosave - ' + new Date().toLocaleString(), creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
       setLiveSaved((p) => [saved, ...p])
       setClips((p) => [saved, ...p])
+      saveMyVideoLocal(saved)
       alert('LIVE IMESAVE KWELI! Ipo kwenye Videos zako sasa!')
     }
     rec.start()
@@ -334,7 +318,15 @@ const saveRecordedVideo = () => {
             creator_email: v.user_email || 'creator@vibra.com',
             likes: Number(v.likes_count || v.likes || 0),
           }))
-          setClips([...m, ...DEMO_VIDEOS])
+          const mySaved = getS('vibra_my_videos', [])
+          const all = [...mySaved, ...m, ...DEMO_VIDEOS]
+          const seen = {}
+          const uniq = all.filter((x) => {
+            if (seen[x.id]) return false
+            seen[x.id] = true
+            return true
+          })
+          setClips(uniq)
         }
       } catch {}
       try {
@@ -378,7 +370,7 @@ const saveRecordedVideo = () => {
   const isFollowing = current ? following.includes(current.creator_email) : false
   const isSaved = current ? savedIds.includes(current.id) : false
   const unread = notifications.filter((n) => !n.read).length
-  const myVideos = [...clips.filter((c) => c.creator_email === user?.email), ...liveSaved.filter((c) => c.creator_email === user?.email)]
+  const myVideos = clips.filter((c) => c.creator_email === user?.email)
   const likedVideos = clips.filter((c) => likedIds.includes(c.id))
   const savedVideos = clips.filter((c) => savedIds.includes(c.id))
   const selectedChat = chats.find((c) => c.id === selectedChatId)
@@ -445,26 +437,29 @@ const saveRecordedVideo = () => {
       return
     }
     const nc = { id: 'my' + Date.now(), url: videoUrl.trim() || DEMO_VIDEOS[0].url, caption: caption.trim() || 'Video yangu mpya!', creator: user.name, creator_email: user.email, likes: 0 }
-    setClips((p) => [nc, ...p])saveToSupabase(nc.url, nc.caption)
+    setClips((p) => [nc, ...p])
+    saveMyVideoLocal(nc)
+    saveToSupabase(nc.url, nc.caption)
     setCaption('')
     setVideoUrl('')
     setShowCamera(false)
     setTab('foryou')
     setIdx(0)
     setView('home')
-    alert('Video imepakiwa!')
+    alert('Video imepakiwa na IMESAVE! Ukitoka na kurudi utaiona!')
   }
   const handleFile = (e) => {
     const f = e.target.files?.[0]
     if (!f) return
     const url = URL.createObjectURL(f)
     const nc = { id: 'my' + Date.now(), url, caption: caption.trim() || f.name, creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
-    setClips((p) => [nc, ...p])saveToSupabase(nc.url, nc.caption)
+    setClips((p) => [nc, ...p])
+    saveMyVideoLocal(nc)
     setShowCamera(false)
     setTab('foryou')
     setIdx(0)
     setView('home')
-    alert('Video imepakiwa kutoka simu!')
+    alert('Video imepakiwa kutoka simu na IMESAVE!')
   }
   const addComment = () => {
     if (!commentText.trim() || !current) return
