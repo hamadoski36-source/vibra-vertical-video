@@ -1,1190 +1,155 @@
-import { createFileRoute } from '@tanstack/react-router'
+// VIBRA WORLDWIDE - FINAL YOTE + SETTINGS - TUSIHARIBU!
+import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
-
+import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/vibra-cloud'
+import { demoCoinBalance } from '@/lib/vibra-rewards'
+import { Button } from '@/components/ui/button'
+import { VibraSheet } from '@/components/vibra-sheet'
+import { VibraRewards } from '@/components/vibra-rewards'
+import { VibraBanner } from '@/components/vibra-banner'
+import { useAuth } from '@/hooks/use-auth'
+import { readCreatorAvatar, readLocalPhoto, saveCreatorAvatar } from '@/lib/vibra-profile'
 export const Route = createFileRoute('/')({
-  component: VibraTikTok,
+  head: () => ({ meta: [{ title: 'Vibra Worldwide - Video feed' },{ name: 'description', content: 'Watch and share short videos with Vibra' },{ property: 'og:title', content: 'Vibra Worldwide - Video feed' },{ property: 'og:description', content: 'Watch and share short videos with Vibra' },{ property: 'og:type', content: 'website' },] }), component: VibraTikTok,
 })
-
-const SUPABASE_URL = 'https://svrjacetnlwlwesferwz.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc'
-const SB_HEADERS = {
-  apikey: SUPABASE_KEY,
-  Authorization: 'Bearer ' + SUPABASE_KEY,
-  'Content-Type': 'application/json',
-  Prefer: 'return=representation',
-}
+type Clip = { id?: number | string; url: string; caption: string; thumb?: string }
+type VibraUser = { name: string; email: string; pass: string }
+type ChatMsg = { from: 'me' | 'them'; text: string; time: string; audioUrl?: string; mediaType?: 'voice'|'image'|'video'; seen?: boolean }
+type Chat = { id: string; name: string; avatar: string; last: string; time: string; unread: number; online: boolean; isGroup?: boolean; messages: ChatMsg[]; typing?: boolean; lastSeen?: string; phone?: string }
+type StatusItem = { id: string; name: string; avatar: string; img: string; caption: string; time: string; seen: boolean; mediaType?: 'image'|'video'|'text' }
 const PINK = '#FE2C55'
 const TEAL = '#25F4EE'
 const GRADIENT = 'linear-gradient(90deg,#FE2C55,#25F4EE)'
-
-const DEMO_VIDEOS = [
-  { id: 'demo1', url: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4', caption: 'Karibu Vibra Worldwide! 🔥 #vibra', creator: 'Vibra Official', creator_email: 'vibra@official.com', likes: 1240 },
-  { id: 'demo2', url: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4', caption: 'Dance challenge mpya! 💃', creator: 'Hamadoski', creator_email: 'hamadoski@gmail.com', likes: 856 },
-  { id: 'demo3', url: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_1MB.mp4', caption: 'Mombasa vibes 🌊❤️', creator: 'Mombasa Queen', creator_email: 'queen@mombasa.com', likes: 432 },
-  { id: 'demo4', url: 'https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_1MB.mp4', caption: 'Nairobi nights 🌃', creator: 'Nairobi Boy', creator_email: 'nairobi@boy.com', likes: 321 },
-  { id: 'demo5', url: 'https://test-videos.co.uk/vids/elephantsdream/mp4/h264/720/Elephants_Dream_720_10s_1MB.mp4', caption: 'Funny moments 😂😂', creator: 'Comedy King', creator_email: 'comedy@king.com', likes: 987 },
-]
-
-const FILTERS = [
-  { name: 'Normal', css: 'none' },
-  { name: 'Sepia', css: 'sepia(0.8) contrast(1.1)' },
-  { name: 'B&W', css: 'grayscale(1) contrast(1.2)' },
-  { name: 'Vintage', css: 'sepia(0.4) brightness(1.1) saturate(1.3)' },
-  { name: 'Bright', css: 'brightness(1.4) saturate(1.4)' },
-  { name: 'Cool', css: 'hue-rotate(180deg) saturate(1.2)' },
-  { name: 'Warm', css: 'sepia(0.2) saturate(1.6) hue-rotate(-15deg)' },
-  { name: 'Neon', css: 'contrast(1.4) saturate(2) brightness(1.1)' },
-]
-const STICKERS = ['😂', '🔥', '❤️', '👑', '🌹', '😍', '💎', '🎉', '⭐', '🦁', '🐱', '😎', '🍕', '⚽']
-const EMOJIS = ['😂', '❤️', '🔥', '😍', '👏', '🙏', '😭', '😎', '🎉', '👑', '💯', '😅']
-
-function getS(k, f) {
-  try {
-    const v = localStorage.getItem(k)
-    return v ? JSON.parse(v) : f
-  } catch {
-    return f
-  }
+const GRADIENT_BTN = 'linear-gradient(90deg,#FE2C55 0%,#FF6B9D 50%,#25F4EE 100%)'
+const vibraText: React.CSSProperties = { background: GRADIENT, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 'bold' }
+const vibraTextPink: React.CSSProperties = { color: PINK, fontWeight: 'bold' }
+const vibraTextTeal: React.CSSProperties = { color: TEAL, fontWeight: 'bold' }
+const vibraBtn: React.CSSProperties = { background: GRADIENT_BTN, color: '#fff', border: 'none', fontWeight: 'bold' }
+const inputStyle: React.CSSProperties = { padding:14, borderRadius:12, border:`2px solid ${TEAL}`, background:'#111', color:'#fff', fontSize:16, width:'100%', boxSizing:'border-box', outline:'none' }
+const labelStyle: React.CSSProperties = { ...vibraText, fontSize:13, textAlign:'left', marginBottom:-4 }
+const actionBtn: React.CSSProperties = { width:52, height:52, minWidth:52, padding:0, fontSize:11, lineHeight:'1.1', borderRadius:12, background: GRADIENT_BTN, color:'#fff', border:`1px solid ${TEAL}`, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, whiteSpace:'nowrap', overflow:'hidden' }
+const noticeStyle: React.CSSProperties = { position:'fixed', left:'50%', bottom:80, transform:'translateX(-50%)', zIndex:9999, background: GRADIENT_BTN, color:'#fff', padding:'10px 16px', borderRadius:20, fontSize:13, fontWeight:'bold', boxShadow:'0 4px 20px rgba(254,44,85,0.5)', maxWidth:'90%', textAlign:'center' }
+function openDB(): Promise<IDBDatabase>{ return new Promise((res,rej)=>{ const req=indexedDB.open('vibra-db',1); req.onupgradeneeded=()=>{ if(!req.result.objectStoreNames.contains('videos')) req.result.createObjectStore('videos',{keyPath:'id'}) }; req.onsuccess=()=>res(req.result); req.onerror=()=>rej(req.error) }) }
+async function saveVideoDB(id:number, file:Blob, caption:string){ try{ const db=await openDB(); const tx=db.transaction('videos','readwrite'); tx.objectStore('videos').put({id, blob:file, caption}); await new Promise(r=>tx.oncomplete=r) }catch{} }
+async function loadVideosDB(): Promise<Clip[]>{ try{ const db=await openDB(); const tx=db.transaction('videos','readonly'); const all:any[]=await new Promise((res,rej)=>{ const r=tx.objectStore('videos').getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error) }); return all.sort((a,b)=>b.id-a.id).map(v=>({id:v.id, url:URL.createObjectURL(v.blob), caption:v.caption})) }catch{ return [] } }
+function makeThumb(videoUrl:string): Promise<string>{ return new Promise((res)=>{ const v=document.createElement('video'); v.src=videoUrl; v.muted=true; v.playsInline=true; v.preload='auto'; v.crossOrigin='anonymous'; v.onloadedmetadata=()=>{ try{ v.currentTime=Math.min(0.5, v.duration/3 || 0.5) }catch{} }; v.onseeked=()=>{ try{ const c=document.createElement('canvas'); c.width=270; c.height=480; const ctx=c.getContext('2d'); if(!ctx) return res(''); ctx.drawImage(v,0,0,270,480); res(c.toDataURL('image/jpeg',0.7)) }catch{ res('') } }; v.onerror=()=>res(''); setTimeout(()=>res(''), 8000) }) }
+function renderCaption(text:string){ if(!text) return null; const parts=text.split(/(#[\wÀ-ÿ]+)/g); return <span>{parts.map((p,i)=> p.startsWith('#') ? <span key={i} style={vibraTextTeal}>{p} </span> : <span key={i} style={{color:'#fff'}}>{p}</span> )}</span> }
+function VibraCamera({ onDone, onClose }: { onDone: (file: Blob, caption: string) => void, onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null); const streamRef = useRef<MediaStream | null>(null); const recorderRef = useRef<MediaRecorder | null>(null); const chunksRef = useRef<Blob[]>([])
+  const [isRecording, setIsRecording] = useState(false); const [facing, setFacing] = useState<'user' | 'environment'>('user'); const [beauty, setBeauty] = useState(true); const [flash, setFlash] = useState(false); const [speed, setSpeed] = useState(1); const [duration, setDuration] = useState(15); const [timer, setTimer] = useState(0); const [countdown, setCountdown] = useState(0); const [effect, setEffect] = useState('beauty'); const [faceEffect, setFaceEffect] = useState('none'); const [facePos, setFacePos] = useState({ x: 50, y: 48 }); const [faceSize, setFaceSize] = useState(160); const [caption, setCaption] = useState(''); const [timeLeft, setTimeLeft] = useState(0); const [recordedUrl, setRecordedUrl] = useState(''); const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null)
+  const effects: Record<string, string> = { normal: 'none', beauty: 'brightness(1.15) contrast(1.1) saturate(1.2)', bw: 'grayscale(1) contrast(1.2)', warm: 'sepia(0.3) brightness(1.1)', cool: 'hue-rotate(180deg) saturate(1.2)', vivid: 'saturate(1.8) contrast(1.2)' }
+  const startCamera = async (face: 'user' | 'environment') => { try { streamRef.current?.getTracks().forEach(t => t.stop()); const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: face }, audio: true }); streamRef.current = stream; if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play().catch(()=>{}) } } catch { alert('Ruhusu kamera: Allow') } }
+  useEffect(() => { startCamera(facing); return () => streamRef.current?.getTracks().forEach(t => t.stop()) }, [])
+  useEffect(() => { startCamera(facing) }, [facing])
+  useEffect(() => { if (flash && streamRef.current) { const track: any = streamRef.current.getVideoTracks()[0]; try { track.applyConstraints({ advanced: [{ torch: true }] }) } catch {} } }, [flash])
+  const doRecord = () => { if (isRecording) { stopRecord(); return }; if (timer === 3) { setCountdown(3); let c = 3; const iv = setInterval(() => { c--; setCountdown(c); if (c <= 0) { clearInterval(iv); setCountdown(0); startRec() } }, 1000); return }; startRec() }
+  const startRec = () => { if (!streamRef.current) return; chunksRef.current = []; const rec = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' }); recorderRef.current = rec; rec.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }; rec.onstop = () => { const blob = new Blob(chunksRef.current, { type: 'video/webm' }); setRecordedBlob(blob); setRecordedUrl(URL.createObjectURL(blob)) }; rec.start(); setIsRecording(true); setTimeLeft(duration); const iv = setInterval(() => { setTimeLeft(v => { if (v <= 1) { clearInterval(iv); stopRecord(); return 0 } return v - 1 }) }, 1000) }
+  const stopRecord = () => { recorderRef.current?.stop(); setIsRecording(false) }
+  const useVideo = () => { if (!recordedBlob) return; let cap = caption.trim(); if (!cap) cap = '#Vibra #Mombasa'; else if (!cap.includes('#')) cap += ' #Vibra #Mombasa'; onDone(recordedBlob, cap) }
+  const filterStyle = effects[effect] || 'none'
+  const renderFace = () => { if (faceEffect === 'dog') return <div style={{ textAlign: 'center', lineHeight: 0.9 }}><div style={{ fontSize: faceSize * 1.3 }}>🐶</div><div style={{ fontSize: 45, marginTop: -5 }}>👅</div></div>; if (faceEffect === 'glasses') return <div style={{ fontSize: faceSize * 1.4 }}>😎</div>; if (faceEffect === 'crown') return <div style={{ textAlign: 'center', lineHeight: 1 }}><div style={{ fontSize: faceSize * 1.5 }}>👑</div><div style={{ fontSize: faceSize * 1.2, marginTop: 8 }}>😎</div></div>; if (faceEffect === 'rabbit') return <div style={{ fontSize: faceSize * 1.5 }}>🐰</div>; if (faceEffect === 'clown') return <div style={{ fontSize: faceSize * 1.5 }}>🤡</div>; if (faceEffect === 'fire') return <div style={{ fontSize: faceSize * 1.3 }}>🔥😎🔥</div>; if (faceEffect === 'heart') return <div style={{ textAlign: 'center' }}><div style={{ fontSize: faceSize * 1.4 }}>😍</div><div style={{ fontSize: 45 }}>💖💖💖</div></div>; if (faceEffect === 'alien') return <div style={{ fontSize: faceSize * 1.5 }}>👽</div>; if (faceEffect === 'cat') return <div style={{ fontSize: faceSize * 1.5 }}>🐱</div>; return null }
+  return (<div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', display: 'flex', flexDirection: 'column' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 12px', color: '#fff', zIndex: 10 }}><button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 24 }}>✕</button><div style={{ display: 'flex', gap: 10, alignItems: 'center' }}><button onClick={() => setFacing(f => f === 'user' ? 'environment' : 'user')} style={{ background: GRADIENT_BTN, border: `1px solid ${TEAL}`, color: '#fff', width: 38, height: 38, borderRadius: '50%', fontSize: 16 }}>🔄</button><button onClick={() => { setBeauty(!beauty); setEffect(beauty ? 'normal' : 'beauty') }} style={{ background: beauty ? GRADIENT_BTN : 'rgba(0,0,0,0.5)', border: `1px solid ${TEAL}`, color: '#fff', width: 38, height: 38, borderRadius: '50%', fontSize: 16 }}>✨</button><button onClick={() => setTimer(t => t === 0 ? 3 : 0)} style={{ background: timer === 3 ? GRADIENT_BTN : 'rgba(0,0,0,0.5)', border: `1px solid ${TEAL}`, color: '#fff', width: 38, height: 38, borderRadius: '50%', fontSize: 14 }}>⏱️</button><button onClick={() => setFlash(!flash)} style={{ background: flash ? GRADIENT_BTN : 'rgba(0,0,0,0.5)', border: `1px solid ${TEAL}`, color: '#fff', width: 38, height: 38, borderRadius: '50%', fontSize: 16 }}>⚡</button><button onClick={() => setSpeed(s => s === 1 ? 2 : s === 2 ? 0.5 : 1)} style={{ background: GRADIENT_BTN, border: `1px solid ${TEAL}`, color: '#fff', padding: '6px 8px', borderRadius: 20, fontSize: 12, fontWeight: 'bold' }}>{speed}x</button></div></div><div style={{ flex: 1, position: 'relative', background: '#111', overflow: 'hidden' }}>{!recordedUrl ? (<video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', filter: filterStyle, transform: facing === 'user' ? 'scaleX(-1)' : 'none' }} />) : (<video src={recordedUrl} controls autoPlay loop style={{ width: '100%', height: '100%', objectFit: 'cover' }} />)}{faceEffect !== 'none' && !recordedUrl && (<div onTouchMove={(e) => { const rect = e.currentTarget.parentElement?.getBoundingClientRect(); if (!rect) return; const t = e.touches[0]; setFacePos({ x: ((t.clientX - rect.left) / rect.width) * 100, y: ((t.clientY - rect.top) / rect.height) * 100 }) }} style={{ position: 'absolute', left: `${facePos.x}%`, top: `${facePos.y}%`, transform: 'translate(-50%, -50%)', zIndex: 20, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))', touchAction: 'none' }}>{renderFace()}</div>)}{countdown > 0 && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 100, color: '#fff', fontWeight: 'bold', background: 'rgba(0,0,0,0.4)' }}>{countdown}</div>}{isRecording && <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', background: GRADIENT_BTN, color: '#fff', padding: '6px 14px', borderRadius: 20, fontWeight: 'bold' }}>🔴 {timeLeft}s</div>}</div>{!recordedUrl && (<><div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '10px 12px 4px', background: '#000', alignItems: 'center' }}><span style={vibraTextTeal}>Rangi:</span>{[['normal','Normal'],['beauty','Beauty ✨'],['bw','B&W'],['warm','Warm ☀️'],['cool','Cool ❄️'],['vivid','Vivid 🌈']].map(([key,label]) => (<button key={key} onClick={() => { setEffect(key); setBeauty(key === 'beauty') }} style={{ background: effect === key ? GRADIENT_BTN : '#222', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13 }}>{label}</button>))}</div><div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '4px 12px 6px', background: '#000', alignItems: 'center' }}><span style={vibraTextTeal}>Uso:</span>{[['none','❌ Hakuna'],['dog','🐶 Mbwa'],['cat','🐱 Paka'],['glasses','😎 Miwani'],['crown','👑 Taji'],['rabbit','🐰 Sungura'],['clown','🤡 Clown'],['fire','🔥 Moto'],['heart','😍 Moyo'],['alien','👽 Alien']].map(([key,label]) => (<button key={key} onClick={() => setFaceEffect(key)} style={{ background: faceEffect === key ? GRADIENT_BTN : '#333', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontSize: 13 }}>{label}</button>))}</div></>)}{recordedUrl && (<div style={{ padding: '12px', background: '#000' }}><input value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption... #Vibra #Mombasa" style={{ width: '100%', padding: 12, borderRadius: 12, border: `2px solid ${TEAL}`, background: '#111', color: '#fff', fontSize: 14 }} /><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>{['#Mombasa','#Vibra','#Kamata','#ForYou','#Dance'].map(t => (<button key={t} onClick={() => setCaption(v => v.includes(t) ? v.replace(t,'').trim() : (v+' '+t).trim())} style={{ background: caption.includes(t) ? GRADIENT_BTN : '#222', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 20, fontSize: 13 }}>{t}</button>))}</div><div style={{ display: 'flex', gap: 10, marginTop: 12 }}><button onClick={() => { setRecordedUrl(''); setRecordedBlob(null) }} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#333', color: '#fff', border: 'none', fontWeight: 'bold' }}>🔄 Rekodi Tena</button><button onClick={useVideo} style={{ flex: 2, padding: 14, borderRadius: 12, background: GRADIENT_BTN, color: '#fff', border: 'none', fontWeight: 'bold', fontSize: 16 }}>✅ Tumia Video Hii</button></div></div>)}{!recordedUrl && (<div style={{ padding: '10px 12px 18px', background: '#000' }}><div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 12 }}>{[15,60,180].map(s => (<button key={s} onClick={() => setDuration(s)} style={{ background: 'none', border: 'none', color: duration === s ? TEAL : '#888', fontWeight: duration === s ? 'bold' : 'normal', fontSize: 14 }}>{s === 180 ? '3m' : s + 's'}</button>))}</div><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><span style={vibraText}>✨<br/>Effects</span><button onClick={doRecord} style={{ width: 72, height: 72, borderRadius: '50%', background: GRADIENT_BTN, border: `4px solid ${TEAL}`, color: '#fff', fontSize: 14, fontWeight: 'bold' }}>{isRecording ? '⏹️' : '🔴'}</button><label style={vibraText}>📁<br/>Upload<input type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onDone(f, '#Vibra #Mombasa') }} /></label></div></div>)}</div>)
 }
-function setS(k, v) {
-  try {
-    localStorage.setItem(k, JSON.stringify(v))
-  } catch {}
-}
-function cleanName(n) {
-  if (!n) return 'Mgeni'
-  return String(n).replace(/^@+/, '').trim() || 'Mgeni'
-}
-function isBlobExpired(url) {
-  return String(url || '').startsWith('blob:')
-}
-
-function VibraTikTok() {
-  const [user, setUser] = useState(() => getS('vibra_user', null))
-  const [accounts, setAccounts] = useState(() => getS('vibra_accounts', []))
-  const [tab, setTab] = useState('foryou')
-  const [idx, setIdx] = useState(0)
-  const [soundEnabled, setSoundEnabled] = useState(false)
-  const [touchY, setTouchY] = useState(0)
-  const mainVideoRef = useRef(null)
-  const [clips, setClips] = useState(() => {
-    const saved = getS('vibra_my_videos', []).filter((v) => !isBlobExpired(v.url))
-    return [...saved, ...DEMO_VIDEOS]
-  })
-  const [likedIds, setLikedIds] = useState(() => getS('vibra_liked', []))
-  const [globalLikes, setGlobalLikes] = useState(() => getS('vibra_global_likes', {}))
-  const [following, setFollowing] = useState(() => getS('vibra_following', []))
-  const [savedIds, setSavedIds] = useState(() => getS('vibra_saved', []))
-  const [panel, setPanel] = useState('')
-  const [view, setView] = useState('home')
-  const [showCamera, setShowCamera] = useState(false)
-  const [showLogin, setShowLogin] = useState(false)
-  const [showSwitch, setShowSwitch] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [loginName, setLoginName] = useState('')
-  const [loginEmail, setLoginEmail] = useState('')
-  const [loginPass, setLoginPass] = useState('')
-  const [caption, setCaption] = useState('')
-  const [videoUrl, setVideoUrl] = useState('')
-  const [commentText, setCommentText] = useState('')
-  const [comments, setComments] = useState(() => getS('vibra_comments', {}))
-  const [globalComments, setGlobalComments] = useState(() => getS('vibra_global_comments', {}))
-  const [notifications, setNotifications] = useState(() => getS('vibra_notifications', []))
-  const [search, setSearch] = useState('')
-  const [coins, setCoins] = useState(() => getS('vibra_coins', 120))
-  const [creatorCoins, setCreatorCoins] = useState(() => getS('vibra_creator_coins', 90470))
-  const [meTab, setMeTab] = useState('videos')
-  const [chatSearch, setChatSearch] = useState('')
-  const [selectedChatId, setSelectedChatId] = useState('')
-  const [chatInput, setChatInput] = useState('')
-  const [showEmoji, setShowEmoji] = useState(false)
-  const [chatTab, setChatTab] = useState('chats')
-  const [recordingVoice, setRecordingVoice] = useState(false)
-  const [liveOn, setLiveOn] = useState(false)
-  const [liveMsg, setLiveMsg] = useState('')
-  const [liveChat, setLiveChat] = useState([{ name: 'Aisha', text: 'Kali sana!' }, { name: 'Juma', text: 'Uko moto!' }])
-  const [giftSent, setGiftSent] = useState(0)
-  const [liveSaved, setLiveSaved] = useState(() => getS('vibra_live_saved', []))
-  const [liveCreators] = useState(['Vibra Official', 'Hamadoski', 'Mombasa Queen'])
-  const [battleOn, setBattleOn] = useState(false)
-  const [battleScoreMe, setBattleScoreMe] = useState(1250)
-  const [battleScoreOpp, setBattleScoreOpp] = useState(980)
-  const [battleTime, setBattleTime] = useState(180)
-  const [battleOppName, setBattleOppName] = useState('Aisha')
-  const [playingMeId, setPlayingMeId] = useState('')
-  const [battlePeople] = useState([
-    { name: 'Aisha', avatar: 'https://i.pravatar.cc/150?img=47', score: 850, live: true },
-    { name: 'Juma', avatar: 'https://i.pravatar.cc/150?img=12', score: 720, live: true },
-    { name: 'Neema', avatar: 'https://i.pravatar.cc/150?img=32', score: 640, live: true },
-    { name: 'Said', avatar: 'https://i.pravatar.cc/150?img=15', score: 590, live: true },
-    { name: 'Pwani', avatar: 'https://i.pravatar.cc/150?img=45', score: 510, live: false },
-    { name: 'Zawadi', avatar: 'https://i.pravatar.cc/150?img=44', score: 480, live: true },
-    { name: 'Baraka', avatar: 'https://i.pravatar.cc/150?img=13', score: 420, live: true },
-    { name: 'Fatma', avatar: 'https://i.pravatar.cc/150?img=25', score: 380, live: true },
+function VibraTikTok(){
+  const hydrated = useHydrated(); const { user } = useAuth()
+  const [creatorAvatar,setCreatorAvatar]=useState<string|null>(null); const [avatarFailed,setAvatarFailed]=useState(false)
+  const videoRef=useRef<HTMLVideoElement>(null); const liveRef=useRef<HTMLVideoElement>(null); const liveStream=useRef<MediaStream|null>(null); const stageRef=useRef<HTMLDivElement>(null)
+  const [idx,setIdx]=useState(0); const [tab,setTab]=useState('foryou'); const [view,setView]=useState('home'); const [search,setSearch]=useState('')
+  const [soundEnabled,setSoundEnabled]=useState(()=>{ try{ return localStorage.getItem('vibra_sound')!=='off' }catch{ return true } })
+  const [panel,setPanel]=useState(''); const [showCamera,setShowCamera]=useState(false); const [comment,setComment]=useState(''); const [comments,setComments]=useState<Record<string,string[]>>({})
+  const [savedIds,setSavedIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('vibra_saved')||'[]')}catch{return[]}}); const [likedIds,setLikedIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('vibra_liked')||'[]')}catch{return[]}}); const [followingIds,setFollowingIds]=useState<string[]>(()=>{try{return JSON.parse(localStorage.getItem('vibra_following')||'[]')}catch{return[]}})
+  const [cloudClips,setCloudClips]=useState<Clip[]>([]); const [myVideos,setMyVideos]=useState<Clip[]>([]); const [cloudReady,setCloudReady]=useState(false); const [uploading,setUploading]=useState(false); const [caption,setCaption]=useState(''); const [coins,setCoins]=useState(0); const [notice,setNotice]=useState(''); const [showEdit,setShowEdit]=useState(false); const [savingPhoto,setSavingPhoto]=useState(false); const [meTab,setMeTab]=useState('videos')
+  const [liveOn,setLiveOn]=useState(false); const [liveMsg,setLiveMsg]=useState(''); const [liveChats,setLiveChats]=useState<string[]>(['Karibu LIVE!','🔥🔥','Mombasa!']); const [liveOverlay,setLiveOverlay]=useState(''); const [liveOverlayPos,setLiveOverlayPos]=useState({ x: 50, y: 25 }); const [liveOverlaySize,setLiveOverlaySize]=useState(180); const [liveOverlayType,setLiveOverlayType]=useState<'image'|'video'>('image'); const [liveCoins,setLiveCoins]=useState(500); const [giftAnim,setGiftAnim]=useState(''); const [giftFrom,setGiftFrom]=useState(''); const [totalGifts,setTotalGifts]=useState(0); const [showGiftBar,setShowGiftBar]=useState(false); const [guests,setGuests]=useState<string[]>(['','','','','','','','']); const [guestNames,setGuestNames]=useState(['Guest 1','Guest 2','Guest 3','Guest 4','Guest 5','Guest 6','Guest 7','Guest 8']); const [talking,setTalking]=useState(0); const [showGuests,setShowGuests]=useState(false); const [battleOn,setBattleOn]=useState(false); const [battleTime,setBattleTime]=useState(60); const [myScore,setMyScore]=useState(0); const [guestScore,setGuestScore]=useState(0); const [battleWinner,setBattleWinner]=useState(''); const [realLive,setRealLive]=useState(false); const [roomName,setRoomName]=useState(''); const [jitsiKey,setJitsiKey]=useState(0)
+  const hasGuest = guests.some(g=>g!==''); const guestName = guestNames[0]
+  const photoRef=useRef<HTMLInputElement>(null); const [dp,setDp]=useState(''); const [bio,setBio]=useState('Mombasa Vibes | Kamata #Mombasa #Vibra'); const [name,setName]=useState('@MrVibra'); const uploadRef=useRef<HTMLInputElement>(null); const searchRef=useRef<HTMLInputElement>(null); const touchY=useRef<number|null>(null); const lastScroll=useRef(0); const [thumbs,setThumbs]=useState<Record<string,string>>({})
+  const [authUser,setAuthUser]=useState<VibraUser|null>(null); const [showAuth,setShowAuth]=useState(false); const [authMode,setAuthMode]=useState<'login'|'signup'>('signup'); const [authName,setAuthName]=useState(''); const [authEmail,setAuthEmail]=useState(''); const [authPass,setAuthPass]=useState(''); const [authError,setAuthError]=useState(''); const [showPass,setShowPass]=useState(false)
+  const [chatSearch,setChatSearch]=useState(''); const [selectedChatId,setSelectedChatId]=useState<string|null>(null); const [chatInput,setChatInput]=useState(''); const [chatTab,setChatTab]=useState<'chats'|'status'>('chats'); const [viewStatus,setViewStatus]=useState<StatusItem|null>(null); const [isRecordingVoice,setIsRecordingVoice]=useState(false); const voiceRecRef=useRef<MediaRecorder|null>(null); const voiceChunksRef=useRef<Blob[]>([]); const voiceStreamRef=useRef<MediaStream|null>(null); const [showAddContact,setShowAddContact]=useState(false); const [newName,setNewName]=useState(''); const [newPhone,setNewPhone]=useState('')
+  const [showSettings,setShowSettings]=useState(false); const [appLang,setAppLang]=useState('Kiswahili'); const [dataSaver,setDataSaver]=useState(true); const [darkMode,setDarkMode]=useState(true)
+  const [chats,setChats]=useState<Chat[]>([
+    { id:'aisha', name:'Aisha Mkomani', avatar:'https://i.pravatar.cc/150?img=47', last:'Poa sana! 🔥', time:'Now', unread:0, online:true, lastSeen:'Online', phone:'+254712345678', messages:[{from:'them',text:'Pole! Nimefika Old Town, tuko sawa 😊',time:'09:40', seen:true},{from:'them',text:'Video yako ya Sunset kali sana! 🔥',time:'09:41', seen:true},{from:'me',text:'Asante! Karibu Vibra ❤️',time:'09:42', seen:true}] },
+    { id:'juma', name:'Juma Kilindini', avatar:'https://i.pravatar.cc/150?img=12', last:'Sawa, tuko pamoja!', time:'Now', unread:0, online:true, lastSeen:'Online', phone:'+254723456789', messages:[{from:'them',text:'Sawa, nimepanga dhow ride kesho asubuhi 🌊',time:'09:12', seen:true},{from:'me',text:'Poa! Nitaweka video yake Vibra!',time:'09:13', seen:true}] },
+    { id:'neema', name:'Mama Neema • Nyali', avatar:'https://i.pravatar.cc/150?img=32', last:'Poa sana! 🔥', time:'Now', unread:0, online:false, lastSeen:'Last seen 1h ago', phone:'+254734567890', messages:[{from:'them',text:'Asante kwa picha! Beach imekuwa poa Leo',time:'Yesterday', seen:true}] },
+    { id:'said', name:'Said - Old Town', avatar:'https://i.pravatar.cc/150?img=53', last:'Vibra iko poa sana! Love the new update ✨', time:'Yesterday', unread:0, online:false, lastSeen:'Last seen 2h ago', phone:'+254745678901', messages:[{from:'them',text:'Vibra iko poa sana! Love the new update ✨',time:'Yesterday', seen:true}] },
+    { id:'pwani', name:'Pwani Crew 🌴', avatar:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&h=150&fit=crop', last:'Twende Mombasa! 🌊', time:'Now', unread:0, online:true, lastSeen:'Online', isGroup:true, messages:[{from:'them',text:'Zawadi: Tutakutana Fort Jesus at 5pm?',time:'Mon', seen:true},{from:'me',text:'Sawa! Nitaleta kamera 📷',time:'Mon', seen:true}] },
   ])
-  const [camOn, setCamOn] = useState(false)
-  const [activeFilter, setActiveFilter] = useState(0)
-  const [activeStickers, setActiveStickers] = useState([])
-  const [isRecording, setIsRecording] = useState(false)
-  const [recordTime, setRecordTime] = useState(0)
-  const [recordedUrl, setRecordedUrl] = useState('')
-  const [facing, setFacing] = useState('user')
-  const [beauty, setBeauty] = useState(0)
-  const camVideoRef = useRef(null)
-  const camStreamRef = useRef(null)
-  const camRecorderRef = useRef(null)
-  const camChunksRef = useRef([])
-  const timerRef = useRef(null)
-  const [liveStreamOn, setLiveStreamOn] = useState(false)
-  const [liveRecording, setLiveRecording] = useState(false)
-  const liveVideoRef = useRef(null)
-  const liveStreamRef = useRef(null)
-  const liveRecorderRef = useRef(null)
-  const liveChunksRef = useRef([])
-  const [chats, setChats] = useState(() =>
-    getS('vibra_chats', [
-      { id: 'aisha', name: 'Aisha Mkomani', avatar: 'https://i.pravatar.cc/150?img=47', last: 'Video yako kali 🔥', time: '14:02', unread: 2, online: true, msgs: [{ from: 'them', text: 'Sasa! Video yako kali 🔥', time: '14:02', tick: 'seen' }, { from: 'me', text: 'Asante sana! 😍', time: '14:03', tick: 'seen' }] },
-      { id: 'juma', name: 'Juma Kilindini', avatar: 'https://i.pravatar.cc/150?img=12', last: 'Tupange collab?', time: '13:10', unread: 1, online: true, msgs: [{ from: 'them', text: 'Tupange collab kesho beach?', time: '13:10', tick: 'seen' }] },
-      { id: 'neema', name: 'Mama Neema Nyali', avatar: 'https://i.pravatar.cc/150?img=32', last: 'Asante kwa gift! 🎁', time: '12:00', unread: 0, online: false, msgs: [{ from: 'them', text: 'Asante kwa gift! 🎁', time: '12:00', tick: 'seen' }] },
-      { id: 'said', name: 'Said Old Town', avatar: 'https://i.pravatar.cc/150?img=15', last: 'Niko LIVE sasa, ingia!', time: '11:20', unread: 0, online: true, msgs: [{ from: 'them', text: 'Niko LIVE sasa, ingia!', time: '11:20', tick: 'seen' }] },
-      { id: 'pwani', name: 'Pwani Crew', avatar: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100', last: 'Leo tunashoot beach', time: '10:05', unread: 3, online: false, msgs: [{ from: 'them', text: 'Leo tunashoot beach', time: '10:05', tick: 'delivered' }] },
-    ])
-  )
-  const fileRef = useRef(null)
-  const myName = cleanName(user?.name)
-
-  const stopAllSound = () => {
-    const all = document.querySelectorAll('video')
-    all.forEach((v) => {
-      try {
-        v.pause()
-        v.muted = true
-      } catch {}
-    })
-    if (mainVideoRef.current) {
-      try {
-        mainVideoRef.current.pause()
-        mainVideoRef.current.muted = true
-      } catch {}
-    }
+  const [statuses,setStatuses]=useState<StatusItem[]>([
+    { id:'s1', name:'Aisha Mkomani', avatar:'https://i.pravatar.cc/150?img=47', img:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=800&fit=crop', caption:'Old Town vibes! 🌊 #Mombasa', time:'12 min ago', seen:false, mediaType:'image' },
+    { id:'s2', name:'Juma Kilindini', avatar:'https://i.pravatar.cc/150?img=12', img:'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=600&h=800&fit=crop', caption:'Dhow ride kesho! ⛵', time:'45 min ago', seen:false, mediaType:'image' },
+    { id:'s3', name:'Pwani Crew 🌴', avatar:'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&h=150&fit=crop', img:'https://images.unsplash.com/photo-1512100356356-de1b84283e18?w=600&h=800&fit=crop', caption:'Fort Jesus at 5pm! Tuko pamoja!', time:'1h ago', seen:true, mediaType:'image' },
+  ])
+  const selectedChat = chats.find(c=>c.id===selectedChatId) || null; const totalUnread = chats.reduce((s,c)=>s+c.unread,0)
+  function addContactByPhone(){ if(!newName.trim() || !newPhone.trim()){ setNotice('Jaza Jina na Namba!'); return }; let phone = newPhone.trim(); if(phone.startsWith('0')) phone = '+254' + phone.slice(1); if(!phone.startsWith('+')) phone = '+254' + phone; if(phone.length < 10){ setNotice('Namba si sahihi! Mfano: 0712345678'); return }; if(chats.some(c=>c.phone===phone)){ setNotice('Huyu mtu tayari yupo kwenye Chat!'); setShowAddContact(false); return }; const id = 'chat'+Date.now(); const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(newName.trim())}&background=FE2C55&color=fff&size=150&bold=true`; setChats(prev=>[{id, name:newName.trim(), avatar, last:'Sema! Karibu Vibra Chat 👋', time:'Now', unread:0, online:true, lastSeen:'Online', phone, messages:[{from:'them',text:'Sema! Karibu Vibra Chat 👋',time:'Now', seen:true}]}, ...prev]); setSelectedChatId(id); setShowAddContact(false); const savedName = newName.trim(); setNewName(''); setNewPhone(''); setNotice('✅ '+savedName+' ('+phone+') ame-addiwa!') }
+  function sendChatMsg(){ if(!chatInput.trim() || !selectedChat) return; const text=chatInput.trim(); const time=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:text, time:'Now', unread:0, messages:[...c.messages, {from:'me',text,time, seen:false}]} : c)); setChatInput(''); setTimeout(()=>{ setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, typing:true} : c)) }, 1200); setTimeout(()=>{ const replies=['Poa sana! 🔥','Sawa, tuko pamoja!','Hahaha 😂','Nimeipenda hiyo! ❤️','Twende Mombasa! 🌊']; const reply=replies[Math.floor(Math.random()*replies.length)]; setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:reply, time:'Now', typing:false, messages:[...c.messages.map(m=> m.from==='me' ? {...m, seen:true} : m), {from:'them',text:reply,time, seen:true}]} : c)) }, 3000) }
+  useEffect(()=>{ if(!selectedChatId) return; const t = setTimeout(()=>{ setChats(prev=>prev.map(c=> c.id===selectedChatId ? {...c, messages: c.messages.map(m=> m.from==='me' ? {...m, seen:true} : m)} : c)) }, 2000); return ()=>clearTimeout(t) },[selectedChatId])
+  function deleteMsg(msgIndex:number){ if(!selectedChat) return; if(!confirm('Ufute ujumbe huu?')) return; setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, messages: c.messages.filter((_,i)=>i!==msgIndex)} : c)); setNotice('Ujumbe umefutwa! 🗑️') }
+  function deleteChat(chatId:string){ if(!confirm('Ufute Chat hii yote?')) return; setChats(prev=>prev.filter(c=>c.id!==chatId)); setSelectedChatId(null); setNotice('Chat imefutwa! 🗑️') }
+  function deleteStatus(statusId:string){ if(!confirm('Ufute Status hii?')) return; setStatuses(prev=>prev.filter(s=>s.id!==statusId)); setViewStatus(null); setNotice('Status imefutwa! 🗑️') }
+  async function toggleVoiceNote(){ if(!selectedChat) return; if(isRecordingVoice){ try{ voiceRecRef.current?.stop() }catch{}; return }; try{ const stream = await navigator.mediaDevices.getUserMedia({audio:true}); voiceStreamRef.current = stream; voiceChunksRef.current = []; const rec = new MediaRecorder(stream); voiceRecRef.current = rec; rec.ondataavailable = e=>{ if(e.data.size>0) voiceChunksRef.current.push(e.data) }; rec.onstop = ()=>{ stream.getTracks().forEach(t=>t.stop()); const blob = new Blob(voiceChunksRef.current, {type:'audio/webm'}); if(blob.size < 1000){ setIsRecordingVoice(false); setNotice('Voice Note fupi sana, jaribu tena'); return }; const url = URL.createObjectURL(blob); const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last:'🎤 Voice Note', time:'Now', unread:0, messages:[...c.messages, {from:'me', text:'🎤 Voice Note', time, audioUrl:url, mediaType:'voice', seen:false}]} : c)); setIsRecordingVoice(false); setNotice('Voice Note imetumwa! 🎤'); setTimeout(()=>{ setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, messages: c.messages.map(m=> m.from==='me' ? {...m, seen:true} : m)} : c)) }, 2500) }; rec.start(); setIsRecordingVoice(true); setNotice('🎤 Inarekodi... Bonyeza 🎤 tena kutuma'); setTimeout(()=>{ try{ if(rec.state==='recording') rec.stop() }catch{} }, 30000) }catch{ setNotice('Ruhusu Microphone: Allow') } }
+  function sendChatMedia(file:File){ if(!selectedChat) return; const url = URL.createObjectURL(file); const isVid = file.type.startsWith('video'); const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); setChats(prev=>prev.map(c=> c.id===selectedChat.id ? {...c, last: isVid?'🎥 Video':'📷 Picha', time:'Now', messages:[...c.messages, {from:'me', text: isVid?'🎥 Video':'📷 Picha', time, audioUrl:url, mediaType: isVid?'video':'image', seen:false}]} : c)); setNotice(isVid?'Video imetumwa! 🎥':'Picha imetumwa! 📷') }
+  function addStatus(file?:File){ if(file){ const url = URL.createObjectURL(file); const isVid = file.type.startsWith('video'); const cap = prompt('Andika caption ya Status hii:','Mombasa Vibes! 🌊') || 'My Status 🌊'; setStatuses(prev=>[{id:'me'+Date.now(), name:'My Status', avatar: profileAvatar || 'https://i.pravatar.cc/150?img=68', img:url, caption:cap, time:'Sasa hivi', seen:false, mediaType: isVid?'video':'image'}, ...prev]); setNotice(isVid?'Status ya Video imewekwa! ✅':'Status ya Picha imewekwa! ✅') } else { const t = prompt('Andika Status yako:','Mombasa Vibes! 🌊'); if(!t) return; setStatuses(prev=>[{id:'me'+Date.now(), name:'My Status', avatar: profileAvatar || 'https://i.pravatar.cc/150?img=68', img:'', caption:t, time:'Sasa hivi', seen:false, mediaType:'text'}, ...prev]); setNotice('Status ya Maandishi imewekwa! ✅') } setChatTab('status') }
+  function chatWithCreator(){ setView('chat'); setSelectedChatId('aisha'); setNotice('Uko kwenye Chat na Aisha!') }
+  const followers = followingIds.length; const following = followingIds.length
+  useEffect(()=>{ try{ const cur=localStorage.getItem('vibra_current_user'); const savedUsers=localStorage.getItem('vibra_users'); if(cur){ const u=JSON.parse(cur); setAuthUser(u); setName(u.name.startsWith('@')?u.name:'@'+u.name.replace('@','')); setAuthName(u.name); setShowAuth(false) } else if(savedUsers && JSON.parse(savedUsers).length>0){ setAuthMode('login'); setShowAuth(true) } else { setShowAuth(true) } }catch{ setShowAuth(true) } },[])
+  useEffect(()=>{ if(!notice) return; const t=setTimeout(()=>setNotice(''), 3000); return ()=>clearTimeout(t) },[notice])
+  function doSignup(){ if(!authName.trim() || !authEmail.trim() || !authPass.trim()){ setAuthError('Jaza Jina, Email na Password zote'); return }; if(authPass.length<4){ setAuthError('Password iwe angalau herufi 4'); return }; try{ const users: VibraUser[] = JSON.parse(localStorage.getItem('vibra_users')||'[]'); if(users.find(u=>u.email.toLowerCase()===authEmail.toLowerCase())){ setAuthError('Hii Email tayari imeshatumika. Bonyeza Login.'); return }; const newUser: VibraUser = { name: authName.trim(), email: authEmail.trim().toLowerCase(), pass: authPass }; users.push(newUser); localStorage.setItem('vibra_users', JSON.stringify(users)); localStorage.setItem('vibra_current_user', JSON.stringify(newUser)); localStorage.setItem('vibra_session', 'active'); localStorage.setItem('vibra_name', '@'+authName.trim().replace('@','')); setAuthUser(newUser); setName('@'+authName.trim().replace('@','')); setAuthError(''); setShowAuth(false); setNotice('Karibu Vibra!') }catch{ setAuthError('Imeshindwa kuhifadhi.') } }
+  function doLogin(){ if(!authEmail.trim() || !authPass.trim()){ setAuthError('Jaza Email na Password'); return }; try{ const users: VibraUser[] = JSON.parse(localStorage.getItem('vibra_users')||'[]'); const found=users.find(u=>u.email.toLowerCase()===authEmail.trim().toLowerCase() && u.pass===authPass); if(!found){ setAuthError('Email au Password si sahihi.'); return }; localStorage.setItem('vibra_current_user', JSON.stringify(found)); localStorage.setItem('vibra_session', 'active'); localStorage.setItem('vibra_name', '@'+found.name.replace('@','')); setAuthUser(found); setName('@'+found.name.replace('@','')); setAuthError(''); setShowAuth(false); setNotice('Karibu tena!') }catch{ setAuthError('Imeshindwa kuingia.') } }
+  function doLogout(){ if(!confirm('Una uhakika unataka kutoka?')) return; localStorage.removeItem('vibra_current_user'); localStorage.removeItem('vibra_session'); setAuthUser(null); setAuthName(''); setAuthEmail(''); setAuthPass(''); setShowAuth(true); setView('home'); setShowSettings(false); setNotice('Umetoka. Ingia tena au tengeneza akaunti mpya.') }
+  useEffect(()=>{ const unlock=()=>{ const v=videoRef.current; if(v && soundEnabled){ v.muted=false; v.volume=1; v.play().catch(()=>{}) } }; document.addEventListener('touchstart', unlock); document.addEventListener('click', unlock); return ()=>{ document.removeEventListener('touchstart', unlock); document.removeEventListener('click', unlock) } },[soundEnabled])
+  useEffect(()=>{ let alive=true; setCreatorAvatar(null); setAvatarFailed(false); if(user?.id){void readCreatorAvatar(user.id).then(url=>{if(alive) setCreatorAvatar(url)})}; return ()=>{alive=false} },[user?.id])
+  const profileAvatar=avatarFailed?'':creatorAvatar||dp
+  useEffect(()=>{ setCoins(demoCoinBalance(localStorage.getItem('vibra_coins'))); setDp(localStorage.getItem('vibra_dp')||''); setBio(localStorage.getItem('vibra_bio')||'Mombasa Vibes | Kamata #Mombasa #Vibra'); if(!localStorage.getItem('vibra_current_user')){ setName(localStorage.getItem('vibra_name')||'@MrVibra') }; try{ const s=JSON.parse(localStorage.getItem('vibra_comments')||'{}'); if(Object.keys(s).length>0) setComments(s) }catch{}; void loadVideosDB().then(v=>{ if(v.length>0) setMyVideos(v) }) },[])
+  useEffect(()=>{ let alive=true; readCloudVideos().then(rows=>{if(!alive) return; setCloudClips(rows.map((r:CloudVideo)=>({id:r.id,url:r.video_url,caption:r.caption||''}))); setCloudReady(true)}).catch(()=>{}); return ()=>{alive=false} },[])
+  useEffect(()=>{ const all=[...myVideos, ...cloudClips]; all.forEach(async v=>{ const key=String(v.id??v.url); if(thumbs[key]) return; const t=await makeThumb(v.url); if(t) setThumbs(prev=>({...prev, [key]:t})) }) },[myVideos, cloudClips])
+  const defaultVid:Clip={url:'https://videos.pexels.com/video-files/1806922/1806922-hd_1920_1080_24fps.mp4',caption:'Karibu Vibra! #Vibra #Mombasa #Kamata'}
+  const baseFeed:Clip[] = myVideos.length>0 ? [...myVideos, ...cloudClips.filter(c=>!myVideos.some(m=>String(m.id)===String(c.id)))] : (cloudReady?cloudClips:[defaultVid])
+  const filteredClips=search?baseFeed.filter(v=>v.caption.toLowerCase().includes(search.toLowerCase())):baseFeed
+  const feed=tab==='following'?filteredClips.filter(v=>followingIds.includes(String(v.id??v.url))):filteredClips
+  const current=feed.length>0?feed[idx%feed.length]:undefined
+  const clipKey=String(current?.id??current?.url??'empty'); const liked=likedIds.includes(clipKey); const saved=savedIds.includes(clipKey); const isFollowing=followingIds.includes(clipKey); const isMyVideo = myVideos.some(v => String(v.id ?? v.url) === clipKey); const baseLikes = isMyVideo ? 247 : 0; const likes = baseLikes + (liked ? 1 : 0); const commentCount=(comments[clipKey]||[]).length
+  const shareText=(current?.caption||'Angalia hii video kwenye Vibra!')+' '+window.location.href; const shareUrl=encodeURIComponent(window.location.href); const shareMsg=encodeURIComponent(shareText)
+  function nextVideo(){ setIdx(v=> v+1 ) }; function prevVideo(){ setIdx(v=> Math.max(0, v-1) ) }
+  function onTouchStart(e:React.TouchEvent){ touchY.current=e.touches[0].clientY }; function onTouchEnd(e:React.TouchEvent){ if(touchY.current===null) return; const dy=touchY.current - e.changedTouches[0].clientY; if(Math.abs(dy)>50){ if(dy>0) nextVideo(); else prevVideo() }; touchY.current=null }
+  function onWheel(e:React.WheelEvent){ const now=Date.now(); if(now-lastScroll.current<500) return; lastScroll.current=now; if(e.deltaY>0) nextVideo(); else prevVideo() }
+  useEffect(()=>{ const onKey=(e:KeyboardEvent)=>{ if(view!=='home' || panel) return; if(e.key==='ArrowDown'){ e.preventDefault(); nextVideo() } if(e.key==='ArrowUp'){ e.preventDefault(); prevVideo() } }; window.addEventListener('keydown', onKey); return ()=>window.removeEventListener('keydown', onKey) },[view,panel])
+  function toggleSound(){ const v=videoRef.current; if(!v) return; const next=!soundEnabled; setSoundEnabled(next); localStorage.setItem('vibra_sound', next?'on':'off'); v.muted=!next; v.volume=1; if(next){ v.play().catch(()=>{}) }; setNotice(next?'Sauti imewashwa 🔊':'Sauti imezimwa 🔇') }
+  function toggleLike(){ if(!authUser){ setShowAuth(true); return }; setLikedIds(v=>{ const n=v.includes(clipKey)?v.filter(id=>id!==clipKey):[...v,clipKey]; localStorage.setItem('vibra_liked', JSON.stringify(n)); return n }) }
+  function toggleSave(){ setSavedIds(v=>{ const already=v.includes(clipKey); const n=already?v.filter(id=>id!==clipKey):[...v,clipKey]; localStorage.setItem('vibra_saved', JSON.stringify(n)); setNotice(already?'Imeondolewa':'Ime-save! ✅'); return n }) }
+  function toggleFollow(){ setFollowingIds(v=>{ const already=v.includes(clipKey); const n=already?v.filter(id=>id!==clipKey):[...v,clipKey]; localStorage.setItem('vibra_following',JSON.stringify(n)); setNotice(already?'Ume-unfollow':'Umemfollow!'); return n }) }
+  function copyLink(){navigator.clipboard?.writeText(window.location.href).then(()=>setNotice('Link imekopiwa!')).catch(()=>setNotice(window.location.href))}
+  function addComment(){ if(!comment.trim()) return; const text=comment.trim(); setComments(v=>{ const n={...v,[clipKey]:[...(v[clipKey]||[]),text]}; localStorage.setItem('vibra_comments',JSON.stringify(n)); return n }); setComment(''); setNotice('Comment imetumwa!') }
+  useEffect(()=>{ const video=videoRef.current; if(!video) return; if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){ video.pause(); return }; video.muted=!soundEnabled; video.volume=1; video.play().catch(()=>{}) },[current,soundEnabled,idx,view,panel])
+  useEffect(()=>{ const stop=()=>{ const v=videoRef.current; if(v){ v.pause() } }; const onHide=()=>{ if(document.hidden){ stop() } }; document.addEventListener('visibilitychange',onHide); window.addEventListener('pagehide',stop); return ()=>{ document.removeEventListener('visibilitychange',onHide); window.removeEventListener('pagehide',stop) } },[])
+  const GIFTS = [{ emoji:'🌹', name:'Rose', cost:1 },{ emoji:'❤️', name:'Heart', cost:5 },{ emoji:'🔥', name:'Moto', cost:10 },{ emoji:'🎁', name:'Gift', cost:20 },{ emoji:'💎', name:'Almasi', cost:50 },{ emoji:'👑', name:'Taji', cost:100 },{ emoji:'🚀', name:'Rocket', cost:200 },]
+  function sendGift(g:{emoji:string,name:string,cost:number}, to:'me'|'guest'='me'){ if(liveCoins < g.cost){ setNotice('Coins hazitoshi! Una '+liveCoins); return }; setLiveCoins(c=>c-g.cost); setTotalGifts(t=>t+g.cost); setGiftAnim(g.emoji); setGiftFrom(g.name+' - '+g.cost+' Coins'); if(battleOn){ if(to==='me') setMyScore(s=>s+g.cost); else setGuestScore(s=>s+g.cost) } else { setMyScore(s=>s+g.cost) }; setLiveChats(v=>[...v, `🎁 Mtu ametuma ${g.emoji} ${g.name} (${g.cost})`]); setTimeout(()=>setGiftAnim(''), 2500) }
+  function startBattle(){ if(!hasGuest && !realLive){ setNotice('Weka Guest kwanza! Bonyeza + kwenye slot au LIVE REAL'); return }; setBattleOn(true); setBattleTime(60); setMyScore(0); setGuestScore(0); setBattleWinner(''); setNotice('⚔️ BATTLE IMEANZA! 60s!') }
+  useEffect(()=>{ if(!battleOn) return; if(battleTime<=0){ setBattleOn(false); const w = myScore>=guestScore ? name : guestName; setBattleWinner(w); setNotice('🏆 '+w+' ameshinda Battle!'); return }; const t=setTimeout(()=>setBattleTime(v=>v-1),1000); return ()=>clearTimeout(t) },[battleOn,battleTime])
+  useEffect(()=>{ if(!battleOn || (!hasGuest && !realLive)) return; const iv=setInterval(()=>{ if(Math.random()>0.4){ const g=GIFTS[Math.floor(Math.random()*4)]; setGuestScore(s=>s+g.cost); setLiveChats(v=>[...v, `🎁 ${guestNames[Math.floor(Math.random()*guestNames.length)]} kapata ${g.emoji} ${g.name}`]) } },4000); return ()=>clearInterval(iv) },[battleOn,hasGuest,realLive])
+  async function startLive(){ if(!authUser){ setShowAuth(true); return }; setPanel('LIVE'); try{ const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); liveStream.current=stream; setLiveOn(true); setTimeout(()=>{ if(liveRef.current){ liveRef.current.srcObject=stream; liveRef.current.play().catch(()=>{}) } },100) }catch{ setNotice('Ruhusu kamera: Allow'); setLiveOn(false) } }
+  function startRealLive(){ const clean = name.replace('@','').replace(/[^a-zA-Z0-9]/g,'') || 'MrVibra'; const room = 'Vibra-' + clean + '-' + Math.floor(Math.random()*9999); setRoomName(room); setRealLive(true); setPanel('LIVE'); setJitsiKey(k=>k+1); setNotice('Tuma link hii kwa marafiki: meet.jit.si/' + room) }
+  function stopLive(){ liveStream.current?.getTracks().forEach(t=>t.stop()); liveStream.current=null; setLiveOn(false); setPanel(''); setLiveOverlay(''); setBattleOn(false); setGuests(['','','','','','','','']); setShowGiftBar(false); setTalking(0); setShowGuests(false); setRealLive(false); setRoomName('') }
+  async function uploadVideo(file:File|Blob|undefined, forcedCaption?:string){ if(!file) return; if(file instanceof File && !file.type.startsWith('video/')){setNotice('Chagua video.');return}; if(uploading) return; setUploading(true); try{ let finalCaption=(forcedCaption || caption).trim(); if(!finalCaption) finalCaption = '#Vibra #Mombasa'; else if(!finalCaption.includes('#')) finalCaption = finalCaption + ' #Vibra #Mombasa'; const newId=Date.now(); await saveVideoDB(newId, file as Blob, finalCaption); const newUrl=URL.createObjectURL(file as Blob); const newClip:Clip={id:newId, url:newUrl, caption:finalCaption}; const thumb=await makeThumb(newUrl); if(thumb) setThumbs(prev=>({...prev, [String(newId)]:thumb})); setMyVideos(list=>[newClip,...list]); if(cloudReady){ try{ await uploadCloudVideo(file as File,name,finalCaption) }catch{} }; setCaption(''); setSearch(''); setIdx(0); setView('home'); setPanel(''); setNotice('Video imepakiwa! ✅') }catch(error){ setNotice('Video imehifadhiwa.') } finally{setUploading(false)} }
+  function shareVideo(){if(!current) return; setPanel('Share')}
+  const uploadInput=<input ref={uploadRef} type="file" accept="video/*" style={{display:'none'}} onChange={e=>uploadVideo(e.target.files?.[0])} />
+  async function choosePhoto(file:File|undefined){ if(!file) return; setSavingPhoto(true); try{ if(user?.id){ const url=await saveCreatorAvatar(user.id,file); setCreatorAvatar(url); setAvatarFailed(false); setDp(url); localStorage.setItem('vibra_dp',url); setNotice('Picha imehifadhiwa!') } else{ const dataUrl=await readLocalPhoto(file); setDp(dataUrl); localStorage.setItem('vibra_dp',dataUrl); setNotice('Picha imehifadhiwa.') } }catch(error){setNotice('Picha haijahifadhiwa.')} finally{setSavingPhoto(false)} }
+  const saveProfile=()=>{localStorage.setItem('vibra_dp',dp);localStorage.setItem('vibra_bio',bio);localStorage.setItem('vibra_name',name);setShowEdit(false);setNotice('Profile imehifadhiwa!')}
+  const cameraPanel = showCamera ? <VibraCamera onClose={()=>setShowCamera(false)} onDone={async (blob, cap)=>{ setShowCamera(false); await uploadVideo(blob, cap) }} /> : null
+  const profileVideos=cloudReady?[...myVideos,...cloudClips]:myVideos; const totalViews = profileVideos.length * 1000 + likedIds.length * 50 + savedIds.length * 20; const viewsTo1M = Math.max(0, 1000000 - totalViews); const progress1M = Math.min(100, (totalViews / 1000000) * 100)
+  const allVideosForSaved=[...baseFeed, ...myVideos, ...cloudClips].filter((v,i,arr)=>arr.findIndex(x=>String(x.id??x.url)===String(v.id??v.url))===i); const savedVideos=allVideosForSaved.filter(v=>savedIds.includes(String(v.id??v.url)))
+  function openClip(clip:Clip){const index=baseFeed.findIndex(entry=>entry.url===clip.url); if(index>=0){setIdx(index);setView('home')} else { setMyVideos(prev=>[clip,...prev]); setIdx(0); setView('home') }}
+  const jitsiUrl = roomName ? `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false&config.disableDeepLinking=true&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.requireDisplayName=false&userInfo.displayName=${encodeURIComponent(name)}` : ''
+  const authScreen = showAuth && (<div style={{position:'fixed',inset:0,zIndex:1000,background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',padding:20,paddingTop:40,color:'#fff',overflowY:'auto'}}><div style={{fontSize:50}}>🎬</div><h1 style={{...vibraText, fontSize:32, marginTop:8}}>VIBRA</h1><p style={{...vibraTextTeal, marginBottom:6,textAlign:'center'}}>Mombasa Vibes | Kamata</p><p style={{...vibraTextPink, marginBottom:20,textAlign:'center',fontSize:12}}>🔒 Akaunti yako itabaki imeingia kudumu</p><div style={{display:'flex',gap:10,marginBottom:20}}><button onClick={()=>{setAuthMode('signup');setAuthError('')}} style={{padding:'10px 24px',borderRadius:20,border:'none',background:authMode==='signup'?GRADIENT_BTN:'#333',color:'#fff',fontWeight:'bold'}}>Sign Up</button><button onClick={()=>{setAuthMode('login');setAuthError('')}} style={{padding:'10px 24px',borderRadius:20,border:'none',background:authMode==='login'?GRADIENT_BTN:'#333',color:'#fff',fontWeight:'bold'}}>Login</button></div><div style={{width:'100%',maxWidth:340,display:'flex',flexDirection:'column',gap:12,background:'#111',padding:16,borderRadius:16,border:`1px solid ${PINK}`}}>{authMode==='signup'&&<><label style={labelStyle}>👤 Jina lako</label><input value={authName} onChange={e=>setAuthName(e.target.value)} placeholder="Mfano: MrVibra" style={inputStyle} /></>}<label style={labelStyle}>📧 Email</label><input value={authEmail} onChange={e=>setAuthEmail(e.target.value)} placeholder="Mfano: wewe@gmail.com" type="email" style={inputStyle} /><label style={labelStyle}>🔒 Password</label><div style={{display:'flex',gap:8}}><input value={authPass} onChange={e=>setAuthPass(e.target.value)} placeholder="Angalau herufi 4" type={showPass?'text':'password'} style={{...inputStyle, flex:1}} /><button onClick={()=>setShowPass(v=>!v)} style={{background:GRADIENT_BTN,color:'#fff',border:'none',borderRadius:12,padding:'0 12px'}}>{showPass?'🙈':'👁️'}</button></div>{authError&&<p style={{color:PINK,fontSize:13,textAlign:'center',background:'#331111',padding:8,borderRadius:8}}>{authError}</p>}<button onClick={authMode==='signup'?doSignup:doLogin} style={{padding:14,borderRadius:12,border:'none',background:GRADIENT_BTN,color:'#fff',fontWeight:'bold',fontSize:16,marginTop:4}}>{authMode==='signup'?'Tengeneza Akaunti 🎉':'Ingia Kudumu 👋'}</button><button onClick={()=>{setShowAuth(false); setNotice('Umeingia kama Mgeni.')}} style={{padding:12,borderRadius:12,border:`1px solid ${TEAL}`,background:'transparent',color:TEAL}}>Endelea kama Mgeni 👀</button></div><p style={{...vibraText, fontSize:12, marginTop:16,textAlign:'center'}}>📩 Contact Creators: mrvibraworldwide@gmail.com<br/>🏆 Fikisha 1M Views ujilipie!</p></div>)
+  if(showSettings){
+    return <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:'#fff',color:'#000',overflowY:'auto'}}>{authScreen}<div style={{display:'flex',alignItems:'center',gap:12,padding:'14px',borderBottom:'1px solid #ddd',position:'sticky',top:0,background:'#fff',zIndex:10}}><button onClick={()=>setShowSettings(false)} style={{background:'none',border:'none',fontSize:22}}>←</button><b style={{flex:1,textAlign:'center',fontSize:17}}>Settings and privacy</b><span style={{width:22}}></span></div><p style={{padding:'14px 14px 6px',fontSize:12,color:'#888',fontWeight:'bold'}}>ACCOUNT</p><button onClick={()=>{setShowSettings(false);setShowEdit(true);setView('me')}} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 14px',background:'none',border:'none',textAlign:'left',width:'100%'}}><span style={{fontSize:20}}>👤</span><span style={{flex:1,fontSize:15}}>Manage account</span><span style={{background:'#FE2C55',color:'#fff',padding:'6px 14px',borderRadius:6,fontWeight:'bold',fontSize:13}}>{authUser? name:'Sign up'}</span></button><p style={{padding:'14px 14px 6px',fontSize:12,color:'#888',fontWeight:'bold',borderTop:'1px solid #eee'}}>CONTENT & ACTIVITY</p><button onClick={()=>{setNotice('Ads zinakuja! Tangaza: mrvibraworldwide@gmail.com')}} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>📢</span><span style={{flex:1}}>Ads</span></button><button onClick={()=>{const n=appLang==='Kiswahili'?'English (US)':'Kiswahili';setAppLang(n);setNotice('Lugha imebadilishwa: '+n)}} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>🅰️</span><span style={{flex:1}}>App language</span><span style={{color:'#888'}}>{appLang}</span></button><button onClick={()=>{setDarkMode(!darkMode);setNotice(darkMode?'Light Mode imewashwa ☀️':'Dark Mode imewashwa 🌙')}} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>🌙</span><span style={{flex:1}}>Display & accessibility</span><span style={{color:'#888'}}>{darkMode?'Dark':'Light'}</span></button><p style={{padding:'14px 14px 6px',fontSize:12,color:'#888',fontWeight:'bold',borderTop:'1px solid #eee'}}>CACHE & CELLULAR DATA</p><button onClick={()=>{localStorage.removeItem('vibra_saved');setSavedIds([]);setNotice('Space imeachiliwa! 🧹 240MB imefutwa')}} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>🗑️</span><span style={{flex:1}}>Free up space</span><span style={{color:'#888'}}>240.50 MB</span></button><button onClick={()=>{setShowSettings(false);setMeTab('saved');setView('me')}} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>⬇️</span><span style={{flex:1}}>Offline videos</span><span style={{color:'#888'}}>{savedIds.length} videos</span></button><button onClick={()=>setNotice('Media Player: Video zina autoplay kama TikTok!')} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>🎵</span><span style={{flex:1}}>Media player</span></button><button onClick={()=>{window.location.href='https://www.safaricom.co.ke'}} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>📱</span><div style={{flex:1,textAlign:'left'}}><div>Safaricom data shop</div><div style={{fontSize:12,color:'#888'}}>Buy discounted data bundles to stay online</div></div></button><button onClick={()=>setDataSaver(!dataSaver)} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left',alignItems:'center'}}><span>📶</span><span style={{flex:1}}>Data Saver</span><span style={{width:44,height:24,borderRadius:20,background:dataSaver?'#22c55e':'#ccc',display:'flex',alignItems:'center',justifyContent:dataSaver?'flex-end':'flex-start',padding:2}}><span style={{width:20,height:20,borderRadius:'50%',background:'#fff'}}></span></span></button><p style={{padding:'14px 14px 6px',fontSize:12,color:'#888',fontWeight:'bold',borderTop:'1px solid #eee'}}>SUPPORT</p><button onClick={()=>{window.location.href='mailto:mrvibraworldwide@gmail.com?subject=Report a problem - Vibra'}} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>✏️</span><span>Report a problem</span></button><button onClick={()=>setNotice('Help Center: Tuma email mrvibraworldwide@gmail.com')} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>❓</span><span>Help Center</span></button><button onClick={()=>setNotice('Safety Center: Vibra ni salama!')} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>🛡️</span><span>Safety Center</span></button><p style={{padding:'14px 14px 6px',fontSize:12,color:'#888',fontWeight:'bold',borderTop:'1px solid #eee'}}>ABOUT</p><button onClick={()=>setNotice('Community Guidelines: Heshimu watu!')} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>👥</span><span>Community Guidelines</span></button><button onClick={()=>setNotice('Terms of Service: Vibra Worldwide 2026')} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>📄</span><span>Terms of Service</span></button><button onClick={()=>setNotice('Privacy Policy: Data yako iko salama!')} style={{display:'flex',gap:12,padding:'12px 14px',background:'none',border:'none',width:'100%',textAlign:'left'}}><span>🔒</span><span>Privacy Policy</span></button><button onClick={()=>doLogout()} style={{display:'flex',gap:12,padding:'14px',background:'#FE2C55',color:'#fff',border:'none',width:'90%',margin:'20px auto',borderRadius:12,justifyContent:'center',fontWeight:'bold'}}>🚪 Log out</button><p style={{textAlign:'center',color:'#aaa',fontSize:12,paddingBottom:20}}>v1.0.0 • Vibra Worldwide • Mombasa</p>{notice&&<div style={noticeStyle}>{notice}</div>}</div>
   }
-
-  useEffect(() => setS('vibra_liked', likedIds), [likedIds])
-  useEffect(() => setS('vibra_following', following), [following])
-  useEffect(() => setS('vibra_saved', savedIds), [savedIds])
-  useEffect(() => setS('vibra_coins', coins), [coins])
-  useEffect(() => setS('vibra_creator_coins', creatorCoins), [creatorCoins])
-  useEffect(() => setS('vibra_comments', comments), [comments])
-  useEffect(() => setS('vibra_global_comments', globalComments), [globalComments])
-  useEffect(() => setS('vibra_global_likes', globalLikes), [globalLikes])
-  useEffect(() => setS('vibra_notifications', notifications), [notifications])
-  useEffect(() => setS('vibra_accounts', accounts), [accounts])
-  useEffect(() => setS('vibra_chats', chats), [chats])
-  useEffect(() => setS('vibra_live_saved', liveSaved), [liveSaved])
-  useEffect(() => {
-    if (!user) return
-    const fixedUser = { ...user, name: cleanName(user.name) }
-    if (fixedUser.name !== user.name) setUser(fixedUser)
-    setS('vibra_user', fixedUser)
-    setAccounts((p) => {
-      const ex = p.find((a) => a.email === fixedUser.email)
-      return ex ? p : [...p, fixedUser]
-    })
-  }, [user])
-  useEffect(() => {
-    if (!isRecording) return
-    timerRef.current = setInterval(() => setRecordTime((t) => t + 1), 1000)
-    return () => clearInterval(timerRef.current)
-  }, [isRecording])
-  useEffect(() => {
-    if (!battleOn) return
-    const t = setInterval(() => setBattleTime((x) => (x > 0 ? x - 1 : 180)), 1000)
-    return () => clearInterval(t)
-  }, [battleOn])
-
-  const saveToSupabase = async (videoUrlToSave, cap) => {
-    try {
-      await fetch(SUPABASE_URL + '/rest/v1/vibra_videos', {
-        method: 'POST',
-        headers: SB_HEADERS,
-        body: JSON.stringify({
-          video_url: videoUrlToSave,
-          caption: cap,
-          creator_name: myName,
-          user_email: user?.email || 'me@vibra.com',
-          likes_count: 0,
-        }),
-      })
-    } catch {}
+  if(view==='chat'){
+    const filteredChats = chatSearch ? chats.filter(c=>c.name.toLowerCase().includes(chatSearch.toLowerCase()) || (c.phone||'').includes(chatSearch) || (c.phone||'').includes(chatSearch.replace('+254','0'))) : chats
+    if(viewStatus){ return <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:'#000',color:'#fff',position:'relative'}}>{viewStatus.mediaType === 'video' ? <video src={viewStatus.img} autoPlay loop controls style={{flex:1,width:'100%',objectFit:'cover'}} /> : viewStatus.mediaType === 'text' ? <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',background:GRADIENT_BTN,padding:20}}><h2 style={{color:'#fff',fontSize:28,textAlign:'center',lineHeight:1.4}}>{viewStatus.caption}</h2></div> : <img src={viewStatus.img} style={{flex:1,width:'100%',objectFit:'cover'}} />}<div style={{position:'absolute',top:0,left:0,right:0,padding:12,display:'flex',alignItems:'center',gap:10,background:'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)'}}><button onClick={()=>setViewStatus(null)} style={{background:'none',border:'none',color:'#fff',fontSize:22}}>✕</button><img src={viewStatus.avatar} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} /><div style={{flex:1}}><b style={vibraText}>{viewStatus.name}</b><p style={{fontSize:11,margin:0,color:TEAL}}>{viewStatus.time}</p></div>{viewStatus.name==='My Status' && <button onClick={()=>deleteStatus(viewStatus.id)} style={{background:PINK,border:'none',color:'#fff',padding:'6px 12px',borderRadius:20,fontWeight:'bold'}}>🗑️ Futa</button>}</div><div style={{position:'absolute',bottom:80,left:12,right:12}}><p style={{background:GRADIENT_BTN,padding:'10px 12px',borderRadius:12,fontSize:14,color:'#fff'}}>{viewStatus.caption}</p></div><div style={{padding:12,background:'#111',display:'flex',gap:8}}><input placeholder="Reply kwa Status..." style={{flex:1,padding:12,borderRadius:24,border:`1px solid ${TEAL}`,background:'#222',color:'#fff'}} /><button onClick={()=>{ setViewStatus(null); setNotice('Reply imetumwa kwa '+viewStatus.name) }} style={{background:GRADIENT_BTN,border:'none',color:'#fff',padding:'10px 16px',borderRadius:24,fontWeight:'bold'}}>❤️ Reply</button></div></div> }
+    if(selectedChat){ return <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:'#000',color:'#fff'}}><div style={{display:'flex',alignItems:'center',gap:10,padding:'12px',background:'#111',borderBottom:`1px solid ${PINK}`}}><button onClick={()=>setSelectedChatId(null)} style={{background:'none',border:'none',color:TEAL,fontSize:20}}>←</button><img src={selectedChat.avatar} style={{width:42,height:42,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} /><div style={{flex:1}}><b style={vibraText}>{selectedChat.name}</b><p style={{fontSize:11,margin:0,color: selectedChat.typing ? TEAL : selectedChat.online ? TEAL : PINK}}>{selectedChat.typing ? '✍️ anaandika...' : selectedChat.online ? '● Online' : '○ '+selectedChat.lastSeen}</p>{selectedChat.phone && <p style={{fontSize:10,margin:0,color:TEAL}}>{selectedChat.phone}</p>}</div><button onClick={()=>setNotice('Video Call inakuja Version 2!')} style={{background:'none',border:'none',fontSize:20}}>📹</button><button onClick={()=>setNotice('Voice Call inakuja Version 2!')} style={{background:'none',border:'none',fontSize:20}}>📞</button><button onClick={()=>deleteChat(selectedChat.id)} style={{background:'none',border:'none',fontSize:20}}>🗑️</button></div><div style={{flex:1,overflowY:'auto',padding:12,display:'flex',flexDirection:'column',gap:8,background:'#0a0a0a'}}>{selectedChat.messages.map((m,i)=>(<div key={i} style={{position:'relative',alignSelf: m.from==='me'?'flex-end':'flex-start',maxWidth:'80%',background: m.from==='me' ? GRADIENT_BTN : '#222',color:'#fff',padding:'10px 12px',borderRadius: m.from==='me' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',fontSize:14, border: m.from==='me' ? `1px solid ${TEAL}` : `1px solid ${PINK}`}}>{m.mediaType==='voice' && m.audioUrl ? <audio src={m.audioUrl} controls style={{width:200}} /> : m.mediaType==='video' && m.audioUrl ? <video src={m.audioUrl} controls style={{width:200,borderRadius:10}} /> : m.mediaType==='image' && m.audioUrl ? <img src={m.audioUrl} style={{width:200,borderRadius:10}} /> : m.text}<div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,marginTop:2}}><span style={{fontSize:10,opacity:0.7}}>{m.time}</span>{m.from==='me' && <span style={{fontSize:14,fontWeight:'bold', color: m.seen ? TEAL : '#fff'}}>{m.seen ? '✓✓' : '✓✓'}</span>}{m.from==='me' && <button onClick={()=>deleteMsg(i)} style={{background:'rgba(0,0,0,0.3)',border:'none',color:'#fff',borderRadius:10,padding:'2px 6px',fontSize:10}}>🗑️ Futa</button>}</div>{m.from==='me' && <div style={{fontSize:8,opacity:0.6,textAlign:'right'}}>{m.seen ? 'Imesomwa 💙' : 'Imetumwa'}</div>}</div>))}{selectedChat.typing && <div style={{alignSelf:'flex-start',background:'#222',padding:'8px 12px',borderRadius:16,fontSize:13,color:TEAL}}>✍️ {selectedChat.name} anaandika... •••</div>}<p style={{textAlign:'center',fontSize:11,marginTop:10, ...vibraText}}>🔒 Ujumbe umelindwa • Vibra Chat • 💙 Blue = Imesomwa</p></div><div style={{display:'flex',gap:6,padding:10,background:'#111',alignItems:'center'}}><label style={{background:GRADIENT_BTN,border:'none',color:'#fff',width:40,height:40,borderRadius:'50%',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>📷<input type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(f) sendChatMedia(f) }} /></label><button onClick={toggleVoiceNote} style={{background: isRecordingVoice ? '#FF0000' : GRADIENT_BTN,border:'none',color:'#fff',width:40,height:40,borderRadius:'50%',fontSize:18}}>{isRecordingVoice?'⏹️':'🎤'}</button><input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter') sendChatMsg() }} placeholder={isRecordingVoice ? '🎤 Inarekodi... Bonyeza 🎤 kutuma' : 'Andika ujumbe...'} style={{flex:1,padding:12,borderRadius:24,border:`1px solid ${TEAL}`,background:'#222',color:'#fff',outline:'none'}} /><button onClick={sendChatMsg} style={{background:GRADIENT_BTN,border:'none',color:'#fff',width:44,height:44,borderRadius:'50%',fontSize:18}}>➤</button></div>{isRecordingVoice && <div style={{background:'#FF0000',color:'#fff',textAlign:'center',padding:'6px',fontSize:12,fontWeight:'bold'}}>🔴 Inarekodi Voice Note... Bonyeza 🎤 tena kutuma</div>}<nav style={{display:'flex',justifyContent:'space-around',padding:12,background:'#000',borderTop:`1px solid ${PINK}`}}><Button variant="ghost" onClick={()=>{setView('home');setSelectedChatId(null)}} style={vibraText}>🎬 Videos</Button><Button variant="ghost" onClick={()=>setSelectedChatId(null)} style={vibraText}>💬 Chat {totalUnread>0?`(${totalUnread})`:''}</Button><Button variant="ghost" onClick={()=>setShowCamera(true)} style={vibraText}>+</Button><Button variant="ghost" onClick={startLive} style={vibraText}>LIVE</Button><Button variant="ghost" onClick={()=>setView('me')} style={vibraText}>👤 Me</Button></nav>{notice&&<div style={noticeStyle}>{notice}</div>}</div> }
+    return <div style={{height:'100dvh',display:'flex',flexDirection:'column',background:'#000',color:'#fff'}}>{authScreen}<div style={{padding:'16px 16px 0'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><h1 style={{...vibraText, fontSize:26, margin:0}}>Vibra Chat 💬</h1><span style={vibraText}>Karibu Vibra Worldwide • {chats.filter(c=>c.online).length} online</span></div><div style={{display:'flex',gap:8,marginTop:12}}><button onClick={()=>setChatTab('chats')} style={{flex:1,padding:'10px',borderRadius:20,border:'none',background: chatTab==='chats' ? GRADIENT_BTN : '#222',color:'#fff',fontWeight:'bold'}}>💬 Chats</button><button onClick={()=>setChatTab('status')} style={{flex:1,padding:'10px',borderRadius:20,border:'none',background: chatTab==='status' ? GRADIENT_BTN : '#222',color:'#fff',fontWeight:'bold'}}>🟢 Status ({statuses.filter(s=>!s.seen).length})</button></div><input value={chatSearch} onChange={e=>setChatSearch(e.target.value)} placeholder="🔍 Search kwa Jina au Namba... 0712..." style={{width:'100%',padding:12,borderRadius:24,border:`1px solid ${TEAL}`,background:'#111',color:'#fff',marginTop:12,outline:'none',boxSizing:'border-box'}} /></div>{chatTab==='status' ? (<div style={{flex:1,overflowY:'auto',padding:'12px 16px'}}><div style={{background:'#111',borderRadius:12,padding:12,display:'flex',gap:12,alignItems:'center',marginBottom:12,border:`1px solid ${PINK}`}}><div style={{position:'relative'}}><img src={profileAvatar || 'https://i.pravatar.cc/150?img=68'} style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} /><span style={{position:'absolute',bottom:0,right:0,background:GRADIENT_BTN,color:'#fff',width:20,height:20,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>+</span></div><div style={{flex:1}}><b style={vibraText}>My Status</b><p style={{fontSize:12,margin:0,color:TEAL}}>Bonyeza kuweka Status yako</p></div></div><div style={{display:'flex',gap:8,marginBottom:12}}><label style={{flex:1,background:GRADIENT_BTN,color:'#fff',padding:'12px',borderRadius:20,fontWeight:'bold',fontSize:13,textAlign:'center',cursor:'pointer'}}>📷 Picha / 🎥 Video<input type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(f) addStatus(f) }} /></label><button onClick={()=>addStatus()} style={{flex:1,background:'#222',color:TEAL,border:`1px solid ${TEAL}`,padding:'12px',borderRadius:20,fontWeight:'bold',fontSize:13}}>✍️ Andika Status</button></div><p style={vibraTextPink}>Recent Status</p>{statuses.map(s=>(<div key={s.id} style={{display:'flex',gap:12,alignItems:'center',padding:'10px 0'}}><button onClick={()=>{ setViewStatus(s); setStatuses(prev=>prev.map(x=> x.id===s.id ? {...x, seen:true} : x)) }} style={{flex:1,display:'flex',gap:12,alignItems:'center',background:'none',border:'none',color:'#fff',textAlign:'left'}}><img src={s.avatar} style={{width:54,height:54,borderRadius:'50%',objectFit:'cover',border: s.seen ? '2px solid #555' : `3px solid ${PINK}`, padding:2}} /><div style={{flex:1}}><b style={vibraText}>{s.name}</b><p style={{fontSize:12,margin:0,color:TEAL}}>{s.time} • {s.mediaType==='video'?'🎥 Video':s.mediaType==='text'?'✍️ Maandishi':'📷 Picha'} • {s.caption.slice(0,30)}</p></div>{!s.seen && <span style={{background:PINK,width:10,height:10,borderRadius:'50%'}} />}</button>{s.name==='My Status' && <button onClick={()=>deleteStatus(s.id)} style={{background:PINK,color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:12}}>🗑️</button>}</div>))}</div>) : (<><div style={{display:'flex',gap:12,overflowX:'auto',padding:'12px 16px 4px'}}><label style={{minWidth:64,textAlign:'center',cursor:'pointer'}}><div style={{position:'relative',width:56,height:56,margin:'0 auto'}}><img src={profileAvatar || 'https://i.pravatar.cc/150?img=68'} style={{width:56,height:56,borderRadius:'50%',objectFit:'cover',border:`3px solid ${PINK}`}} /><span style={{position:'absolute',bottom:0,right:0,background:GRADIENT_BTN,color:'#fff',width:18,height:18,borderRadius:'50%',fontSize:12,display:'flex',alignItems:'center',justifyContent:'center'}}>+</span></div><p style={{fontSize:11,margin:'4px 0 0',...vibraText}}>My Status</p><input type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(f) addStatus(f) }} /></label>{statuses.slice(0,6).map(s=>(<button key={s.id} onClick={()=>{ setViewStatus(s); setStatuses(prev=>prev.map(x=> x.id===s.id ? {...x, seen:true} : x)) }} style={{minWidth:64,background:'none',border:'none',color:'#fff',textAlign:'center'}}><img src={s.avatar} style={{width:56,height:56,borderRadius:'50%',objectFit:'cover',border: s.seen ? '2px solid #555' : `3px solid ${TEAL}`}} /><p style={{fontSize:11,margin:'4px 0 0',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:64,...vibraText}}>{s.name.split(' ')[0]}</p></button>))}</div><div style={{flex:1,overflowY:'auto',padding:'4px 0 0'}}>{filteredChats.map(c=>(<div key={c.id} style={{display:'flex',alignItems:'center',padding:'12px 16px'}}><button onClick={()=>{ setSelectedChatId(c.id); setChats(prev=>prev.map(x=> x.id===c.id ? {...x, unread:0} : x)) }} style={{flex:1,display:'flex',gap:12,alignItems:'center',background:'none',border:'none',color:'#fff',textAlign:'left',cursor:'pointer'}}><div style={{position:'relative'}}><img src={c.avatar} style={{width:54,height:54,borderRadius:'50%',objectFit:'cover',border:`2px solid ${PINK}`}} onError={(e)=>{ (e.currentTarget as any).src='https://i.pravatar.cc/150?img=68' }} />{c.online && <span style={{position:'absolute',bottom:2,right:2,width:12,height:12,borderRadius:'50%',background:TEAL,border:'2px solid #000'}} />}</div><div style={{flex:1,minWidth:0}}><div style={{display:'flex',justifyContent:'space-between'}}><b style={vibraText}>{c.name}</b><span style={{fontSize:11,color:TEAL}}>{c.time}</span></div><p style={{fontSize:13,margin:'2px 0 0',color: c.typing ? TEAL : '#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{c.typing ? '✍️ anaandika...' : c.last}</p><p style={{fontSize:10,margin:0,color:TEAL}}>{c.online ? '● Online' : '○ '+c.lastSeen} {c.phone ? '• '+c.phone : ''}</p></div>{c.unread>0 && <span style={{background:GRADIENT_BTN,color:'#fff',minWidth:22,height:22,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:'bold',padding:'0 6px'}}>{c.unread}</span>}</button><button onClick={()=>deleteChat(c.id)} style={{background:'none',border:'none',fontSize:16}}>🗑️</button></div>))}<button onClick={()=>setShowAddContact(true)} style={{width:'90%',margin:'16px 5%',padding:12,borderRadius:24,border:`1px dashed ${PINK}`,background:'transparent',color:PINK,fontWeight:'bold'}}>+ Chat Mpya • Add kwa Namba</button></div></>)}{showAddContact && (<div style={{position:'fixed',inset:0,zIndex:999,background:'rgba(0,0,0,0.8)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={()=>setShowAddContact(false)}><div style={{background:'#111',border:`2px solid ${PINK}`,borderRadius:20,padding:20,width:'100%',maxWidth:340}} onClick={e=>e.stopPropagation()}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><b style={vibraText}>➕ Add Mtu Mpya</b><button onClick={()=>setShowAddContact(false)} style={{background:'none',border:'none',color:PINK,fontSize:20}}>✕</button></div><p style={{fontSize:12,color:TEAL}}>Kama WhatsApp - Andika Jina na Namba</p><label style={labelStyle}>👤 Jina</label><input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Mfano: Zawadi" style={{...inputStyle, marginTop:6}} /><label style={{...labelStyle, marginTop:12, display:'block'}}>📱 Namba ya Simu</label><div style={{display:'flex',gap:6,marginTop:6}}><span style={{background:GRADIENT_BTN,color:'#fff',padding:'14px 10px',borderRadius:12,fontWeight:'bold',fontSize:14}}>+254</span><input value={newPhone} onChange={e=>setNewPhone(e.target.value.replace(/[^0-9+]/g,''))} placeholder="0712345678" type="tel" style={{...inputStyle, flex:1}} /></div><p style={{fontSize:11,color:'#888'}}>Andika 0712... au +254712... - itabadilika yenyewe kuwa +254</p>{newName && (<div style={{display:'flex',gap:10,alignItems:'center',background:'#222',padding:10,borderRadius:12,marginTop:10}}><img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(newName)}&background=FE2C55&color=fff&size=100&bold=true`} style={{width:44,height:44,borderRadius:'50%'}} /><div><b style={vibraText}>{newName}</b><p style={{fontSize:12,margin:0,color:TEAL}}>{newPhone || 'Namba...'}</p></div></div>)}<div style={{display:'flex',gap:8,marginTop:16}}><button onClick={()=>setShowAddContact(false)} style={{flex:1,padding:12,borderRadius:12,background:'#333',color:'#fff',border:'none'}}>Cancel</button><button onClick={addContactByPhone} style={{flex:2,padding:12,borderRadius:12,background:GRADIENT_BTN,color:'#fff',border:'none',fontWeight:'bold'}}>✅ Add • Chat</button></div><button onClick={()=>{ const link='https://vibra-worldwide.vercel.app/chat?invite='+encodeURIComponent(name); navigator.clipboard?.writeText(link); setNotice('Link ya invite imekopiwa! Mtumie rafiki WhatsApp!') }} style={{width:'100%',marginTop:10,padding:10,borderRadius:12,background:'transparent',border:`1px solid ${TEAL}`,color:TEAL,fontWeight:'bold'}}>🔗 Tuma Invite Link kwa WhatsApp</button></div></div>)}<nav style={{display:'flex',justifyContent:'space-around',padding:12,background:'#000',borderTop:`1px solid ${PINK}`}}><Button variant="ghost" onClick={()=>setView('home')} style={vibraText}>🎬 Videos</Button><Button variant="ghost" style={vibraText}>💬 Chat {totalUnread>0?`(${totalUnread})`:''}</Button><Button variant="ghost" onClick={()=>setShowCamera(true)} style={vibraText}>+</Button><Button variant="ghost" onClick={startLive} style={vibraText}>LIVE</Button><Button variant="ghost" onClick={()=>setView('me')} style={vibraText}>👤 Me</Button></nav>{notice&&<div style={noticeStyle}>{notice}</div>}{cameraPanel}</div>
   }
-  const saveMyVideoLocal = (nc) => {
-    try {
-      if (isBlobExpired(nc.url)) return
-      const old = getS('vibra_my_videos', []).filter((x) => !isBlobExpired(x.url))
-      const filtered = old.filter((x) => x.id !== nc.id)
-      setS('vibra_my_videos', [nc, ...filtered].slice(0, 20))
-    } catch {}
+  if(view==='me'){
+    const listToShow=meTab==='saved'?savedVideos:meTab==='liked'?allVideosForSaved.filter(v=>likedIds.includes(String(v.id??v.url))):profileVideos
+    return <div data-ready={hydrated} className="vibra-app bg-video text-video-text" style={{overflowY:'auto'}}>{authScreen}{cameraPanel}<header className="flex items-center justify-between p-4"><Button variant="ghost" onClick={()=>setView('home')} style={vibraText}>← Back</Button><span style={vibraText}>Vibra</span><div style={{display:'flex',gap:2}}><Button variant="ghost" onClick={()=>setShowCamera(true)} style={vibraText}>📷</Button><Button variant="ghost" onClick={()=>setShowSettings(true)} style={{...vibraText,fontSize:22}}>⋮</Button></div></header><section className="px-4 text-center" style={{paddingBottom:16}}><div style={{position:'relative',width:110,height:110,margin:'0 auto'}}><Button variant="ghost" className="profile-avatar bg-video-glass" style={{width:110,height:110,borderRadius:'50%',overflow:'hidden',fontSize:40,border:`3px solid ${PINK}`}} onClick={()=>photoRef.current?.click()}>{profileAvatar?<img src={profileAvatar} alt="Profile" style={{width:'100%',height:'100%',objectFit:'cover'}} />:'👤'}</Button><span style={{position:'absolute',bottom:0,right:0,background:GRADIENT_BTN,color:'#fff',borderRadius:'50%',width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center'}}>+</span></div><h1 style={{...vibraText, fontSize:22,marginTop:10}}>{name}</h1><p style={vibraTextTeal}>{authUser?.email||'Guest - Ingia kuona email'}</p><p style={{color:'#fff'}}>{renderCaption(bio)}</p><div style={{display:'flex',gap:8,justifyContent:'center',marginTop:12,flexWrap:'wrap'}}><Button variant="ghost" className="bg-video-glass text-video-text" onClick={()=>setShowEdit(true)} style={vibraText}>✏️ Edit</Button><Button variant="ghost" className="bg-video-glass text-video-text" onClick={copyLink} style={vibraText}>🔗 Share</Button><Button onClick={chatWithCreator} style={{background:GRADIENT_BTN,color:'#fff',fontWeight:'bold'}}>💬 Chat</Button>{authUser ? <Button onClick={doLogout} style={{background:GRADIENT_BTN,color:'#fff',fontWeight:'bold'}}>🚪 Logout</Button> : <Button onClick={()=>setShowAuth(true)} style={{background:GRADIENT_BTN,color:'#fff',fontWeight:'bold'}}>🔑 Login / Sign Up</Button>}<Button onClick={()=>{ setNotice('Wasiliana: mrvibraworldwide@gmail.com'); window.location.href='mailto:mrvibraworldwide@gmail.com?subject=Contact Creator - Vibra - '+name }} style={{background:GRADIENT_BTN,color:'#fff',fontWeight:'bold'}}>📩 Contact Creators</Button></div><div style={{background:GRADIENT_BTN,color:'#fff',borderRadius:12,padding:12,margin:'14px 0 0',textAlign:'left',border:`1px solid ${TEAL}`}}><b style={{color:'#fff'}}>🏆 VIBRA CREATOR FUND</b><p style={{fontSize:12,margin:'4px 0',color:'#fff'}}>Fikisha <b>1,000,000 Views</b> ujilipie! 💰</p><div style={{background:'rgba(0,0,0,0.2)',height:10,borderRadius:10,overflow:'hidden'}}><div style={{width: progress1M+'%',background:'#fff',height:'100%'}} /></div><p style={{fontSize:11,marginTop:5,color:'#fff'}}>Views zako: {totalViews.toLocaleString()} / 1,000,000 • {progress1M.toFixed(2)}% • {viewsTo1M.toLocaleString()} zimebaki!</p><button onClick={()=>{ setNotice('Umeomba kulipwa! Tutakujibu kwa email.'); window.location.href='mailto:mrvibraworldwide@gmail.com?subject=Nataka Kulipwa - 1M Views - '+name+' - Views '+totalViews }} style={{background:'#000',color:TEAL,border:'none',padding:'8px 14px',borderRadius:20,fontWeight:'bold',fontSize:12,marginTop:4}}>💰 Omba Kulipwa</button></div><div style={{background:'#111',border:`1px solid ${PINK}`,borderRadius:12,padding:10,marginTop:10,display:'flex',gap:10,alignItems:'center',textAlign:'left'}}><span style={{fontSize:28}}>📢</span><div style={{flex:1}}><b style={vibraText}>Tangaza Biashara Yako Hapa!</b><p style={{fontSize:11,color:TEAL,margin:0}}>Watu 10,000+ wanaona Vibra kila siku • Tsh 10,000 / siku</p></div><button onClick={()=>{ window.location.href='mailto:mrvibraworldwide@gmail.com?subject=Nataka Tangazo Vibra' }} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'8px 12px',borderRadius:20,fontSize:12,fontWeight:'bold'}}>Tangaza</button></div><div className="flex justify-center gap-6" style={{marginTop:16}}><div><p style={{...vibraText,fontSize:18}}>{following}</p><p style={vibraTextTeal}>Following</p></div><div><p style={{...vibraText,fontSize:18}}>{followers}</p><p style={vibraTextTeal}>Followers</p></div><div><p style={{...vibraText,fontSize:18}}>{profileVideos.length}</p><p style={vibraTextTeal}>Videos</p></div><div><p style={{...vibraText,fontSize:18}}>{savedIds.length}</p><p style={vibraTextTeal}>Saved</p></div></div><div style={{display:'flex',justifyContent:'center',gap:20,marginTop:16,borderBottom:`1px solid ${PINK}`,paddingBottom:8}}><Button variant="ghost" onClick={()=>setMeTab('videos')} style={vibraText}>🎬 Videos ({profileVideos.length})</Button><Button variant="ghost" onClick={()=>setMeTab('liked')} style={vibraText}>❤️ Liked ({likedIds.length})</Button><Button variant="ghost" onClick={()=>setMeTab('saved')} style={vibraText}>🔖 Saved ({savedIds.length})</Button></div></section><section className="p-2" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,paddingBottom:100}}>{listToShow.map(v=>{ const key=String(v.id??v.url); const thumb=thumbs[key]; return (<button key={key} onClick={()=>openClip(v)} style={{position:'relative',aspectRatio:'9/16',overflow:'hidden',borderRadius:10,background:'#222',border:`1px solid ${PINK}`,padding:0}}>{thumb ? <img src={thumb} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <video src={v.url} muted playsInline preload="auto" onLoadedData={(e)=>{ try{ if(e.currentTarget.currentTime===0) e.currentTarget.currentTime=0.5 }catch{} }} style={{width:'100%',height:'100%',objectFit:'cover',background:'#000'}} />}<span style={{position:'absolute',left:6,bottom:6,right:6,color:'#fff',fontSize:11,textAlign:'left',textShadow:'0 1px 4px #000'}}>{v.caption||'Video'}</span><span style={{position:'absolute',top:6,right:6,fontSize:12}}>▶️</span></button>)})}</section>{listToShow.length===0&&<p className="p-6 text-center" style={vibraText}>Hakuna video bado.</p>}<VibraBanner placement="profile" /><VibraSheet title="Edit Profile" open={showEdit} onClose={()=>setShowEdit(false)}><input ref={photoRef} type="file" accept="image/*" aria-label="Choose profile photo" onChange={e=>choosePhoto(e.target.files?.[0])} /><Button type="button" className="sheet-command w-full" disabled={savingPhoto} onClick={()=>photoRef.current?.click()}>{savingPhoto?'Inapakia...':'📸 Badilisha Picha'}</Button><input aria-label="Username" value={name} onChange={e=>setName(e.target.value)} /><input aria-label="Bio" value={bio} onChange={e=>setBio(e.target.value)} /><Button onClick={saveProfile} style={vibraBtn}>Save Profile</Button><Button onClick={doLogout} style={{background:GRADIENT_BTN,color:'#fff'}}>🚪 Logout</Button><Button onClick={()=>{ window.location.href='mailto:mrvibraworldwide@gmail.com?subject=Contact Creator' }} style={{background:GRADIENT_BTN,color:'#fff'}}>📩 Contact Creators</Button></VibraSheet>{notice&&<div style={noticeStyle}>{notice}</div>}<nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex justify-around p-3"><Button variant="ghost" onClick={()=>setView('home')} style={vibraText}>🎬 Videos</Button><Button variant="ghost" onClick={()=>setView('chat')} style={vibraText}>💬 Chat {totalUnread>0?`(${totalUnread})`:''}</Button><Button variant="ghost" aria-label="Upload" onClick={()=>setShowCamera(true)} style={vibraText}>+</Button><Button variant="ghost" onClick={startLive} style={vibraText}>LIVE</Button><Button variant="ghost" onClick={()=>setView('me')} style={vibraText}>Me</Button></nav></div>
   }
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true })
-      camStreamRef.current = stream
-      if (camVideoRef.current) {
-        camVideoRef.current.srcObject = stream
-        camVideoRef.current.play()
-      }
-      setCamOn(true)
-    } catch {
-      alert('Ruhusu kamera ili kurecord! Nenda Settings Ruhusu Camera')
-    }
-  }
-  const stopCamera = () => {
-    if (camStreamRef.current) camStreamRef.current.getTracks().forEach((t) => t.stop())
-    setCamOn(false)
-    setIsRecording(false)
-  }
-  const startRecording = () => {
-    if (!camStreamRef.current) {
-      alert('Washa kamera kwanza!')
-      return
-    }
-    camChunksRef.current = []
-    const rec = new MediaRecorder(camStreamRef.current)
-    camRecorderRef.current = rec
-    rec.ondataavailable = (e) => {
-      if (e.data.size > 0) camChunksRef.current.push(e.data)
-    }
-    rec.onstop = () => {
-      const blob = new Blob(camChunksRef.current, { type: 'video/webm' })
-      const url = URL.createObjectURL(blob)
-      setRecordedUrl(url)
-      setRecordTime(0)
-    }
-    rec.start()
-    setIsRecording(true)
-    setRecordTime(0)
-  }
-  const stopRecording = () => {
-    if (camRecorderRef.current) camRecorderRef.current.stop()
-    setIsRecording(false)
-  }
-  const saveRecordedVideo = () => {
-    if (!recordedUrl) return
-    const cap = caption.trim() || 'Video niliyorecord na Filter ' + FILTERS[activeFilter].name
-    const nc = { id: 'my' + Date.now(), url: recordedUrl, caption: cap, creator: myName, creator_email: user?.email || 'me@vibra.com', likes: 0 }
-    setClips((p) => [nc, ...p])
-    setRecordedUrl('')
-    setShowCamera(false)
-    stopCamera()
-    setView('home')
-    setTab('foryou')
-    setIdx(0)
-    alert('Video IMESAVE kwa muda huu! MUHIMU: Video ya kurecord ni ya muda tu. Ili ibaki milele, tumia PAKIA KWA LINK au Chagua Video Kutoka Simu!')
-  }
-  const toggleFacing = async () => {
-    stopCamera()
-    setFacing(facing === 'user' ? 'environment' : 'user')
-    setTimeout(() => startCamera(), 300)
-  }
-  const startLiveCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      liveStreamRef.current = stream
-      if (liveVideoRef.current) {
-        liveVideoRef.current.srcObject = stream
-        liveVideoRef.current.play()
-      }
-      setLiveStreamOn(true)
-    } catch {
-      alert('Ruhusu kamera ili uende LIVE!')
-    }
-  }
-  const stopLiveCamera = () => {
-    if (liveStreamRef.current) liveStreamRef.current.getTracks().forEach((t) => t.stop())
-    setLiveStreamOn(false)
-  }
-  const startLiveRecord = () => {
-    if (!liveStreamRef.current) {
-      alert('Washa kamera ya LIVE kwanza!')
-      return
-    }
-    liveChunksRef.current = []
-    const rec = new MediaRecorder(liveStreamRef.current)
-    liveRecorderRef.current = rec
-    rec.ondataavailable = (e) => {
-      if (e.data.size > 0) liveChunksRef.current.push(e.data)
-    }
-    rec.onstop = () => {
-      const blob = new Blob(liveChunksRef.current, { type: 'video/webm' })
-      const url = URL.createObjectURL(blob)
-      const saved = { id: 'live' + Date.now(), url, caption: 'LIVE yangu iliyosave - ' + new Date().toLocaleString(), creator: myName, creator_email: user?.email || 'me@vibra.com', likes: 0 }
-      setLiveSaved((p) => [saved, ...p])
-      setClips((p) => [saved, ...p])
-      alert('LIVE IMESAVE kwa muda huu!')
-    }
-    rec.start()
-    setLiveRecording(true)
-  }
-  const stopLiveRecord = () => {
-    if (liveRecorderRef.current) liveRecorderRef.current.stop()
-    setLiveRecording(false)
-  }
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const r = await fetch(SUPABASE_URL + '/rest/v1/vibra_videos?select=*&order=created_at.desc&limit=50', { headers: SB_HEADERS })
-        const j = await r.json()
-        if (Array.isArray(j) && j.length > 0) {
-          const m = j.map((v, i) => ({
-            id: String(v.id || 'sb' + i),
-            url: v.video_url || v.url || DEMO_VIDEOS[0].url,
-            caption: v.caption || v.title || 'Vibra Video',
-            creator: cleanName(v.creator_name) || 'Vibra Creator',
-            creator_email: v.user_email || 'creator@vibra.com',
-            likes: Number(v.likes_count || v.likes || 0),
-          })).filter((x) => !isBlobExpired(x.url))
-          const mySaved = getS('vibra_my_videos', []).filter((x) => !isBlobExpired(x.url))
-          const all = [...mySaved, ...m, ...DEMO_VIDEOS]
-          const seen = {}
-          const uniq = all.filter((x) => {
-            if (seen[x.id]) return false
-            seen[x.id] = true
-            return true
-          })
-          setClips(uniq)
-        }
-      } catch {}
-      try {
-        const rl = await fetch(SUPABASE_URL + '/rest/v1/vibra_likes?select=*&limit=500', { headers: SB_HEADERS }).then((x) => x.json())
-        if (Array.isArray(rl)) {
-          const c = {}
-          rl.forEach((l) => {
-            const vid = String(l.video_id)
-            c[vid] = (c[vid] || 0) + 1
-          })
-          setGlobalLikes((p) => ({ ...p, ...c }))
-        }
-      } catch {}
-      try {
-        const rc = await fetch(SUPABASE_URL + '/rest/v1/vibra_comments?select=*&order=created_at.desc&limit=200', { headers: SB_HEADERS }).then((x) => x.json())
-        if (Array.isArray(rc)) {
-          const gc = {}
-          rc.forEach((c) => {
-            const vid = String(c.video_id)
-            if (!gc[vid]) gc[vid] = []
-            gc[vid].push({ name: cleanName(c.user_name) || 'Mtu', text: c.comment_text || c.text || '' })
-          })
-          setGlobalComments((p) => ({ ...p, ...gc }))
-        }
-      } catch {}
-    }
-    load()
-  }, [])
-
-  const visibleClips = clips.filter((c) => {
-    if (tab === 'following' && user) return following.includes(c.creator_email)
-    if (tab === 'following' && !user) return false
-    if (search) return (c.caption + c.creator).toLowerCase().includes(search.toLowerCase())
-    return true
-  })
-  const current = visibleClips[idx] || visibleClips[0] || DEMO_VIDEOS[0]
-  const safeIdx = visibleClips.indexOf(current)
-  const isLiked = current ? likedIds.includes(current.id) : false
-  const displayLikes = current ? current.likes + (globalLikes[current.id] || 0) + (isLiked ? 1 : 0) : 0
-  const allComments = current ? [...(globalComments[current.id] || []), ...(comments[current.id] || [])] : []
-  const isFollowing = current ? following.includes(current.creator_email) : false
-  const isSaved = current ? savedIds.includes(current.id) : false
-  const unread = notifications.filter((n) => !n.read).length
-  const myVideos = clips.filter((c) => c.creator_email === user?.email)
-  const likedVideos = clips.filter((c) => likedIds.includes(c.id))
-  const savedVideos = clips.filter((c) => savedIds.includes(c.id))
-  const selectedChat = chats.find((c) => c.id === selectedChatId)
-
-  const pushNotif = (to, type, text, from) => {
-    const n = { id: Date.now() + Math.random(), to, type, text, from, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), read: false }
-    setNotifications((p) => [n, ...p].slice(0, 50))
-  }
-  const toggleLike = async () => {
-    if (!current) return
-    const nl = !isLiked
-    setLikedIds((p) => (nl ? [...p, current.id] : p.filter((x) => x !== current.id)))
-    setGlobalLikes((p) => ({ ...p, [current.id]: Math.max(0, (p[current.id] || 0) + (nl ? 1 : -1)) }))
-    if (nl) {
-      setCoins((c) => c + 5)
-      setCreatorCoins((c) => c + 1)
-      if (current.creator_email !== user?.email) pushNotif(current.creator_email, 'like', (myName || 'Mtu') + ' amekulike video yako', myName || 'Mtu')
-    }
-    try {
-      if (nl) await fetch(SUPABASE_URL + '/rest/v1/vibra_likes', { method: 'POST', headers: SB_HEADERS, body: JSON.stringify({ video_id: current.id, user_email: user?.email || 'guest@vibra.com', user_name: myName || 'Guest' }) })
-    } catch {}
-  }
-  const toggleFollow = () => {
-    if (!current) return
-    if (!user) {
-      setShowLogin(true)
-      return
-    }
-    const nf = !isFollowing
-    setFollowing((p) => (nf ? [...p, current.creator_email] : p.filter((x) => x !== current.creator_email)))
-    if (nf && current.creator_email !== user.email) pushNotif(current.creator_email, 'follow', myName + ' amekufollow!', myName)
-  }
-  const toggleSave = () => {
-    if (!current) return
-    setSavedIds((p) => (isSaved ? p.filter((x) => x !== current.id) : [...p, current.id]))
-  }
-  const next = () => {
-    stopAllSound()
-    if (safeIdx < visibleClips.length - 1) setIdx(safeIdx + 1)
-  }
-  const prev = () => {
-    stopAllSound()
-    if (safeIdx > 0) setIdx(safeIdx - 1)
-  }
-  const handleLogin = () => {
-    if (!loginName.trim() || !loginEmail.trim()) {
-      alert('Weka jina na email!')
-      return
-    }
-    const u = { name: cleanName(loginName.trim()), email: loginEmail.trim().toLowerCase(), pass: loginPass }
-    setUser(u)
-    setShowLogin(false)
-    setShowSwitch(false)
-    setLoginName('')
-    setLoginEmail('')
-    setLoginPass('')
-    alert('Karibu ' + u.name + '!')
-  }
-  const handleUpload = () => {
-    if (!user) {
-      setShowLogin(true)
-      return
-    }
-    if (!videoUrl.trim() && !caption.trim()) {
-      alert('Weka link ya video au caption!')
-      return
-    }
-    const nc = { id: 'my' + Date.now(), url: videoUrl.trim() || DEMO_VIDEOS[0].url, caption: caption.trim() || 'Video yangu mpya!', creator: myName, creator_email: user.email, likes: 0 }
-    setClips((p) => [nc, ...p])
-    saveMyVideoLocal(nc)
-    saveToSupabase(nc.url, nc.caption)
-    setCaption('')
-    setVideoUrl('')
-    setShowCamera(false)
-    setTab('foryou')
-    setIdx(0)
-    setView('home')
-    alert('Video imepakiwa na IMESAVE MILELE! Ukitoka na kurudi utaiona!')
-  }
-  const handleFile = (e) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    alert('Video kutoka Galari ni ya muda tu kwenye simu. Ili ibaki milele, tumia PAKIA KWA LINK!')
-    const url = URL.createObjectURL(f)
-    const nc = { id: 'my' + Date.now(), url, caption: caption.trim() || f.name, creator: myName, creator_email: user?.email || 'me@vibra.com', likes: 0 }
-    setClips((p) => [nc, ...p])
-    setShowCamera(false)
-    setTab('foryou')
-    setIdx(0)
-    setView('home')
-    alert('Video imepakiwa kutoka simu!')
-  }
-  const addComment = () => {
-    if (!commentText.trim() || !current) return
-    const c = { name: myName || 'Mgeni', text: commentText.trim() }
-    setComments({ ...comments, [current.id]: [...(comments[current.id] || []), c] })
-    setGlobalComments((p) => ({ ...p, [current.id]: [...(p[current.id] || []), c] }))
-    setCommentText('')
-    if (current.creator_email !== user?.email) pushNotif(current.creator_email, 'comment', c.name + ' amecomment', c.name)
-    fetch(SUPABASE_URL + '/rest/v1/vibra_comments', { method: 'POST', headers: SB_HEADERS, body: JSON.stringify({ video_id: current.id, user_email: user?.email || 'guest@vibra.com', user_name: c.name, comment_text: c.text }) }).catch(() => {})
-  }
-  const shareVideo = () => {
-    const t = 'Tazama hii video kwenye Vibra! ' + current?.caption
-    if (navigator.share) navigator.share({ title: 'Vibra', text: t }).catch(() => {})
-    else {
-      navigator.clipboard?.writeText(t)
-      alert('Link imecopywa!')
-    }
-  }
-  const sendChatMsg = () => {
-    if (!chatInput.trim() || !selectedChatId) return
-    const msgText = chatInput.trim()
-    setChats((p) =>
-      p.map((ch) =>
-        ch.id === selectedChatId
-          ? { ...ch, last: msgText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), unread: 0, msgs: [...(ch.msgs || []), { from: 'me', text: msgText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'sent' }] }
-          : ch
-      )
-    )
-    setChatInput('')
-    setShowEmoji(false)
-    setTimeout(() => {
-      setChats((p) =>
-        p.map((ch) =>
-          ch.id === selectedChatId
-            ? { ...ch, msgs: ch.msgs.map((m, i) => (i === ch.msgs.length - 1 ? { ...m, tick: 'seen' } : m)) }
-            : ch
-        )
-      )
-    }, 1500)
-  }
-  const sendVoiceNote = () => {
-    if (!selectedChatId) return
-    setRecordingVoice(true)
-    setTimeout(() => {
-      setRecordingVoice(false)
-      setChats((p) =>
-        p.map((ch) =>
-          ch.id === selectedChatId
-            ? { ...ch, last: 'Voice note (0:07)', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), msgs: [...(ch.msgs || []), { from: 'me', text: 'Voice note - Bonyeza kucheza (0:07)', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'sent', isVoice: true }] }
-            : ch
-        )
-      )
-      alert('Voice note imetumwa!')
-    }, 2000)
-  }
-  const sendGift = (g) => {
-    if (coins < g.cost) {
-      alert('Coins hazitoshi! Like video ili upate coins')
-      return
-    }
-    setCoins((c) => c - g.cost)
-    setGiftSent((x) => x + g.cost)
-    setCreatorCoins((c) => c + g.cost)
-    alert('Umetuma ' + g.name + ' ' + g.emoji)
-  }
-  const addNewChat = () => {
-    const name = prompt('Jina la rafiki mpya? (mf: Neema)')
-    if (!name) return
-    const newChat = { id: 'chat' + Date.now(), name: cleanName(name), avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70), last: 'Hey! Karibu Vibra', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), unread: 0, online: true, msgs: [{ from: 'them', text: 'Hey! Karibu Vibra', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'seen' }] }
-    setChats((p) => [newChat, ...p])
-    setSelectedChatId(newChat.id)
-    setChatTab('chats')
-  }
-  const deleteMyVideo = (id) => {
-    if (!confirm('Ufute video hii?')) return
-    setClips((p) => p.filter((x) => x.id !== id))
-    try {
-      const old = getS('vibra_my_videos', []).filter((x) => x.id !== id)
-      setS('vibra_my_videos', old)
-    } catch {}
-  }
-
-  if (showSettings) {
-    return (
-      <div style={{ background: '#fff', color: '#000', minHeight: '100vh', fontFamily: 'system-ui' }}>
-        <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between' }}>
-          <b style={{ fontSize: 18 }}>Settings and privacy</b>
-          <span onClick={() => setShowSettings(false)} style={{ cursor: 'pointer', fontSize: 22 }}>✕</span>
-        </div>
-        <div style={{ padding: '0 16px 30px' }}>
-          <div style={{ fontSize: 12, color: '#888', fontWeight: 700 }}>ACCOUNT</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #eee' }}>
-            <span>Manage account</span>
-            <span style={{ background: PINK, color: '#fff', padding: '6px 12px', borderRadius: 15, fontSize: 13, fontWeight: 800 }}>@{myName}</span>
-          </div>
-          <div onClick={() => { setShowSettings(false); setShowSwitch(true) }} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #eee', cursor: 'pointer' }}>
-            <span>Switch account</span>
-            <span style={{ color: '#888' }}>{accounts.length} accounts</span>
-          </div>
-          <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>CONTENT</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Ads</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>App language - Kiswahili</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Display - Dark</div>
-          <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>CACHE</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Free up space - 240.50 MB</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Offline videos - {savedIds.length} videos</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Media player</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Safaricom data shop</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Data Saver - ON</div>
-          <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>SUPPORT</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Report a problem</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Help Center</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Safety Center</div>
-          <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>ABOUT</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Community Guidelines</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Terms of Service</div>
-          <div style={{ padding: '12px 0' }}>Privacy Policy</div>
-          <button onClick={() => { if (confirm('Una uhakika unataka kutoka?')) { setUser(null); localStorage.removeItem('vibra_user'); setShowSettings(false) } }} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 14, borderRadius: 12, fontWeight: 900, marginTop: 10 }}>Log out</button>
-          <button onClick={() => { if (confirm('Futa video zote zilizoharibika?')) { setS('vibra_my_videos', []); setClips(DEMO_VIDEOS); alert('Zimefutwa! Sasa pakia upya kwa LINK!') } }} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 800, marginTop: 10 }}>Futa Video Zilizoharibika (Weusi)</button>
-          <div style={{ textAlign: 'center', fontSize: 12, color: '#aaa', marginTop: 10 }}>v1.0.0 - Vibra Worldwide - Mombasa</div>
-        </div>
-      </div>
-    )
-  }
-
-  if (view === 'chat') {
-    return (
-      <div style={{ background: '#0b141a', color: '#fff', minHeight: '100vh', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column' }}>
-        {!selectedChatId ? (
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <div style={{ background: '#202c33', padding: '14px 16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <b style={{ fontSize: 20 }}>Vibra Chats</b>
-                <div style={{ display: 'flex', gap: 16, fontSize: 20 }}>
-                  <span onClick={addNewChat} style={{ cursor: 'pointer' }}>💬+</span>
-                  <span onClick={() => setView('home')} style={{ cursor: 'pointer' }}>✕</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 20, marginTop: 14, fontSize: 14, fontWeight: 700 }}>
-                <span onClick={() => setChatTab('chats')} style={{ color: chatTab === 'chats' ? '#00a884' : '#8696a0', borderBottom: chatTab === 'chats' ? '2px solid #00a884' : 'none', paddingBottom: 6, cursor: 'pointer' }}>Chats</span>
-                <span onClick={() => setChatTab('status')} style={{ color: chatTab === 'status' ? '#00a884' : '#8696a0', borderBottom: chatTab === 'status' ? '2px solid #00a884' : 'none', paddingBottom: 6, cursor: 'pointer' }}>Status</span>
-                <span onClick={() => setChatTab('calls')} style={{ color: chatTab === 'calls' ? '#00a884' : '#8696a0', borderBottom: chatTab === 'calls' ? '2px solid #00a884' : 'none', paddingBottom: 6, cursor: 'pointer' }}>Calls</span>
-              </div>
-            </div>
-            <div style={{ padding: '10px 14px' }}>
-              <input value={chatSearch} onChange={(e) => setChatSearch(e.target.value)} placeholder="Tafuta chat..." style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#202c33', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-            {chatTab === 'chats' && (
-              <div style={{ flex: 1, overflow: 'auto', padding: '0 6px' }}>
-                {chats.filter((c) => c.name.toLowerCase().includes(chatSearch.toLowerCase())).map((c) => (
-                  <div key={c.id} onClick={() => { setSelectedChatId(c.id); setChats((p) => p.map((x) => (x.id === c.id ? { ...x, unread: 0 } : x))) }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 10px', cursor: 'pointer', borderBottom: '1px solid #1a2a33' }}>
-                    <div style={{ position: 'relative' }}>
-                      <img src={c.avatar} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover' }} />
-                      {c.online && <span style={{ position: 'absolute', bottom: 2, right: 2, width: 12, height: 12, borderRadius: '50%', background: '#00a884', border: '2px solid #0b141a' }} />}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <b style={{ fontSize: 16 }}>{c.name}</b>
-                        <span style={{ fontSize: 12, color: c.unread > 0 ? '#00a884' : '#8696a0' }}>{c.time}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-                        <span style={{ fontSize: 14, color: '#8696a0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.last}</span>
-                        {c.unread > 0 && <span style={{ background: '#00a884', color: '#000', fontSize: 12, fontWeight: 800, minWidth: 20, height: 20, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{c.unread}</span>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={addNewChat} style={{ margin: 16, width: 'calc(100% - 32px)', background: '#00a884', color: '#fff', border: 'none', padding: 13, borderRadius: 12, fontWeight: 800 }}>+ Chat Mpya</button>
-              </div>
-            )}
-            {chatTab === 'status' && (
-              <div style={{ padding: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
-                  <span style={{ width: 52, height: 52, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>+</span>
-                  <div><b>My Status</b><div style={{ fontSize: 13, color: '#8696a0' }}>Bonyeza kuweka status</div></div>
-                </div>
-                <div style={{ fontSize: 13, color: '#8696a0', marginTop: 10 }}>RECENT UPDATES</div>
-                {chats.slice(0, 3).map((c) => (
-                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
-                    <img src={c.avatar} style={{ width: 52, height: 52, borderRadius: '50%', border: '3px solid #00a884', objectFit: 'cover' }} />
-                    <div><b>{c.name}</b><div style={{ fontSize: 13, color: '#8696a0' }}>Leo, {c.time}</div></div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {chatTab === 'calls' && (
-              <div style={{ padding: 16 }}>
-                {chats.slice(0, 3).map((c) => (
-                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a2a33' }}>
-                    <img src={c.avatar} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
-                    <div style={{ flex: 1 }}><b>{c.name}</b><div style={{ fontSize: 13, color: '#8696a0' }}>Leo, {c.time}</div></div>
-                    <span style={{ fontSize: 20 }}>📞</span>
-                    <span style={{ fontSize: 20 }}>📹</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0b141a' }}>
-            <div style={{ background: '#202c33', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span onClick={() => setSelectedChatId('')} style={{ cursor: 'pointer', fontSize: 22 }}>←</span>
-              <img src={selectedChat.avatar} style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
-              <div style={{ flex: 1 }}>
-                <b>{selectedChat.name}</b>
-                <div style={{ fontSize: 12, color: selectedChat.online ? '#00a884' : '#8696a0' }}>{selectedChat.online ? 'Online' : 'Last seen leo'}</div>
-              </div>
-              <span style={{ fontSize: 20 }}>📹</span>
-              <span style={{ fontSize: 20 }}>📞</span>
-              <span style={{ fontSize: 20 }}>⋮</span>
-            </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 8, background: '#0b141a' }}>
-              <div style={{ alignSelf: 'center', background: '#182229', padding: '6px 12px', borderRadius: 8, fontSize: 12, color: '#ffd279' }}>Messages zime-encryptiwa</div>
-              {(selectedChat.msgs || []).map((m, i) => (
-                <div key={i} style={{ alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start', background: m.from === 'me' ? '#005c4b' : '#202c33', padding: '8px 10px', borderRadius: 12, maxWidth: '80%', fontSize: 15 }}>
-                  <div>{m.text}</div>
-                  <div style={{ fontSize: 11, color: '#8696a0', textAlign: 'right', marginTop: 2 }}>{m.time} {m.from === 'me' && <span style={{ color: m.tick === 'seen' ? '#53bdeb' : '#8696a0' }}>{m.tick === 'seen' ? '✓✓' : m.tick === 'delivered' ? '✓✓' : '✓'}</span>}</div>
-                </div>
-              ))}
-              {recordingVoice && <div style={{ alignSelf: 'flex-end', background: '#005c4b', padding: '10px 14px', borderRadius: 16 }}>Inarecord...</div>}
-            </div>
-            {showEmoji && (
-              <div style={{ background: '#202c33', padding: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {EMOJIS.map((e) => (
-                  <span key={e} onClick={() => setChatInput((p) => p + e)} style={{ fontSize: 26, cursor: 'pointer' }}>{e}</span>
-                ))}
-              </div>
-            )}
-            <div style={{ padding: '10px', display: 'flex', gap: 8, alignItems: 'center', background: '#202c33' }}>
-              <span onClick={() => setShowEmoji(!showEmoji)} style={{ fontSize: 26, cursor: 'pointer' }}>😊</span>
-              <span onClick={() => alert('Chagua picha kutuma!')} style={{ fontSize: 22, cursor: 'pointer' }}>📎</span>
-              <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Andika ujumbe..." style={{ flex: 1, padding: 12, borderRadius: 20, border: 'none', background: '#2a3942', color: '#fff', outline: 'none' }} />
-              {chatInput.trim() ? (
-                <button onClick={sendChatMsg} style={{ background: '#00a884', color: '#fff', border: 'none', width: 44, height: 44, borderRadius: '50%', fontSize: 20 }}>➤</button>
-              ) : (
-                <button onClick={sendVoiceNote} style={{ background: '#00a884', color: '#fff', border: 'none', width: 44, height: 44, borderRadius: '50%', fontSize: 20 }}>🎤</button>
-              )}
-              <span style={{ fontSize: 22 }}>📷</span>
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  if (view === 'me') {
-    const listToShow = meTab === 'videos' ? myVideos : meTab === 'liked' ? likedVideos : savedVideos
-    return (
-      <div style={{ background: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'system-ui', paddingBottom: 80 }}>
-        <div style={{ padding: 14, display: 'flex', justifyContent: 'space-between' }}>
-          <span onClick={() => { stopAllSound(); setView('home') }} style={{ cursor: 'pointer', fontSize: 20 }}>←</span>
-          <b>@{myName}</b>
-          <span onClick={() => setShowSettings(true)} style={{ cursor: 'pointer', fontSize: 22 }}>☰</span>
-        </div>
-        <div style={{ textAlign: 'center', padding: '10px 16px' }}>
-          <div style={{ width: 88, height: 88, borderRadius: '50%', background: GRADIENT, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 900 }}>{(myName || 'V')[0].toUpperCase()}</div>
-          <div style={{ fontWeight: 900, fontSize: 20, marginTop: 8 }}>@{myName}</div>
-          <div style={{ opacity: 0.6, fontSize: 13 }}>{user?.email || 'Ingia ili uone profile'}</div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 14 }}>
-            <span><b>{following.length}</b><br /><span style={{ fontSize: 12, opacity: 0.6 }}>Following</span></span>
-            <span><b>85</b><br /><span style={{ fontSize: 12, opacity: 0.6 }}>Followers</span></span>
-            <span><b>{coins}</b><br /><span style={{ fontSize: 12, opacity: 0.6 }}>Coins</span></span>
-          </div>
-          {!user ? (
-            <button onClick={() => setShowLogin(true)} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 800, marginTop: 14 }}>Ingia Sasa</button>
-          ) : (
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14 }}>
-              <button onClick={() => setShowSwitch(true)} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 20, fontWeight: 800 }}>Switch Account</button>
-              <button onClick={() => setShowSettings(true)} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 20, fontWeight: 800 }}>Settings</button>
-            </div>
-          )}
-        </div>
-        <div style={{ margin: 14, background: 'linear-gradient(90deg,#FE2C55,#FF6B9D)', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontWeight: 900 }}>Creator Fund</div>
-          <div style={{ fontSize: 22, fontWeight: 900, marginTop: 4 }}>{creatorCoins.toLocaleString()} / 1,000,000</div>
-          <div style={{ background: 'rgba(255,255,255,0.3)', height: 8, borderRadius: 4, marginTop: 8, overflow: 'hidden' }}>
-            <div style={{ width: Math.min(100, creatorCoins / 10000) + '%', background: '#fff', height: '100%' }} />
-          </div>
-          <div style={{ fontSize: 12, marginTop: 6 }}>Like na Gifts zinaongeza Fund yako!</div>
-        </div>
-        <div onClick={() => alert('Tangaza Biashara - Tsh 10,000 / wiki!')} style={{ margin: '0 14px', background: '#1a1a1a', borderRadius: 16, padding: 16, display: 'flex', justifyContent: 'space-between', cursor: 'pointer' }}>
-          <div><div style={{ fontWeight: 900 }}>Tangaza Biashara</div><div style={{ fontSize: 12, opacity: 0.6 }}>Tsh 10,000 / wiki - Watu 50K+ wanaona</div></div>
-          <span style={{ background: PINK, padding: '8px 14px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>Tangaza</span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 18, borderBottom: '1px solid #222' }}>
-          <span onClick={() => setMeTab('videos')} style={{ padding: '10px 0', fontWeight: 800, borderBottom: meTab === 'videos' ? '2px solid ' + PINK : 'none', cursor: 'pointer' }}>Videos ({myVideos.length})</span>
-          <span onClick={() => setMeTab('liked')} style={{ padding: '10px 0', fontWeight: 800, borderBottom: meTab === 'liked' ? '2px solid ' + PINK : 'none', cursor: 'pointer' }}>Liked ({likedVideos.length})</span>
-          <span onClick={() => setMeTab('saved')} style={{ padding: '10px 0', fontWeight: 800, borderBottom: meTab === 'saved' ? '2px solid ' + PINK : 'none', cursor: 'pointer' }}>Saved ({savedVideos.length})</span>
-        </div>
-        <div style={{ padding: '8px 14px', fontSize: 13, color: '#00a884' }}>LIVE zilizosave: {liveSaved.length} - Ziko hapa kwenye Videos!</div>
-        {myVideos.length > 0 && (
-          <div style={{ margin: '0 14px 10px', background: '#1a1a1a', padding: 12, borderRadius: 12, fontSize: 13 }}>
-            <b>Bonyeza video yoyote kuicheza! ▶️</b>
-            <div style={{ opacity: 0.6, fontSize: 12, marginTop: 4 }}>Video za kurecord ni za muda tu. Ili zibaki milele, pakia kwa LINK!</div>
-          </div>
-        )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, padding: 2 }}>
-          {listToShow.map((v) => (
-            <div key={v.id} onClick={() => {
-              if (playingMeId === v.id) {
-                setPlayingMeId('')
-                stopAllSound()
-              } else {
-                setPlayingMeId(v.id)
-                const idxInAll = clips.findIndex((x) => x.id === v.id)
-                if (idxInAll >= 0) {
-                  stopAllSound()
-                  setTab('foryou')
-                  setIdx(idxInAll)
-                  setView('home')
-                }
-              }
-            }} style={{ position: 'relative', aspectRatio: '9/16', background: GRADIENT, cursor: 'pointer', overflow: 'hidden' }}>
-              <video src={v.url + '#t=0.1'} muted playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#222' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.8))', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 6 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.caption}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
-                  <span style={{ fontSize: 12 }}>❤️ {v.likes + (globalLikes[v.id] || 0)}</span>
-                  <span style={{ fontSize: 18 }}>▶️</span>
-                </div>
-              </div>
-              {meTab === 'videos' && (
-                <span onClick={(e) => { e.stopPropagation(); deleteMyVideo(v.id) }} style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.7)', padding: '4px 7px', borderRadius: 10, fontSize: 12 }}>🗑️</span>
-              )}
-            </div>
-          ))}
-          {listToShow.length === 0 && <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 30, opacity: 0.6 }}>Hakuna video hapa bado - Bonyeza + kupakia!</div>}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ background: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'system-ui', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'linear-gradient(180deg, rgba(0,0,0,0.85), transparent)' }}>
-        <div style={{ fontWeight: 900, fontSize: 22 }}>VIBRA<span style={{ color: PINK }}>●</span></div>
-        <div style={{ display: 'flex', gap: 18, fontWeight: 700, fontSize: 15 }}>
-          <span onClick={() => { stopAllSound(); setTab('following'); setIdx(0) }} style={{ cursor: 'pointer', opacity: tab === 'following' ? 1 : 0.6, borderBottom: tab === 'following' ? '2px solid ' + PINK : 'none' }}>Following</span>
-          <span onClick={() => { stopAllSound(); setTab('foryou'); setIdx(0) }} style={{ cursor: 'pointer', opacity: tab === 'foryou' ? 1 : 0.6, borderBottom: tab === 'foryou' ? '2px solid ' + PINK : 'none' }}>For You</span>
-        </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span style={{ background: '#222', padding: '5px 10px', borderRadius: 20, fontSize: 13, fontWeight: 800 }}>🪙 {coins}</span>
-          <span onClick={() => { setPanel(panel === 'notifications' ? '' : 'notifications'); setNotifications((p) => p.map((n) => ({ ...n, read: true }))) }} style={{ position: 'relative', fontSize: 22, cursor: 'pointer' }}>
-            🔔{unread > 0 && <span style={{ position: 'absolute', top: -4, right: -6, background: PINK, fontSize: 10, minWidth: 16, height: 16, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{unread > 9 ? '9+' : unread}</span>}
-          </span>
-          <span onClick={() => setPanel(panel === 'search' ? '' : 'search')} style={{ fontSize: 20, cursor: 'pointer' }}>🔍</span>
-          {user ? (
-            <span onClick={() => { stopAllSound(); setView('me') }} style={{ width: 32, height: 32, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, cursor: 'pointer' }}>{myName[0].toUpperCase()}</span>
-          ) : (
-            <button onClick={() => setShowLogin(true)} style={{ background: PINK, color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 800 }}>Ingia</button>
-          )}
-        </div>
-      </div>
-
-      {panel === 'search' && (
-        <div style={{ position: 'fixed', top: 60, left: 12, right: 12, zIndex: 60, background: '#1a1a1a', padding: 12, borderRadius: 14 }}>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tafuta video au creator..." style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#333', color: '#fff', outline: 'none' }} />
-          <div style={{ fontSize: 12, opacity: 0.6, marginTop: 8 }}>Video: {visibleClips.length} - Likes za wote zinaonekana!</div>
-        </div>
-      )}
-      {panel === 'notifications' && (
-        <div style={{ position: 'fixed', top: 60, left: 12, right: 12, zIndex: 70, background: '#1a1a1a', borderRadius: 16, padding: 16, maxHeight: '60vh', overflow: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>Notifications ({notifications.length})</b><span onClick={() => setPanel('')} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
-          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {notifications.length === 0 && <div style={{ opacity: 0.6, fontSize: 13, textAlign: 'center', padding: 20 }}>Hakuna notification bado.<br />Ukilike-wa itaonekana hapa!</div>}
-            {notifications.map((n) => (
-              <div key={n.id} style={{ background: '#222', padding: 12, borderRadius: 12 }}><div>{n.type === 'like' ? '❤️' : n.type === 'comment' ? '💬' : n.type === 'follow' ? '👥' : '📢'} <b>{n.from}</b></div><div style={{ fontSize: 14, marginTop: 3 }}>{n.text}</div><div style={{ fontSize: 11, opacity: 0.5 }}>{n.time || ''}</div></div>
-            ))}
-          </div>
-          {notifications.length > 0 && <button onClick={() => setNotifications([])} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 10, borderRadius: 10, marginTop: 12 }}>Futa Zote</button>}
-        </div>
-      )}
-
-      {tab === 'following' && !user ? (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
-          <div style={{ fontSize: 50 }}>👥</div>
-          <div style={{ fontWeight: 900, fontSize: 20, marginTop: 10 }}>Ingia ili uone Following</div>
-          <button onClick={() => setShowLogin(true)} style={{ marginTop: 16, background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 800 }}>Ingia Sasa</button>
-        </div>
-      ) : tab === 'following' && visibleClips.length === 0 ? (
-        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center' }}>
-          <div style={{ fontSize: 50 }}>😔</div>
-          <div style={{ fontWeight: 900, fontSize: 20, marginTop: 10 }}>Bado haujafollow mtu</div>
-          <button onClick={() => { stopAllSound(); setTab('foryou'); setIdx(0) }} style={{ marginTop: 16, background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 800 }}>Nenda For You</button>
-        </div>
-      ) : (
-        <div
-          onTouchStart={(e) => setTouchY(e.touches[0].clientY)}
-          onTouchEnd={(e) => {
-            const diff = touchY - e.changedTouches[0].clientY
-            if (diff > 50) next()
-            if (diff < -50) prev()
-          }}
-          onWheel={(e) => {
-            if (e.deltaY > 20) next()
-            if (e.deltaY < -20) prev()
-          }}
-          style={{ height: '100vh', width: '100vw', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}
-        >
-          <video ref={mainVideoRef} key={current.id} src={current.url} autoPlay loop muted={!soundEnabled} playsInline onClick={(e) => {
-            if (!soundEnabled) {
-              setSoundEnabled(true)
-              e.target.muted = false
-              e.target.volume = 1
-              e.target.play()
-            } else {
-              if (e.target.paused) e.target.play()
-              else e.target.pause()
-            }
-          }} style={{ width: '100vw', height: '100vh', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
-          {liveCreators.includes(current.creator) && (
-            <div style={{ position: 'absolute', top: 70, left: 12, background: '#FF0000', padding: '6px 12px', borderRadius: 20, fontWeight: 900, fontSize: 13, zIndex: 30 }}>
-              LIVE • Wanaangalia 342
-            </div>
-          )}
-          {liveCreators.includes(current.creator) && (
-            <div style={{ position: 'absolute', top: 105, left: 12, background: 'rgba(0,0,0,0.6)', padding: '6px 12px', borderRadius: 20, fontSize: 12, zIndex: 30 }}>
-              Video hii inaongezeka • {displayLikes} likes
-            </div>
-          )}
-          <div onClick={() => {
-            if (soundEnabled) {
-              stopAllSound()
-              setSoundEnabled(false)
-            } else {
-              setSoundEnabled(true)
-              const v = mainVideoRef.current
-              if (v) { v.muted = false; v.volume = 1; v.play() }
-            }
-          }} style={{ position: 'absolute', top: 70, right: 16, background: 'rgba(0,0,0,0.6)', padding: '8px 12px', borderRadius: 20, cursor: 'pointer', zIndex: 30 }}>🔊 {soundEnabled ? 'ON - Bonyeza kukata' : 'OFF - Bonyeza kuwasha'}</div>
-          <div style={{ position: 'absolute', right: 12, bottom: 130, display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center', zIndex: 20 }}>
-            <div style={{ position: 'relative' }}>
-              <div onClick={toggleFollow} style={{ width: 52, height: 52, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 20, cursor: 'pointer', border: '2px solid #fff' }}>{current.creator[0].toUpperCase()}</div>
-              <div onClick={toggleFollow} style={{ position: 'absolute', bottom: -8, left: '50%', transform: 'translateX(-50%)', width: 20, height: 20, borderRadius: '50%', background: isFollowing ? '#fff' : PINK, color: isFollowing ? PINK : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, cursor: 'pointer' }}>{isFollowing ? '✓' : '+'}</div>
-            </div>
-            <div onClick={toggleLike} style={{ textAlign: 'center', cursor: 'pointer' }}><div style={{ fontSize: 32 }}>{isLiked ? '❤️' : '🤍'}</div><div style={{ fontWeight: 800, fontSize: 13 }}>{displayLikes >= 1000 ? (displayLikes / 1000).toFixed(1) + 'K' : displayLikes}</div><div style={{ fontSize: 10, opacity: 0.6 }}>Wote</div></div>
-            <div onClick={() => setPanel(panel === 'comments' ? '' : 'comments')} style={{ textAlign: 'center', cursor: 'pointer' }}><div style={{ fontSize: 30 }}>💬</div><div style={{ fontWeight: 800, fontSize: 13 }}>{allComments.length}</div><div style={{ fontSize: 10, opacity: 0.6 }}>Wote</div></div>
-            <div onClick={toggleSave} style={{ textAlign: 'center', cursor: 'pointer' }}><div style={{ fontSize: 30 }}>{isSaved ? '🔖' : '📌'}</div><div style={{ fontSize: 12 }}>{isSaved ? 'Saved' : 'Save'}</div></div>
-            <div onClick={shareVideo} style={{ textAlign: 'center', cursor: 'pointer' }}><div style={{ fontSize: 30 }}>↗️</div><div style={{ fontSize: 12 }}>Share</div></div>
-            <div onClick={() => setPanel(panel === 'gifts' ? '' : 'gifts')} style={{ textAlign: 'center', cursor: 'pointer' }}><div style={{ fontSize: 28 }}>🎁</div><div style={{ fontSize: 12 }}>Gift</div></div>
-          </div>
-          <div style={{ position: 'absolute', left: 12, right: 70, bottom: 110, zIndex: 20 }}>
-            <div style={{ fontWeight: 900, fontSize: 17 }}>@{current.creator}</div>
-            <div style={{ marginTop: 4, fontSize: 14 }}>{current.caption}</div>
-            <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button onClick={toggleFollow} style={{ background: isFollowing ? '#fff' : PINK, color: isFollowing ? '#000' : '#fff', border: 'none', padding: '7px 16px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>{isFollowing ? 'Following ✓' : 'Follow'}</button>
-              <button onClick={() => setPanel('comments')} style={{ background: '#222', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 700, fontSize: 13 }}>Comments ({allComments.length})</button>
-              <button onClick={() => { stopAllSound(); setLiveOn(true) }} style={{ background: '#FF0000', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>LIVE</button>
-              <button onClick={() => { stopAllSound(); setBattleOn(true) }} style={{ background: '#FFD700', color: '#000', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>BATTLE 8</button>
-            </div>
-            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>{safeIdx + 1} / {visibleClips.length} - FULL SCREEN - Swipe juu au chini</div>
-          </div>
-          <div style={{ position: 'absolute', right: 12, bottom: 260, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 20 }}>
-            <button onClick={prev} disabled={safeIdx === 0} style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', width: 36, height: 36, borderRadius: '50%', fontSize: 18, opacity: safeIdx === 0 ? 0.3 : 1 }}>↑</button>
-            <button onClick={next} disabled={safeIdx >= visibleClips.length - 1} style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', width: 36, height: 36, borderRadius: '50%', fontSize: 18, opacity: safeIdx >= visibleClips.length - 1 ? 0.3 : 1 }}>↓</button>
-          </div>
-        </div>
-      )}
-
-      {panel === 'comments' && (
-        <div style={{ position: 'fixed', bottom: 70, left: 0, right: 0, zIndex: 70, background: '#1a1a1a', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, maxHeight: '50vh', overflow: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>Comments za Wote ({allComments.length})</b><span onClick={() => setPanel('')} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
-          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {allComments.length === 0 && <div style={{ opacity: 0.6, fontSize: 13 }}>Hakuna comment bado - Kuwa wa kwanza!</div>}
-            {allComments.map((c, i) => (
-              <div key={i} style={{ background: '#222', padding: '10px 12px', borderRadius: 12 }}><b style={{ fontSize: 13 }}>{c.name}</b><div style={{ fontSize: 14, marginTop: 2 }}>{c.text}</div></div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <input value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Andika comment - wote wataiona..." style={{ flex: 1, padding: 12, borderRadius: 20, border: 'none', background: '#333', color: '#fff', outline: 'none' }} />
-            <button onClick={addComment} style={{ background: PINK, color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 20, fontWeight: 800 }}>Tuma</button>
-          </div>
-        </div>
-      )}
-      {panel === 'gifts' && (
-        <div style={{ position: 'fixed', bottom: 70, left: 0, right: 0, zIndex: 70, background: '#1a1a1a', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>Tuma Gift kwa @{current.creator}</b><span onClick={() => setPanel('')} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
-          <div style={{ fontSize: 13, opacity: 0.6, marginTop: 4 }}>Coins zako: {coins} - Umetuma: {giftSent}</div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-            {[{ emoji: '🌹', name: 'Rose', cost: 1 }, { emoji: '❤️', name: 'Heart', cost: 5 }, { emoji: '🔥', name: 'Fire', cost: 10 }, { emoji: '💎', name: 'Diamond', cost: 50 }, { emoji: '👑', name: 'Crown', cost: 100 }].map((g) => (
-              <button key={g.name} onClick={() => sendGift(g)} style={{ background: '#222', color: '#fff', border: 'none', padding: '12px 14px', borderRadius: 14, cursor: 'pointer' }}><div style={{ fontSize: 24 }}>{g.emoji}</div><div style={{ fontSize: 12, fontWeight: 800 }}>{g.name}</div><div style={{ fontSize: 11, opacity: 0.6 }}>{g.cost}</div></button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {battleOn && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 95, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <b style={{ fontSize: 18 }}>BATTLE LIVE - {Math.floor(battleTime / 60)}:{String(battleTime % 60).padStart(2, '0')}</b>
-            <span onClick={() => setBattleOn(false)} style={{ cursor: 'pointer', fontSize: 22 }}>✕</span>
-          </div>
-          <div style={{ padding: '0 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontWeight: 900 }}>MIMI {battleScoreMe}</span>
-            <div style={{ flex: 1, height: 12, background: '#333', borderRadius: 6, overflow: 'hidden', display: 'flex' }}>
-              <div style={{ width: (battleScoreMe / (battleScoreMe + battleScoreOpp) * 100) + '%', background: PINK }} />
-              <div style={{ flex: 1, background: TEAL }} />
-            </div>
-            <span style={{ fontWeight: 900 }}>{battleScoreOpp} OPP</span>
-          </div>
-          <div style={{ display: 'flex', flex: 1, gap: 8, padding: 12 }}>
-            <div style={{ width: 90, display: 'flex', flexDirection: 'column', gap: 8, overflow: 'auto' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, textAlign: 'center', color: '#aaa' }}>WATU 8 KUSHOTO</div>
-              {battlePeople.map((p) => (
-                <div key={p.name} onClick={() => { setBattleScoreOpp(p.score); setBattleOppName(p.name); alert('Sasa unabattle na ' + p.name + '!') }} style={{ background: '#1a1a1a', borderRadius: 12, padding: 8, textAlign: 'center', cursor: 'pointer', border: p.live ? '2px solid #FF0000' : 'none' }}>
-                  <img src={p.avatar} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
-                  <div style={{ fontSize: 11, fontWeight: 800 }}>{p.name}</div>
-                  <div style={{ fontSize: 10, color: '#00C853' }}>{p.live ? 'LIVE' : 'Offline'}</div>
-                  <div style={{ fontSize: 11 }}>{p.score}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ flex: 1, background: GRADIENT, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 50 }}>👤</div>
-                <b>MIMI - @{myName}</b>
-                <div style={{ fontSize: 22, fontWeight: 900 }}>{battleScoreMe}</div>
-                <div style={{ fontSize: 12 }}>{battleScoreMe > battleScoreOpp ? 'UNAONGOZA!' : 'PIGANA!'}</div>
-              </div>
-              <div style={{ flex: 1, background: '#222', borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 50 }}>⚔️</div>
-                <b>VS - {battleOppName}</b>
-                <div style={{ fontSize: 22, fontWeight: 900 }}>{battleScoreOpp}</div>
-                <button onClick={() => { setBattleScoreMe((s) => s + 50); setCoins((c) => c + 10) }} style={{ background: PINK, color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 20, fontWeight: 900, marginTop: 8 }}>NIPIGIE KURA +50</button>
-              </div>
-            </div>
-          </div>
-          <div style={{ padding: 12, display: 'flex', gap: 8, justifyContent: 'center' }}>
-            <button onClick={() => { setBattleScoreMe((s) => s + 10); alert('Umetuma Rose!') }} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: 12 }}>Rose</button>
-            <button onClick={() => { setBattleScoreMe((s) => s + 50); alert('Umetuma Diamond!') }} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: 12 }}>Diamond</button>
-            <button onClick={() => { setBattleScoreMe((s) => s + 100); alert('Umetuma Crown!') }} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: 12 }}>Crown</button>
-          </div>
-        </div>
-      )}
-
-      {liveOn && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 90, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ background: '#FF0000', padding: '6px 12px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>LIVE {liveRecording ? 'REC' : ''}</span>
-            <span onClick={() => { stopLiveCamera(); setLiveOn(false) }} style={{ cursor: 'pointer', fontSize: 22 }}>✕</span>
-          </div>
-          <div style={{ flex: 1, position: 'relative', background: '#111', overflow: 'hidden' }}>
-            {liveStreamOn ? (
-              <video ref={liveVideoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20, textAlign: 'center' }}>
-                <div style={{ fontSize: 60 }}>📹</div>
-                <div style={{ fontWeight: 900, fontSize: 18, marginTop: 10 }}>Uko tayari kwenda LIVE?</div>
-                <div style={{ opacity: 0.6, fontSize: 13, marginTop: 6 }}>Bonyeza Washa Kamera - Uso wako utaonekana LIVE kweli!</div>
-                <button onClick={startLiveCamera} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 900, marginTop: 14 }}>WASHA KAMERA YA LIVE</button>
-              </div>
-            )}
-            {liveStreamOn && (
-              <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, display: 'flex', gap: 8 }}>
-                {!liveRecording ? (
-                  <button onClick={startLiveRecord} style={{ flex: 1, background: '#FF0000', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900 }}>ANZA KURECORD LIVE - ITASAVE KWELI!</button>
-                ) : (
-                  <button onClick={stopLiveRecord} style={{ flex: 1, background: '#00C853', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900 }}>MALIZA NA SAVE LIVE</button>
-                )}
-              </div>
-            )}
-          </div>
-          <div style={{ padding: 14 }}>
-            <div style={{ fontSize: 12, color: '#00a884' }}>LIVE zilizosave: {liveSaved.length} - Zitaonekana kwenye Profile</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, maxHeight: 100, overflow: 'auto' }}>
-              {liveChat.map((m, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.15)', padding: '8px 12px', borderRadius: 12, fontSize: 13 }}><b>{m.name}:</b> {m.text}</div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <input value={liveMsg} onChange={(e) => setLiveMsg(e.target.value)} placeholder="Chat LIVE..." style={{ flex: 1, padding: 12, borderRadius: 20, border: 'none', background: '#222', color: '#fff', outline: 'none' }} />
-              <button onClick={() => { if (!liveMsg.trim()) return; setLiveChat((p) => [...p, { name: myName, text: liveMsg }]); setLiveMsg('') }} style={{ background: PINK, color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 20, fontWeight: 800 }}>Tuma</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#000', borderTop: '1px solid #222', display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '10px 0 14px' }}>
-        <span onClick={() => { stopAllSound(); setView('home'); setTab('foryou'); setIdx(0); setPanel('') }} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>🏠</div>Home</span>
-        <span onClick={() => setPanel(panel === 'search' ? '' : 'search')} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>🔍</div>Discover</span>
-        <span onClick={() => { stopAllSound(); if (!user) setShowLogin(true); else setShowCamera(true) }} style={{ width: 48, height: 32, background: GRADIENT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, cursor: 'pointer' }}>+</span>
-        <span onClick={() => { stopAllSound(); setView('chat') }} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>💬</div>Chat</span>
-        <span onClick={() => { stopAllSound(); if (!user) setShowLogin(true); else setView('me') }} style={{ textAlign: 'center', cursor: 'pointer', fontSize: 12 }}><div style={{ fontSize: 22 }}>👤</div>Me</span>
-      </div>
-
-      {showLogin && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: '#1a1a1a', padding: 24, borderRadius: 20, width: '100%', maxWidth: 360 }}>
-            <div style={{ fontWeight: 900, fontSize: 22, textAlign: 'center' }}>Ingia Vibra 🔥</div>
-            <div style={{ fontSize: 12, color: '#aaa', textAlign: 'center', marginTop: 6 }}>Andika jina bila @ - mf: Mr Vibra</div>
-            <input value={loginName} onChange={(e) => setLoginName(e.target.value)} placeholder="Jina lako - bila @" style={{ width: '100%', padding: 13, borderRadius: 12, border: 'none', background: '#333', color: '#fff', marginTop: 16, outline: 'none', boxSizing: 'border-box' }} />
-            <input value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Email" style={{ width: '100%', padding: 13, borderRadius: 12, border: 'none', background: '#333', color: '#fff', marginTop: 10, outline: 'none', boxSizing: 'border-box' }} />
-            <input value={loginPass} onChange={(e) => setLoginPass(e.target.value)} type="password" placeholder="Password" style={{ width: '100%', padding: 13, borderRadius: 12, border: 'none', background: '#333', color: '#fff', marginTop: 10, outline: 'none', boxSizing: 'border-box' }} />
-            <button onClick={handleLogin} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 13, borderRadius: 12, fontWeight: 900, marginTop: 14 }}>INGIA</button>
-            <button onClick={() => setShowLogin(false)} style={{ width: '100%', background: 'transparent', color: '#aaa', border: 'none', padding: 10, marginTop: 6 }}>Ghairi</button>
-          </div>
-        </div>
-      )}
-      {showSwitch && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: '#1a1a1a', padding: 22, borderRadius: 20, width: '100%', maxWidth: 360 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ fontSize: 19 }}>Switch Account</b><span onClick={() => setShowSwitch(false)} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
-            <div style={{ fontSize: 13, opacity: 0.6, marginTop: 4 }}>Chagua akaunti</div>
-            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {accounts.length === 0 && <div style={{ opacity: 0.6, fontSize: 13 }}>Hakuna akaunti nyingine - Ongeza mpya chini!</div>}
-              {accounts.map((a) => (
-                <div key={a.email} onClick={() => { setUser(a); setS('vibra_user', a); setShowSwitch(false); alert('Ume-switch kwenda @' + cleanName(a.name)) }} style={{ display: 'flex', alignItems: 'center', gap: 12, background: user?.email === a.email ? '#333' : '#222', padding: 12, borderRadius: 12, cursor: 'pointer', border: user?.email === a.email ? '2px solid ' + PINK : 'none' }}>
-                  <span style={{ width: 38, height: 38, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{cleanName(a.name)[0].toUpperCase()}</span>
-                  <div style={{ flex: 1 }}><div style={{ fontWeight: 800 }}>{cleanName(a.name)} {user?.email === a.email && <span style={{ fontSize: 11, color: TEAL }}>Active</span>}</div><div style={{ fontSize: 12, opacity: 0.6 }}>{a.email}</div></div>
-                </div>
-              ))}
-            </div>
-            <div style={{ borderTop: '1px solid #333', marginTop: 14, paddingTop: 14 }}>
-              <input value={loginName} onChange={(e) => setLoginName(e.target.value)} placeholder="Jina la akaunti mpya - bila @" style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#333', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
-              <input value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Email ya akaunti mpya" style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#333', color: '#fff', marginTop: 8, outline: 'none', boxSizing: 'border-box' }} />
-              <button onClick={handleLogin} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 12, borderRadius: 10, fontWeight: 900, marginTop: 10 }}>+ ONGEZA NA SWITCH</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showCamera && (
-        <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 100, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000' }}>
-            <span onClick={() => { stopCamera(); setShowCamera(false) }} style={{ cursor: 'pointer', fontSize: 22 }}>✕</span>
-            <b>Record Video - Kama TikTok</b>
-            <span onClick={toggleFacing} style={{ cursor: 'pointer', fontSize: 22 }}>🔄</span>
-          </div>
-          <div style={{ flex: 1, position: 'relative', background: '#111', overflow: 'hidden' }}>
-            {camOn ? (
-              <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-                <video ref={camVideoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', filter: FILTERS[activeFilter].css }} />
-                {activeStickers.map((s, i) => (
-                  <span key={i} onClick={() => setActiveStickers((p) => p.filter((_, j) => j !== i))} style={{ position: 'absolute', top: 20 + i * 50, left: 20 + (i % 3) * 60, fontSize: 48, cursor: 'pointer' }}>{s}</span>
-                ))}
-                {isRecording && <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: '#FF0000', padding: '6px 14px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>REC {Math.floor(recordTime / 60)}:{String(recordTime % 60).padStart(2, '0')}</div>}
-              </div>
-            ) : (
-              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20, textAlign: 'center' }}>
-                <div style={{ fontSize: 60 }}>📷</div>
-                <div style={{ fontWeight: 900, fontSize: 18, marginTop: 10 }}>Record Video Yako!</div>
-                <div style={{ opacity: 0.6, fontSize: 13, marginTop: 6 }}>Kamera yako ya kweli itafunguka hapa - Chagua Filter na Sticker!</div>
-                <button onClick={startCamera} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 900, marginTop: 14 }}>WASHA KAMERA</button>
-                <div style={{ marginTop: 14, width: '100%' }}>
-                  <div style={{ background: '#1a1a1a', padding: 12, borderRadius: 12, fontSize: 13, textAlign: 'left', marginBottom: 10 }}>
-                    <b>ILI VIDEO IBAKI MILELE - Tumia LINK! 🔗</b>
-                    <div style={{ opacity: 0.6, fontSize: 12, marginTop: 4 }}>Video ya kurecord au Galari inapotea ukifunga app. Link inabaki milele!</div>
-                  </div>
-                  <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="Weka link ya video mp4..." style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
-                  <textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Andika caption... #vibra" style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', marginTop: 8, outline: 'none', minHeight: 60, boxSizing: 'border-box' }} />
-                  <button onClick={handleUpload} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900, marginTop: 8 }}>PAKIA KWA LINK - INABAKI MILELE</button>
-                  <input ref={fileRef} type="file" accept="video/*" onChange={handleFile} style={{ display: 'none' }} />
-                  <button onClick={() => fileRef.current?.click()} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 800, marginTop: 8 }}>Chagua Video Kutoka Simu - Ya Muda Tu</button>
-                </div>
-              </div>
-            )}
-            {recordedUrl && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-                <div style={{ fontWeight: 900 }}>Video Imerecordiwa!</div>
-                <video src={recordedUrl} controls autoPlay loop style={{ width: '100%', maxHeight: 300, marginTop: 12, borderRadius: 12, objectFit: 'cover', filter: FILTERS[activeFilter].css }} />
-                <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Andika caption..." style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', marginTop: 12, outline: 'none', boxSizing: 'border-box' }} />
-                <button onClick={saveRecordedVideo} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 13, borderRadius: 12, fontWeight: 900, marginTop: 10 }}>SAVE NA PAKIA VIDEO</button>
-                <button onClick={() => { setRecordedUrl(''); startCamera() }} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, marginTop: 8 }}>Record Tena</button>
-              </div>
-            )}
-          </div>
-          {camOn && (
-            <div style={{ background: '#000', padding: '10px 12px 16px' }}>
-              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
-                {FILTERS.map((f, i) => (
-                  <button key={f.name} onClick={() => setActiveFilter(i)} style={{ background: activeFilter === i ? PINK : '#222', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, whiteSpace: 'nowrap', fontWeight: 800, fontSize: 13 }}>{f.name}</button>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
-                {STICKERS.map((s) => (
-                  <span key={s} onClick={() => setActiveStickers((p) => [...p, s])} style={{ fontSize: 28, cursor: 'pointer', background: '#222', padding: '6px 8px', borderRadius: 12 }}>{s}</span>
-                ))}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: 13 }}>Beauty</span>
-                <input type="range" min="0" max="50" value={beauty} onChange={(e) => setBeauty(Number(e.target.value))} style={{ flex: 1 }} />
-                <span style={{ fontSize: 13 }}>{beauty}%</span>
-                <button onClick={() => setActiveStickers([])} style={{ background: '#222', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 10, fontSize: 12 }}>Futa Stickers</button>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-                {!isRecording ? (
-                  <button onClick={startRecording} style={{ width: 72, height: 72, borderRadius: '50%', background: '#FF0000', border: '4px solid #fff', fontSize: 28, cursor: 'pointer' }}>●</button>
-                ) : (
-                  <button onClick={stopRecording} style={{ width: 72, height: 72, borderRadius: 12, background: '#FF0000', border: '4px solid #fff', fontSize: 20, cursor: 'pointer' }}>⏹️</button>
-                )}
-              </div>
-              <div style={{ textAlign: 'center', fontSize: 12, opacity: 0.6, marginTop: 6 }}>Bonyeza Sticker kuweka - Bonyeza Filter kubadilisha</div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
+  return(<div data-ready={hydrated} className="vibra-app home-bottom-scroll bg-video text-video-text" style={{overflow:'hidden'}}>{authScreen}{cameraPanel}<div ref={stageRef} className={'home-video-stage '+(idx%feed.length)} style={{overflow:'hidden',position:'relative'}} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} onWheel={onWheel}><div style={{position:'absolute',top:0,left:0,right:0,zIndex:10,padding:'0 8px'}}><div style={{display:'flex',gap:8,alignItems:'center'}}><input ref={searchRef} aria-label="Search videos" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Find related content..." style={{fontSize:13, border:`2px solid ${TEAL}`, background:'#111', color:'#fff'}} /><button onClick={()=>setShowCamera(true)} style={{background:GRADIENT_BTN,color:'#fff',border:`1px solid ${TEAL}`,width:38,height:38,borderRadius:'50%',fontSize:16}}>📷</button><span className="text-xs whitespace-nowrap" style={{...vibraText, fontSize:11}}>{coins} Coins</span></div><div style={{display:'flex',justifyContent:'center',gap:8,marginTop:8,alignItems:'center'}}><Button variant="ghost" onClick={()=>{setTab('following');setIdx(0)}} style={{fontWeight:tab==='following'?'bold':'normal',fontSize:13,padding:'6px 10px', ...vibraText}}>Following</Button><Button variant="ghost" onClick={()=>{setTab('foryou');setIdx(0)}} style={{fontWeight:tab==='foryou'?'bold':'normal',fontSize:13,padding:'6px 10px', ...vibraText}}>For You</Button>{authUser?<button onClick={()=>setView('me')} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11}}>{name}</button>:<button onClick={()=>setShowAuth(true)} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'6px 10px',borderRadius:20,fontSize:11,fontWeight:'bold'}}>Login / Sign Up</button>}</div></div>{current?<video ref={videoRef} className="feed-video absolute inset-0" src={current.url} loop playsInline autoPlay preload="auto" onClick={toggleSound} />:<p className="p-6 text-center" style={{paddingTop:180, ...vibraText}}>Hakuna video.</p>}<div style={{position:'absolute',right:12,top:92,zIndex:70}}><button onClick={toggleSound} style={{width:44,height:44,borderRadius:'50%',background:GRADIENT_BTN,color:'#fff',border:`1px solid ${TEAL}`,fontSize:18}}>{soundEnabled?'🔊':'🔇'}</button></div>{!soundEnabled&&(<button onClick={toggleSound} style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:60,background:GRADIENT_BTN,color:'#fff',border:`1px solid ${TEAL}`,padding:'12px 18px',borderRadius:30,fontSize:14,fontWeight:'bold'}}>🔇 Bonyeza kwa Sauti 🔊</button>)}<div style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',zIndex:40,display:'flex',flexDirection:'column',gap:8,opacity:0.8}}><button onClick={prevVideo} style={{width:32,height:32,borderRadius:'50%',background:GRADIENT_BTN,color:'#fff',border:`1px solid ${TEAL}`,fontSize:12}}>↑</button><button onClick={nextVideo} style={{width:32,height:32,borderRadius:'50%',background:GRADIENT_BTN,color:'#fff',border:`1px solid ${TEAL}`,fontSize:12}}>↓</button></div><div style={{position:'absolute',left:12,bottom:110,right:70,zIndex:45}}><p style={{...vibraText, fontSize:14, textShadow:'0 1px 4px #000'}}>{name}</p><p style={{fontSize:13,lineHeight:'1.4',marginTop:4,color:'#fff',textShadow:'0 1px 4px #000'}}>{current?renderCaption(current.caption):''}</p></div><div style={{position:'absolute',right:8,bottom:115,top:'auto',zIndex:50,display:'flex',flexDirection:'column',gap:7,alignItems:'center',width:52,justifyContent:'flex-end'}}><div style={{position:'relative',width:48,height:48,marginBottom:6}}><button onClick={()=>setView('me')} style={{width:48,height:48,borderRadius:'50%',overflow:'hidden',border:`2px solid ${PINK}`,background:'#333',padding:0,cursor:'pointer'}}>{profileAvatar?<img src={profileAvatar} alt="Creator" style={{width:'100%',height:'100%',objectFit:'cover'}} />:<span style={{fontSize:22}}>👤</span>}</button><button onClick={toggleFollow} style={{position:'absolute',bottom:-8,left:'50%',transform:'translateX(-50%)',width:20,height:20,borderRadius:'50%',background: isFollowing ? '#fff' : GRADIENT_BTN,color:isFollowing?PINK:'#fff',border:'none',fontSize:12,fontWeight:'bold',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>{isFollowing?'✓':'+'}</button></div><button onClick={toggleLike} style={{...actionBtn}}>♥<span style={{fontSize:10}}>{likes}</span></button><button onClick={()=>setPanel('Comments')} style={actionBtn}>💬<span style={{fontSize:10}}>{commentCount}</span></button><button onClick={toggleSave} style={{...actionBtn}}>{saved?'✅':'🔖'}<span style={{fontSize:10}}>{savedIds.length}</span></button><button onClick={shareVideo} style={actionBtn}>↗<span style={{fontSize:10}}>Share</span></button><button onClick={()=>setPanel('Lyrics')} style={actionBtn}>🎵<span style={{fontSize:10}}>Song</span></button><button onClick={startLive} style={actionBtn}>🔴<span style={{fontSize:10}}>LIVE</span></button><div style={{transform:'scale(0.85)',transformOrigin:'bottom center'}}><VibraRewards onOpenChange={open=>setPanel(open?'Rewards':'')} /></div></div></div><nav className="bottom-nav absolute bottom-0 inset-x-0 bg-video flex justify-around p-3"><Button variant="ghost" onClick={()=>{setView('home');setSearch('')}} style={{fontSize:12, ...vibraText}}>🎬 Videos</Button><Button variant="ghost" onClick={()=>setView('chat')} style={{fontSize:12, ...vibraText}}>💬 Chat {totalUnread>0?`(${totalUnread})`:''}</Button><Button variant="ghost" aria-label="Upload" onClick={()=>setShowCamera(true)} style={{fontSize:16, ...vibraText}}>+</Button><Button variant="ghost" onClick={startLive} style={{fontSize:12, ...vibraText}}>LIVE</Button><Button variant="ghost" onClick={()=>setView('me')} style={{fontSize:12, ...vibraText}}>👤 Me</Button></nav><div style={{position:'fixed',bottom:52,left:0,right:0,zIndex:40,background:'#111',borderTop:`1px solid ${PINK}`,padding:'6px 10px',display:'flex',gap:8,alignItems:'center'}}><span style={{fontSize:16}}>📢</span><span style={{fontSize:11,flex:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis', ...vibraText}}>Tangaza hapa! Tsh 10,000/siku • mrvibraworldwide@gmail.com</span><button onClick={()=>{ window.location.href='mailto:mrvibraworldwide@gmail.com?subject=Nataka Tangazo Vibra' }} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'4px 10px',borderRadius:20,fontSize:11,fontWeight:'bold'}}>Tangaza</button></div><VibraBanner placement="home" />{panel==='Share'&&(<div style={{position:'fixed',inset:0,zIndex:999,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'flex-end'}} onClick={()=>setPanel('')}><div style={{background:'#fff',color:'#000',width:'100%',borderRadius:'20px 20px 0 0',padding:20}} onClick={e=>e.stopPropagation()}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><b style={vibraText}>Share hii video</b><button onClick={()=>setPanel('')} style={{fontSize:20,border:'none',background:'none',color:PINK}}>✕</button></div><p style={{fontSize:13,marginTop:6, color:PINK}}>{current?.caption||'Share hii video'}</p><div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:14}}><a href={'https://wa.me/?text='+shareMsg} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#25D366',color:'#fff',padding:'14px 4px',borderRadius:12}}>💬<br/>WhatsApp</a><a href={'https://www.facebook.com/sharer/sharer.php?u='+shareUrl} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#1877F2',color:'#fff',padding:'14px 4px',borderRadius:12}}>📘<br/>Facebook</a><a href="https://www.instagram.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:GRADIENT_BTN,color:'#fff',padding:'14px 4px',borderRadius:12}}>📸<br/>Instagram</a><a href={'https://chatgpt.com/?q='+encodeURIComponent('Nisaidie caption nzuri ya video hii: '+(current?.caption||''))} target="_blank" rel="noreferrer" style={{textAlign:'center',textDecoration:'none',background:'#10a37f',color:'#fff',padding:'14px 4px',borderRadius:12}}>🤖<br/>ChatGPT</a><a href="https://www.capcut.com/" target="_blank" rel="noreferrer" onClick={()=>copyLink()} style={{textAlign:'center',textDecoration:'none',background:'#000',color:'#fff',padding:'14px 4px',borderRadius:12}}>✂️<br/>CapCut</a><button onClick={copyLink} style={{background:GRADIENT_BTN,color:'#fff',padding:'14px 4px',borderRadius:12,border:'none'}}>🔗<br/>Copy Link</button></div></div></div>)}{panel==='LIVE'&&(<div style={{position:'fixed',inset:0,zIndex:999,background:'#000',display:'flex',flexDirection:'column'}}><div style={{display:'flex',gap:6,padding:8,background:'#111',flexWrap:'wrap',alignItems:'center'}}><button onClick={startRealLive} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'8px 12px',borderRadius:20,fontWeight:'bold',fontSize:12}}>📡 LIVE REAL - Watu Waingie!</button>{roomName && <button onClick={()=>{ navigator.clipboard?.writeText('https://meet.jit.si/'+roomName); setNotice('Link imekopiwa! Mtumie rafiki!') }} style={{background:'#333',color:TEAL,border:'none',padding:'8px 12px',borderRadius:20,fontSize:12}}>🔗 Copy Link: meet.jit.si/{roomName}</button>}{realLive && <button onClick={()=>setRealLive(false)} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'8px 12px',borderRadius:20,fontSize:12}}>Back kwa Picha</button>}{realLive && <button onClick={()=>{ setJitsiKey(k=>k+1); setNotice('Inarefresh LIVE...') }} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'8px 12px',borderRadius:20,fontWeight:'bold',fontSize:12}}>🔄 Refresh LIVE</button>}{realLive && <a href={jitsiUrl} target="_blank" rel="noreferrer" style={{background:'#fff',color:PINK,padding:'8px 12px',borderRadius:20,fontWeight:'bold',fontSize:12,textDecoration:'none'}}>↗ Fungua LIVE Nje</a>}</div><div style={{display:'flex',justifyContent:'space-between',padding:10,color:'#fff',alignItems:'center',gap:6,flexWrap:'wrap'}}><b style={{fontSize:13, ...vibraText}}>🔴 LIVE - {name} | 🪙 {liveCoins} | 🎁 {totalGifts}</b><div style={{display:'flex',gap:5,alignItems:'center'}}><label style={{background:GRADIENT_BTN,color:'#fff',padding:'6px 8px',borderRadius:20,fontSize:11,cursor:'pointer',whiteSpace:'nowrap'}}>🖼️ Picha Juu<input type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(!f) return; const url=URL.createObjectURL(f); setLiveOverlay(url); setLiveOverlayType(f.type.startsWith('video')?'video':'image'); setLiveOverlayPos({x:50,y:25}); setLiveOverlaySize(180) }} /></label><button onClick={()=>{ setShowGuests(v=>!v); setNotice(showGuests ? 'Guests wamefichwa' : 'Chagua Guest - bonyeza + kwenye slot') }} style={{background: showGuests ? GRADIENT_BTN : '#333',color:'#fff',padding:'6px 8px',borderRadius:20,fontSize:11,border:'none'}}>👥 Guests 8</button><button onClick={stopLive} style={{color:PINK,background:'none',border:'none',fontSize:20}}>✕</button></div></div>{(battleOn || battleWinner) && (<div style={{padding:'8px 12px',background: battleWinner ? GRADIENT_BTN : '#111',color:'#fff'}}>{battleWinner ? <p style={{textAlign:'center',fontWeight:'bold',fontSize:14}}>🏆 {battleWinner} ameshinda Battle! {name} {myScore} - {guestScore} {guestName}</p> : (<><div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:'bold',...vibraText}}><span>{name} {myScore}</span><span>⏱️ {battleTime}s ⚔️ BATTLE</span><span>{guestScore} {guestName}</span></div><div style={{display:'flex',height:10,borderRadius:10,overflow:'hidden',marginTop:4,background:'#333'}}><div style={{width: `${myScore+guestScore===0?50:(myScore/(myScore+guestScore))*100}%`,background:PINK}} /><div style={{flex:1,background:TEAL}} /></div></>)}</div>)} {realLive ? (<div style={{flex:1,position:'relative',background:'#000'}}><iframe key={jitsiKey} src={jitsiUrl} allow="camera; microphone; fullscreen; display-capture; autoplay" style={{width:'100%',height:'100%',border:'none'}} /><p style={{position:'absolute',top:8,left:8,background:GRADIENT_BTN,color:'#fff',padding:'6px 10px',borderRadius:20,fontSize:11}}>📡 LIVE REAL - Ukiona Waiting, bonyeza Log-in na Google mara moja uwe Moderator!</p></div>) : (<div style={{flex:1,position:'relative',background:'#111',display:'flex',overflow:'hidden'}}><div style={{flex:1, position:'relative', borderRight: showGuests?`2px solid ${PINK}`:'none', minWidth: showGuests?'45%':'100%'}}><video ref={liveRef} autoPlay playsInline muted style={{width:'100%',height:'100%',objectFit:'cover'}} /><span onClick={()=>{setTalking(0); setLiveChats(v=>[...v, `🎤 ${name} anaongea sasa!`])}} style={{position:'absolute',top:8,left:8,background: talking===0 ? GRADIENT_BTN : 'rgba(0,0,0,0.6)',color:'#fff',padding:'4px 8px',borderRadius:12,fontSize:11,cursor:'pointer'}}>{name} 🎤 {talking===0?'Anaongea':''} {battleOn?`• ${myScore}`:''}</span>{!liveOn&&<p style={{position:'absolute',color:'#fff',textAlign:'center',padding:20,top:'40%'}}>Inafungua kamera...</p>}</div>{showGuests && (<div style={{flex:1,display:'grid',gridTemplateColumns:'1fr 1fr',gridTemplateRows:'1fr 1fr 1fr 1fr',gap:2,background:'#000',padding:2,minWidth:'55%'}}>{guests.map((g,i)=>(<div key={i} style={{position:'relative',background:'#222',borderRadius:8,overflow:'hidden',border: talking===i+1 ? `3px solid ${TEAL}` : `1px solid ${PINK}`,minHeight:50}}>{g ? <img src={g} style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <label style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',color:TEAL,fontSize:22,cursor:'pointer'}}>👤 +<input type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>{ const f=e.target.files?.[0]; if(!f) return; const url=URL.createObjectURL(f); setGuests(prev=>prev.map((x,idx)=>idx===i?url:x)); const n=prompt('Jina la Guest '+(i+1)+'?','@Guest'+(i+1)); if(n) setGuestNames(prev=>prev.map((x,idx)=>idx===i?n:x)); setNotice('Guest '+(i+1)+' amejiunga!') }} /></label>}<span style={{position:'absolute',bottom:2,left:4,color:'#fff',fontSize:9,background:GRADIENT_BTN,padding:'2px 5px',borderRadius:8}}>{guestNames[i]}</span>{g && <span onClick={()=>{ setTalking(i+1); setLiveChats(v=>[...v, `🎤 ${guestNames[i]} anaongea sasa!`])}} style={{position:'absolute',top:2,right:2,background: talking===i+1 ? GRADIENT_BTN : '#333',color:'#fff',padding:'2px 6px',borderRadius:10,fontSize:9,cursor:'pointer'}}>🎤 {talking===i+1?'Anaongea':'Ongea'}</span>}{g && <span onClick={()=>setGuests(prev=>prev.map((x,idx)=>idx===i?'':x))} style={{position:'absolute',top:2,left:2,background:PINK,color:'#fff',width:18,height:18,borderRadius:'50%',fontSize:10,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>✕</span>}</div>))}</div>)}{liveOverlay && !showGuests && (<div onTouchMove={(e)=>{ const rect=e.currentTarget.parentElement?.getBoundingClientRect(); if(!rect) return; const t=e.touches[0]; setLiveOverlayPos({ x: ((t.clientX-rect.left)/rect.width)*100, y: ((t.clientY-rect.top)/rect.height)*100 }) }} style={{position:'absolute',left:`${liveOverlayPos.x}%`,top:`${liveOverlayPos.y}%`,transform:'translate(-50%,-50%)',width:liveOverlaySize,height:liveOverlaySize*1.4,borderRadius:12,overflow:'hidden',border:`3px solid ${PINK}`,boxShadow:'0 4px 20px rgba(0,0,0,0.6)',zIndex:20,touchAction:'none'}}>{liveOverlayType==='video' ? <video src={liveOverlay} autoPlay loop muted playsInline style={{width:'100%',height:'100%',objectFit:'cover'}} /> : <img src={liveOverlay} style={{width:'100%',height:'100%',objectFit:'cover'}} />}<button onClick={()=>setLiveOverlay('')} style={{position:'absolute',top:2,right:2,background:PINK,color:'#fff',border:'none',borderRadius:'50%',width:24,height:24}}>✕</button></div>)}{giftAnim && <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:30,pointerEvents:'none'}}><div style={{fontSize:110}}>{giftAnim}</div><p style={{background:GRADIENT_BTN,color:'#fff',padding:'8px 16px',borderRadius:20,fontWeight:'bold'}}>🎁 {giftFrom}</p></div>}<div style={{position:'absolute',left:10,bottom:10,color:'#fff',fontSize:13,zIndex:15}}>{liveChats.slice(-3).map((c,i)=><p key={i} style={{textShadow:'0 1px 3px #000'}}>{c}</p>)}</div></div>)}{showGiftBar && (<div style={{background:'#111',padding:'10px 12px',borderTop:`1px solid ${PINK}`}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}><span style={vibraText}>🎁 Tuma Gift - Una 🪙 {liveCoins} Coins</span><button onClick={()=>setShowGiftBar(false)} style={{background:'none',border:'none',color:PINK}}>✕</button></div><div style={{display:'flex',gap:8,overflowX:'auto'}}>{GIFTS.map(g=>(<button key={g.name} onClick={()=>sendGift(g,'me')} style={{background:'#222',border:`1px solid ${PINK}`,borderRadius:12,padding:'10px 12px',minWidth:70,textAlign:'center',color:'#fff'}}><div style={{fontSize:28}}>{g.emoji}</div><div style={{fontSize:11, ...vibraText}}>{g.name}</div><div style={{fontSize:11,color:TEAL}}>🪙 {g.cost}</div></button>))}</div></div>)}<div style={{padding:10,background:'#000',display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}><input value={liveMsg} onChange={e=>setLiveMsg(e.target.value)} placeholder="Andika LIVE chat..." style={{flex:1,minWidth:120,padding:10,borderRadius:20,border:`1px solid ${TEAL}`,background:'#222',color:'#fff'}} /><button onClick={()=>setShowGiftBar(v=>!v)} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'10px 12px',borderRadius:20,fontWeight:'bold',fontSize:12}}>🎁 Gift</button>{(hasGuest || realLive) && !battleOn && <button onClick={startBattle} style={{background:GRADIENT_BTN,color:'#fff',border:'none',padding:'10px 12px',borderRadius:20,fontWeight:'bold',fontSize:12}}>⚔️ Battle!</button>}{battleOn && <button onClick={()=>{setBattleOn(false); setBattleWinner('')}} style={{background:'#333',color:'#fff',border:'none',padding:'10px 12px',borderRadius:20,fontSize:12}}>Stop Battle</button>}<Button onClick={()=>{if(!liveMsg.trim()) return; setLiveChats(v=>[...v,liveMsg]); setLiveMsg('')}} style={{background:GRADIENT_BTN}}>Send</Button><Button onClick={stopLive} style={{background:GRADIENT_BTN}}>Maliza LIVE</Button></div></div>)}<VibraSheet title={panel} open={panel==='Comments'||panel==='Lyrics'||panel==='Rewards'} onClose={()=>setPanel('')}>{panel==='Lyrics'?<p className="lyrics-copy" style={vibraText}>{current?.caption||'No lyrics'}</p>:panel==='Comments'?<div><p style={vibraText}>{commentCount} Comments</p>{(comments[clipKey]||[]).map((text,i)=><p key={i} style={{padding:'8px 0',borderBottom:`1px solid ${PINK}`,color:'#fff'}}>{renderCaption(text)}</p>)}<input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Add comment..." style={inputStyle} /><Button onClick={addComment} style={{background:GRADIENT_BTN}}>Send</Button></div>:<p style={vibraText}>Coins: {coins}</p>}</VibraSheet>{notice&&<div style={noticeStyle}>{notice}</div>}{uploadInput}</div>)
 }
