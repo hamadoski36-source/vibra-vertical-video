@@ -8,7 +8,12 @@ import { VibraSheet } from '@/components/vibra-sheet'
 import { VibraRewards } from '@/components/vibra-rewards'
 import { VibraBanner } from '@/components/vibra-banner'
 import { useAuth } from '@/hooks/use-auth'
-import { readCreatorAvatar, readLocalPhoto, saveCreatorAvatar } from '@/lib/vibra-profile'
+import { readCreatorAvatar, readLocalPhoto, saveCreatorAvatar } from '@/lib/vibra-profile'create table if not exists vibra_likes (id bigint generated always as identity primary key, video_id text not null, user_email text not null, created_at timestamptz default now(), unique(video_id, user_email));
+create table if not exists vibra_comments (id bigint generated always as identity primary key, video_id text not null, user_email text, username text, avatar text, text text, created_at timestamptz default now());
+alter table vibra_likes enable row level security;
+alter table vibra_comments enable row level security;
+create policy "allow all likes" on vibra_likes for all using (true) with check (true);
+create policy "allow all comments" on vibra_comments for all using (true) with check (true);
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [{ title: 'Vibra Worldwide - Video feed' },{ name: 'description', content: 'Watch and share short videos with Vibra' },{ property: 'og:title', content: 'Vibra Worldwide - Video feed' },{ property: 'og:description', content: 'Watch and share short videos with Vibra' },{ property: 'og:type', content: 'website' },] }), component: VibraTikTok,
 })
@@ -108,16 +113,15 @@ function doAddAccount(){ setShowSettings(false); setAuthMode('signup'); setAuthN
   const current=feed.length>0?feed[idx%feed.length]:undefined
   const clipKey=String(current?.id??current?.url??'empty'); const liked=likedIds.includes(clipKey); const saved=savedIds.includes(clipKey); const isFollowing=followingIds.includes(clipKey); const isMyVideo = myVideos.some(v => String(v.id ?? v.url) === clipKey); const baseLikes = isMyVideo ? 247 : 0; const likes = baseLikes + (liked ? 1 : 0); const commentCount=(comments[clipKey]||[]).length
   const shareText=(current?.caption||'Angalia hii video kwenye Vibra!')+' '+window.location.href; const shareUrl=encodeURIComponent(window.location.href); const shareMsg=encodeURIComponent(shareText)
-  function nextVideo(){ setIdx(v=> v+1 ) }; function prevVideo(){ setIdx(v=> Math.max(0, v-1) ) }
+  function toggleLike(){ if(!authUser){ setShowAuth(true); return }; const videoId=String(clipKey); const email=authUser.email; const already=likedIds.includes(videoId); setLikedIds((v:any)=> already ? v.filter((id:any)=>String(id)!==videoId) : [...v, videoId]); (async()=>{ try{ if(already){ await fetch(`${SUPABASE_URL}/rest/v1/vibra_likes?video_id=eq.${encodeURIComponent(videoId)}&user_email=eq.${encodeURIComponent(email)}`, { method:"DELETE", headers: SB_HEADERS }); } else { await fetch(`${SUPABASE_URL}/rest/v1/vibra_likes`, { method:"POST", headers: SB_HEADERS, body: JSON.stringify({ video_id: videoId, user_email: email }) }); } }catch(e){} })(); }
   function onTouchStart(e:React.TouchEvent){ touchY.current=e.touches[0].clientY }; function onTouchEnd(e:React.TouchEvent){ if(touchY.current===null) return; const dy=touchY.current - e.changedTouches[0].clientY; if(Math.abs(dy)>50){ if(dy>0) nextVideo(); else prevVideo() }; touchY.current=null }
   function onWheel(e:React.WheelEvent){ const now=Date.now(); if(now-lastScroll.current<500) return; lastScroll.current=now; if(e.deltaY>0) nextVideo(); else prevVideo() }
   useEffect(()=>{ const onKey=(e:KeyboardEvent)=>{ if(view!=='home' || panel) return; if(e.key==='ArrowDown'){ e.preventDefault(); nextVideo() } if(e.key==='ArrowUp'){ e.preventDefault(); prevVideo() } }; window.addEventListener('keydown', onKey); return ()=>window.removeEventListener('keydown', onKey) },[view,panel])
   function toggleSound(){ const v=videoRef.current; if(!v) return; const next=!soundEnabled; setSoundEnabled(next); localStorage.setItem('vibra_sound', next?'on':'off'); v.muted=!next; v.volume=1; if(next){ v.play().catch(()=>{}) }; setNotice(next?'Sauti imewashwa 🔊':'Sauti imezimwa 🔇') }
-  function toggleLike(){ if(!authUser){ setShowAuth(true); return }; setLikedIds(v=>{ const n=v.includes(clipKey)?v.filter(id=>id!==clipKey):[...v,clipKey]; worldwide.setItem('vibra_liked', JSON.stringify(n)); return n }) }
+
   function toggleSave(){ setSavedIds(v=>{ const already=v.includes(clipKey); const n=already?v.filter(id=>id!==clipKey):[...v,clipKey]; localStorage.setItem('vibra_saved', JSON.stringify(n)); setNotice(already?'Imeondolewa':'Ime-save! ✅'); return n }) }
   function toggleFollow(){ setFollowingIds(v=>{ const already=v.includes(clipKey); const n=already?v.filter(id=>id!==clipKey):[...v,clipKey]; localStorage.setItem('vibra_following',JSON.stringify(n)); setNotice(already?'Ume-unfollow':'Umemfollow!'); return n }) }
-  function copyLink(){navigator.clipboard?.writeText(window.location.href).then(()=>setNotice('Link imekopiwa!')).catch(()=>setNotice(window.location.href))}
-  function addComment(){ if(!comment.trim()) return; const text=comment; const videoId=String(clipKey); setComment(''); (async()=>{ try{ await fetch(`${SUPABASE_URL}/rest/v1/vibra_comments`, { method:"POST", headers: SB_HEADERS, body: JSON.stringify({ video_id: videoId, user_email: authUser?.email||'guest', username: authUser?.name||'Guest', avatar:'', text }) }); }catch(e){} })(); }
+  function copyLink(){navigator.clipboard?.writeText(window.location.href).then(()=>setNotice('Link imekopiwa!')).catch(()=>setNotice(window.location.href))}catch(e){} })(); }
   function addComment(){ if(!comment.trim()) return; const text=comment.trim(); setComments(v=>{ const n={...v,[clipKey]:[...(v[clipKey]||[]),text]}; worldwide.setItem('vibra_comments',JSON.stringify(n)); return n }); setComment(''); setNotice('Comment imetumwa!') }
   useEffect(()=>{ const video=videoRef.current; if(!video) return; if(view!=='home' || panel==='Share' || panel==='Comments' || panel==='LIVE' || panel==='Rewards' || panel==='Lyrics'){ video.pause(); return }; video.muted=!soundEnabled; video.volume=1; video.play().catch(()=>{}) },[current,soundEnabled,idx,view,panel])
   useEffect(()=>{ const stop=()=>{ const v=videoRef.current; if(v){ v.pause() } }; const onHide=()=>{ if(document.hidden){ stop() } }; document.addEventListener('visibilitychange',onHide); window.addEventListener('pagehide',stop); return ()=>{ document.removeEventListener('visibilitychange',onHide); window.removeEventListener('pagehide',stop) } },[])
