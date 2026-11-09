@@ -58,7 +58,46 @@ function VibraTikTok() {
   const [tab, setTab] = useState('foryou')
   const [idx, setIdx] = useState(0)
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [clips, setClips] = useState(DEMO_VIDEOS)
+  const saveToSupabase = async (videoUrlToSave, cap) => {
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/vibra_videos', {
+      method: 'POST',
+      headers: SB_HEADERS,
+      body: JSON.stringify({
+        video_url: videoUrlToSave,
+        caption: cap,
+        creator_name: user?.name || 'Mimi',
+        user_email: user?.email || 'me@vibra.com',
+        likes_count: 0,
+      }),
+    })
+  } catch {}
+}
+const saveRecordedVideo = () => {
+  if (!recordedUrl) return
+  const cap = caption.trim() || 'Video niliyorecord na Filter ' + FILTERS[activeFilter].name
+  const nc = {
+    id: 'my' + Date.now(),
+    url: recordedUrl,
+    caption: cap,
+    creator: user?.name || 'Mimi',
+    creator_email: user?.email || 'me@vibra.com',
+    likes: 0,
+  }
+  setClips((p) => [nc, ...p])
+  saveToSupabase(recordedUrl, cap)
+  try {
+    const old = JSON.parse(localStorage.getItem('vibra_my_videos') || '[]')
+    localStorage.setItem('vibra_my_videos', JSON.stringify([nc, ...old].slice(0, 20)))
+  } catch {}
+  setRecordedUrl('')
+  setShowCamera(false)
+  stopCamera()
+  setView('home')
+  setTab('foryou')
+  setIdx(0)
+  alert('Video IMESAVE KWELI! Sasa hata ukitoka na kurudi utaiona!')
+}
   const [likedIds, setLikedIds] = useState(() => getS('vibra_liked', []))
   const [globalLikes, setGlobalLikes] = useState(() => getS('vibra_global_likes', {}))
   const [following, setFollowing] = useState(() => getS('vibra_following', []))
@@ -406,7 +445,7 @@ function VibraTikTok() {
       return
     }
     const nc = { id: 'my' + Date.now(), url: videoUrl.trim() || DEMO_VIDEOS[0].url, caption: caption.trim() || 'Video yangu mpya!', creator: user.name, creator_email: user.email, likes: 0 }
-    setClips((p) => [nc, ...p])
+    setClips((p) => [nc, ...p])saveToSupabase(nc.url, nc.caption)
     setCaption('')
     setVideoUrl('')
     setShowCamera(false)
@@ -420,7 +459,7 @@ function VibraTikTok() {
     if (!f) return
     const url = URL.createObjectURL(f)
     const nc = { id: 'my' + Date.now(), url, caption: caption.trim() || f.name, creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
-    setClips((p) => [nc, ...p])
+    setClips((p) => [nc, ...p])saveToSupabase(nc.url, nc.caption)
     setShowCamera(false)
     setTab('foryou')
     setIdx(0)
