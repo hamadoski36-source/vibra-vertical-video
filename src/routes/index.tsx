@@ -93,8 +93,22 @@ function VibraTikTok() {
   const [liveChat, setLiveChat] = useState([{ name: 'Aisha', text: 'Kali sana!' }, { name: 'Juma', text: 'Uko moto!' }])
   const [giftSent, setGiftSent] = useState(0)
   const [liveSaved, setLiveSaved] = useState(() => getS('vibra_live_saved', []))
-
-  // CAMERA + FILTER + STICKER + RECORD
+  const [liveCreators] = useState(['Vibra Official', 'Hamadoski', 'Mombasa Queen'])
+  const [battleOn, setBattleOn] = useState(false)
+  const [battleScoreMe, setBattleScoreMe] = useState(1250)
+  const [battleScoreOpp, setBattleScoreOpp] = useState(980)
+  const [battleTime, setBattleTime] = useState(180)
+  const [battleOppName, setBattleOppName] = useState('Aisha')
+  const [battlePeople] = useState([
+    { name: 'Aisha', avatar: 'https://i.pravatar.cc/150?img=47', score: 850, live: true },
+    { name: 'Juma', avatar: 'https://i.pravatar.cc/150?img=12', score: 720, live: true },
+    { name: 'Neema', avatar: 'https://i.pravatar.cc/150?img=32', score: 640, live: true },
+    { name: 'Said', avatar: 'https://i.pravatar.cc/150?img=15', score: 590, live: true },
+    { name: 'Pwani', avatar: 'https://i.pravatar.cc/150?img=45', score: 510, live: false },
+    { name: 'Zawadi', avatar: 'https://i.pravatar.cc/150?img=44', score: 480, live: true },
+    { name: 'Baraka', avatar: 'https://i.pravatar.cc/150?img=13', score: 420, live: true },
+    { name: 'Fatma', avatar: 'https://i.pravatar.cc/150?img=25', score: 380, live: true },
+  ])
   const [camOn, setCamOn] = useState(false)
   const [activeFilter, setActiveFilter] = useState(0)
   const [activeStickers, setActiveStickers] = useState([])
@@ -108,22 +122,19 @@ function VibraTikTok() {
   const camRecorderRef = useRef(null)
   const camChunksRef = useRef([])
   const timerRef = useRef(null)
-
-  // LIVE REAL CAMERA
   const [liveStreamOn, setLiveStreamOn] = useState(false)
   const [liveRecording, setLiveRecording] = useState(false)
   const liveVideoRef = useRef(null)
   const liveStreamRef = useRef(null)
   const liveRecorderRef = useRef(null)
   const liveChunksRef = useRef([])
-
   const [chats, setChats] = useState(() =>
     getS('vibra_chats', [
       { id: 'aisha', name: 'Aisha Mkomani', avatar: 'https://i.pravatar.cc/150?img=47', last: 'Video yako kali 🔥', time: '14:02', unread: 2, online: true, msgs: [{ from: 'them', text: 'Sasa! Video yako kali 🔥', time: '14:02', tick: 'seen' }, { from: 'me', text: 'Asante sana! 😍', time: '14:03', tick: 'seen' }] },
       { id: 'juma', name: 'Juma Kilindini', avatar: 'https://i.pravatar.cc/150?img=12', last: 'Tupange collab?', time: '13:10', unread: 1, online: true, msgs: [{ from: 'them', text: 'Tupange collab kesho beach?', time: '13:10', tick: 'seen' }] },
-      { id: 'neema', name: 'Mama Neema • Nyali', avatar: 'https://i.pravatar.cc/150?img=32', last: 'Asante kwa gift! 🎁', time: '12:00', unread: 0, online: false, msgs: [{ from: 'them', text: 'Asante kwa gift! 🎁', time: '12:00', tick: 'seen' }] },
-      { id: 'said', name: 'Said - Old Town', avatar: 'https://i.pravatar.cc/150?img=15', last: 'Niko LIVE sasa, ingia!', time: '11:20', unread: 0, online: true, msgs: [{ from: 'them', text: 'Niko LIVE sasa, ingia!', time: '11:20', tick: 'seen' }] },
-      { id: 'pwani', name: 'Pwani Crew 🌴', avatar: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100', last: 'Leo tunashoot beach 🏖️', time: '10:05', unread: 3, online: false, msgs: [{ from: 'them', text: 'Leo tunashoot beach 🏖️', time: '10:05', tick: 'delivered' }] },
+      { id: 'neema', name: 'Mama Neema Nyali', avatar: 'https://i.pravatar.cc/150?img=32', last: 'Asante kwa gift! 🎁', time: '12:00', unread: 0, online: false, msgs: [{ from: 'them', text: 'Asante kwa gift! 🎁', time: '12:00', tick: 'seen' }] },
+      { id: 'said', name: 'Said Old Town', avatar: 'https://i.pravatar.cc/150?img=15', last: 'Niko LIVE sasa, ingia!', time: '11:20', unread: 0, online: true, msgs: [{ from: 'them', text: 'Niko LIVE sasa, ingia!', time: '11:20', tick: 'seen' }] },
+      { id: 'pwani', name: 'Pwani Crew', avatar: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=100', last: 'Leo tunashoot beach', time: '10:05', unread: 3, online: false, msgs: [{ from: 'them', text: 'Leo tunashoot beach', time: '10:05', tick: 'delivered' }] },
     ])
   )
   const fileRef = useRef(null)
@@ -153,8 +164,12 @@ function VibraTikTok() {
     timerRef.current = setInterval(() => setRecordTime((t) => t + 1), 1000)
     return () => clearInterval(timerRef.current)
   }, [isRecording])
+  useEffect(() => {
+    if (!battleOn) return
+    const t = setInterval(() => setBattleTime((x) => (x > 0 ? x - 1 : 180)), 1000)
+    return () => clearInterval(t)
+  }, [battleOn])
 
-  // CAMERA FUNCTIONS - REAL
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true })
@@ -165,7 +180,7 @@ function VibraTikTok() {
       }
       setCamOn(true)
     } catch {
-      alert('Ruhusu kamera ili kurecord! 📷 Nenda Settings > Ruhusu Camera')
+      alert('Ruhusu kamera ili kurecord! Nenda Settings Ruhusu Camera')
     }
   }
   const stopCamera = () => {
@@ -203,7 +218,7 @@ function VibraTikTok() {
     const nc = {
       id: 'my' + Date.now(),
       url: recordedUrl,
-      caption: caption.trim() || 'Video niliyorecord na Filter ' + FILTERS[activeFilter].name + ' 🎬',
+      caption: caption.trim() || 'Video niliyorecord na Filter ' + FILTERS[activeFilter].name,
       creator: user?.name || 'Mimi',
       creator_email: user?.email || 'me@vibra.com',
       likes: 0,
@@ -215,15 +230,13 @@ function VibraTikTok() {
     setView('home')
     setTab('foryou')
     setIdx(0)
-    alert('Video imesave na kupakiwa! 🎉')
+    alert('Video imesave na kupakiwa!')
   }
   const toggleFacing = async () => {
     stopCamera()
     setFacing(facing === 'user' ? 'environment' : 'user')
     setTimeout(() => startCamera(), 300)
   }
-
-  // LIVE REAL FUNCTIONS
   const startLiveCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
@@ -234,7 +247,7 @@ function VibraTikTok() {
       }
       setLiveStreamOn(true)
     } catch {
-      alert('Ruhusu kamera ili uende LIVE! 📹')
+      alert('Ruhusu kamera ili uende LIVE!')
     }
   }
   const stopLiveCamera = () => {
@@ -255,10 +268,10 @@ function VibraTikTok() {
     rec.onstop = () => {
       const blob = new Blob(liveChunksRef.current, { type: 'video/webm' })
       const url = URL.createObjectURL(blob)
-      const saved = { id: 'live' + Date.now(), url, caption: 'LIVE yangu iliyosave 🎥 - ' + new Date().toLocaleString(), creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
+      const saved = { id: 'live' + Date.now(), url, caption: 'LIVE yangu iliyosave - ' + new Date().toLocaleString(), creator: user?.name || 'Mimi', creator_email: user?.email || 'me@vibra.com', likes: 0 }
       setLiveSaved((p) => [saved, ...p])
       setClips((p) => [saved, ...p])
-      alert('LIVE IMESAVE KWELI! ✅ Ipo kwenye Videos zako sasa!')
+      alert('LIVE IMESAVE KWELI! Ipo kwenye Videos zako sasa!')
     }
     rec.start()
     setLiveRecording(true)
@@ -461,11 +474,11 @@ function VibraTikTok() {
       setChats((p) =>
         p.map((ch) =>
           ch.id === selectedChatId
-            ? { ...ch, last: '🎤 Voice note (0:07)', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), msgs: [...(ch.msgs || []), { from: 'me', text: '🎤 Voice note - Bonyeza kucheza (0:07)', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'sent', isVoice: true }] }
+            ? { ...ch, last: 'Voice note (0:07)', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), msgs: [...(ch.msgs || []), { from: 'me', text: 'Voice note - Bonyeza kucheza (0:07)', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'sent', isVoice: true }] }
             : ch
         )
       )
-      alert('Voice note imetumwa! 🎤')
+      alert('Voice note imetumwa!')
     }, 2000)
   }
   const sendGift = (g) => {
@@ -481,65 +494,59 @@ function VibraTikTok() {
   const addNewChat = () => {
     const name = prompt('Jina la rafiki mpya? (mf: Neema)')
     if (!name) return
-    const newChat = { id: 'chat' + Date.now(), name, avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70), last: 'Hey! Karibu Vibra 👋', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), unread: 0, online: true, msgs: [{ from: 'them', text: 'Hey! Karibu Vibra 👋', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'seen' }] }
+    const newChat = { id: 'chat' + Date.now(), name, avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70), last: 'Hey! Karibu Vibra', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), unread: 0, online: true, msgs: [{ from: 'them', text: 'Hey! Karibu Vibra', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), tick: 'seen' }] }
     setChats((p) => [newChat, ...p])
     setSelectedChatId(newChat.id)
     setChatTab('chats')
   }
 
-  // SETTINGS
   if (showSettings) {
     return (
       <div style={{ background: '#fff', color: '#000', minHeight: '100vh', fontFamily: 'system-ui' }}>
         <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between' }}>
           <b style={{ fontSize: 18 }}>Settings and privacy</b>
-          <span onClick={() => setShowSettings(false)} style={{ cursor: 'pointer', fontSize: 22 }}>
-            ✕
-          </span>
+          <span onClick={() => setShowSettings(false)} style={{ cursor: 'pointer', fontSize: 22 }}>✕</span>
         </div>
         <div style={{ padding: '0 16px 30px' }}>
           <div style={{ fontSize: 12, color: '#888', fontWeight: 700 }}>ACCOUNT</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #eee' }}>
-            <span>👤 Manage account</span>
+            <span>Manage account</span>
             <span style={{ background: PINK, color: '#fff', padding: '6px 12px', borderRadius: 15, fontSize: 13, fontWeight: 800 }}>@{user?.name || 'Guest'}</span>
           </div>
           <div onClick={() => { setShowSettings(false); setShowSwitch(true) }} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #eee', cursor: 'pointer' }}>
-            <span>🔄 Switch account</span>
-            <span style={{ color: '#888' }}>{accounts.length} accounts ›</span>
+            <span>Switch account</span>
+            <span style={{ color: '#888' }}>{accounts.length} accounts</span>
           </div>
-          <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>CONTENT & ACTIVITY</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>📢 Ads</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>🅰️ App language - Kiswahili</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>🌙 Display & accessibility - Dark</div>
-          <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>CACHE & CELLULAR DATA</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>🧹 Free up space - 240.50 MB</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>⬇️ Offline videos - {savedIds.length} videos</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>🎵 Media player</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>📱 Safaricom data shop<div style={{ fontSize: 12, color: '#888' }}>Buy discounted data bundles</div></div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>📶 Data Saver - <span style={{ color: '#00C853' }}>ON</span></div>
+          <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>CONTENT</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Ads</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>App language - Kiswahili</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Display - Dark</div>
+          <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>CACHE</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Free up space - 240.50 MB</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Offline videos - {savedIds.length} videos</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Media player</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Safaricom data shop</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Data Saver - ON</div>
           <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>SUPPORT</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>✏️ Report a problem</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>❓ Help Center</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>🛡️ Safety Center</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Report a problem</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Help Center</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Safety Center</div>
           <div style={{ fontSize: 12, color: '#888', fontWeight: 700, marginTop: 16 }}>ABOUT</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>👥 Community Guidelines</div>
-          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>📄 Terms of Service</div>
-          <div style={{ padding: '12px 0' }}>🔒 Privacy Policy</div>
-          <button onClick={() => { if (confirm('Una uhakika unataka kutoka?')) { setUser(null); localStorage.removeItem('vibra_user'); setShowSettings(false) } }} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 14, borderRadius: 12, fontWeight: 900, marginTop: 10 }}>
-            🚪 Log out
-          </button>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Community Guidelines</div>
+          <div style={{ padding: '12px 0', borderBottom: '1px solid #eee' }}>Terms of Service</div>
+          <div style={{ padding: '12px 0' }}>Privacy Policy</div>
+          <button onClick={() => { if (confirm('Una uhakika unataka kutoka?')) { setUser(null); localStorage.removeItem('vibra_user'); setShowSettings(false) } }} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 14, borderRadius: 12, fontWeight: 900, marginTop: 10 }}>Log out</button>
           <div style={{ textAlign: 'center', fontSize: 12, color: '#aaa', marginTop: 10 }}>v1.0.0 - Vibra Worldwide - Mombasa</div>
         </div>
       </div>
     )
   }
 
-  // WHATSAPP STYLE CHATS - FIXED
   if (view === 'chat') {
     return (
       <div style={{ background: '#0b141a', color: '#fff', minHeight: '100vh', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column' }}>
         {!selectedChatId ? (
-          <>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
             <div style={{ background: '#202c33', padding: '14px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <b style={{ fontSize: 20 }}>Vibra Chats</b>
@@ -555,7 +562,7 @@ function VibraTikTok() {
               </div>
             </div>
             <div style={{ padding: '10px 14px' }}>
-              <input value={chatSearch} onChange={(e) => setChatSearch(e.target.value)} placeholder="🔍 Tafuta chat..." style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#202c33', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+              <input value={chatSearch} onChange={(e) => setChatSearch(e.target.value)} placeholder="Tafuta chat..." style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: '#202c33', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
             </div>
             {chatTab === 'chats' && (
               <div style={{ flex: 1, overflow: 'auto', padding: '0 6px' }}>
@@ -600,14 +607,14 @@ function VibraTikTok() {
                 {chats.slice(0, 3).map((c) => (
                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '1px solid #1a2a33' }}>
                     <img src={c.avatar} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
-                    <div style={{ flex: 1 }}><b>{c.name}</b><div style={{ fontSize: 13, color: '#8696a0' }}>📞 Leo, {c.time}</div></div>
+                    <div style={{ flex: 1 }}><b>{c.name}</b><div style={{ fontSize: 13, color: '#8696a0' }}>Leo, {c.time}</div></div>
                     <span style={{ fontSize: 20 }}>📞</span>
                     <span style={{ fontSize: 20 }}>📹</span>
                   </div>
                 ))}
               </div>
             )}
-          </>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0b141a' }}>
             <div style={{ background: '#202c33', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -621,17 +628,15 @@ function VibraTikTok() {
               <span style={{ fontSize: 20 }}>📞</span>
               <span style={{ fontSize: 20 }}>⋮</span>
             </div>
-            <div style={{ flex: 1, overflow: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 8, background: 'linear-gradient(180deg,#0b141a,#111b21)' }}>
-              <div style={{ alignSelf: 'center', background: '#182229', padding: '6px 12px', borderRadius: 8, fontSize: 12, color: '#ffd279' }}>🔒 Messages zime-encryptiwa</div>
+            <div style={{ flex: 1, overflow: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 8, background: '#0b141a' }}>
+              <div style={{ alignSelf: 'center', background: '#182229', padding: '6px 12px', borderRadius: 8, fontSize: 12, color: '#ffd279' }}>Messages zime-encryptiwa</div>
               {(selectedChat.msgs || []).map((m, i) => (
                 <div key={i} style={{ alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start', background: m.from === 'me' ? '#005c4b' : '#202c33', padding: '8px 10px', borderRadius: 12, maxWidth: '80%', fontSize: 15 }}>
                   <div>{m.text}</div>
-                  <div style={{ fontSize: 11, color: '#8696a0', textAlign: 'right', marginTop: 2 }}>
-                    {m.time} {m.from === 'me' && <span style={{ color: m.tick === 'seen' ? '#53bdeb' : '#8696a0' }}>{m.tick === 'seen' ? '✓✓' : m.tick === 'delivered' ? '✓✓' : '✓'}</span>}
-                  </div>
+                  <div style={{ fontSize: 11, color: '#8696a0', textAlign: 'right', marginTop: 2 }}>{m.time} {m.from === 'me' && <span style={{ color: m.tick === 'seen' ? '#53bdeb' : '#8696a0' }}>{m.tick === 'seen' ? '✓✓' : m.tick === 'delivered' ? '✓✓' : '✓'}</span>}</div>
                 </div>
               ))}
-              {recordingVoice && <div style={{ alignSelf: 'flex-end', background: '#005c4b', padding: '10px 14px', borderRadius: 16 }}>🎤 Inarecord... 0:0{Math.floor(Math.random() * 9)} ⏺️</div>}
+              {recordingVoice && <div style={{ alignSelf: 'flex-end', background: '#005c4b', padding: '10px 14px', borderRadius: 16 }}>Inarecord...</div>}
             </div>
             {showEmoji && (
               <div style={{ background: '#202c33', padding: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -642,14 +647,14 @@ function VibraTikTok() {
             )}
             <div style={{ padding: '10px', display: 'flex', gap: 8, alignItems: 'center', background: '#202c33' }}>
               <span onClick={() => setShowEmoji(!showEmoji)} style={{ fontSize: 26, cursor: 'pointer' }}>😊</span>
-              <span onClick={() => alert('Chagua picha / video kutuma! 📎')} style={{ fontSize: 22, cursor: 'pointer' }}>📎</span>
-              <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && sendChatMsg()} placeholder="Andika ujumbe..." style={{ flex: 1, padding: 12, borderRadius: 20, border: 'none', background: '#2a3942', color: '#fff', outline: 'none' }} />
+              <span onClick={() => alert('Chagua picha kutuma!')} style={{ fontSize: 22, cursor: 'pointer' }}>📎</span>
+              <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Andika ujumbe..." style={{ flex: 1, padding: 12, borderRadius: 20, border: 'none', background: '#2a3942', color: '#fff', outline: 'none' }} />
               {chatInput.trim() ? (
                 <button onClick={sendChatMsg} style={{ background: '#00a884', color: '#fff', border: 'none', width: 44, height: 44, borderRadius: '50%', fontSize: 20 }}>➤</button>
               ) : (
                 <button onClick={sendVoiceNote} style={{ background: '#00a884', color: '#fff', border: 'none', width: 44, height: 44, borderRadius: '50%', fontSize: 20 }}>🎤</button>
               )}
-              <span onClick={() => alert('Camera imefunguka! 📷')} style={{ fontSize: 22, cursor: 'pointer' }}>📷</span>
+              <span style={{ fontSize: 22 }}>📷</span>
             </div>
           </div>
         )}
@@ -679,13 +684,13 @@ function VibraTikTok() {
             <button onClick={() => setShowLogin(true)} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 800, marginTop: 14 }}>Ingia Sasa</button>
           ) : (
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14 }}>
-              <button onClick={() => setShowSwitch(true)} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 20, fontWeight: 800 }}>🔄 Switch Account</button>
-              <button onClick={() => setShowSettings(true)} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 20, fontWeight: 800 }}>⚙️ Settings</button>
+              <button onClick={() => setShowSwitch(true)} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 20, fontWeight: 800 }}>Switch Account</button>
+              <button onClick={() => setShowSettings(true)} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 20, fontWeight: 800 }}>Settings</button>
             </div>
           )}
         </div>
         <div style={{ margin: 14, background: 'linear-gradient(90deg,#FE2C55,#FF6B9D)', borderRadius: 16, padding: 16 }}>
-          <div style={{ fontWeight: 900 }}>💰 Creator Fund</div>
+          <div style={{ fontWeight: 900 }}>Creator Fund</div>
           <div style={{ fontSize: 22, fontWeight: 900, marginTop: 4 }}>{creatorCoins.toLocaleString()} / 1,000,000</div>
           <div style={{ background: 'rgba(255,255,255,0.3)', height: 8, borderRadius: 4, marginTop: 8, overflow: 'hidden' }}>
             <div style={{ width: Math.min(100, creatorCoins / 10000) + '%', background: '#fff', height: '100%' }} />
@@ -693,15 +698,15 @@ function VibraTikTok() {
           <div style={{ fontSize: 12, marginTop: 6 }}>Like na Gifts zinaongeza Fund yako!</div>
         </div>
         <div onClick={() => alert('Tangaza Biashara - Tsh 10,000 / wiki!')} style={{ margin: '0 14px', background: '#1a1a1a', borderRadius: 16, padding: 16, display: 'flex', justifyContent: 'space-between', cursor: 'pointer' }}>
-          <div><div style={{ fontWeight: 900 }}>📢 Tangaza Biashara</div><div style={{ fontSize: 12, opacity: 0.6 }}>Tsh 10,000 / wiki - Watu 50K+ wanaona</div></div>
-          <span style={{ background: PINK, padding: '8px 14px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>Tangaza →</span>
+          <div><div style={{ fontWeight: 900 }}>Tangaza Biashara</div><div style={{ fontSize: 12, opacity: 0.6 }}>Tsh 10,000 / wiki - Watu 50K+ wanaona</div></div>
+          <span style={{ background: PINK, padding: '8px 14px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>Tangaza</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 18, borderBottom: '1px solid #222' }}>
           <span onClick={() => setMeTab('videos')} style={{ padding: '10px 0', fontWeight: 800, borderBottom: meTab === 'videos' ? '2px solid ' + PINK : 'none', cursor: 'pointer' }}>Videos ({myVideos.length})</span>
           <span onClick={() => setMeTab('liked')} style={{ padding: '10px 0', fontWeight: 800, borderBottom: meTab === 'liked' ? '2px solid ' + PINK : 'none', cursor: 'pointer' }}>Liked ({likedVideos.length})</span>
           <span onClick={() => setMeTab('saved')} style={{ padding: '10px 0', fontWeight: 800, borderBottom: meTab === 'saved' ? '2px solid ' + PINK : 'none', cursor: 'pointer' }}>Saved ({savedVideos.length})</span>
         </div>
-        <div style={{ padding: '8px 14px', fontSize: 13, color: '#00a884' }}>🎥 LIVE zilizosave: {liveSaved.length} - Ziko hapa kwenye Videos!</div>
+        <div style={{ padding: '8px 14px', fontSize: 13, color: '#00a884' }}>LIVE zilizosave: {liveSaved.length} - Ziko hapa kwenye Videos!</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, padding: 2 }}>
           {listToShow.map((v) => (
             <div key={v.id} style={{ position: 'relative', aspectRatio: '9/16', background: '#222' }}>
@@ -745,7 +750,7 @@ function VibraTikTok() {
       )}
       {panel === 'notifications' && (
         <div style={{ position: 'fixed', top: 60, left: 12, right: 12, zIndex: 70, background: '#1a1a1a', borderRadius: 16, padding: 16, maxHeight: '60vh', overflow: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>🔔 Notifications ({notifications.length})</b><span onClick={() => setPanel('')} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>Notifications ({notifications.length})</b><span onClick={() => setPanel('')} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
           <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {notifications.length === 0 && <div style={{ opacity: 0.6, fontSize: 13, textAlign: 'center', padding: 20 }}>Hakuna notification bado.<br />Ukilike-wa itaonekana hapa!</div>}
             {notifications.map((n) => (
@@ -771,6 +776,16 @@ function VibraTikTok() {
       ) : (
         <div style={{ height: '100vh', width: '100vw', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}>
           <video key={current.id} src={current.url} autoPlay loop muted={!soundEnabled} playsInline onClick={(e) => (e.target.paused ? e.target.play() : e.target.pause())} style={{ width: '100vw', height: '100vh', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
+          {liveCreators.includes(current.creator) && (
+            <div style={{ position: 'absolute', top: 70, left: 12, background: '#FF0000', padding: '6px 12px', borderRadius: 20, fontWeight: 900, fontSize: 13, zIndex: 30 }}>
+              LIVE • Wanaangalia 342
+            </div>
+          )}
+          {liveCreators.includes(current.creator) && (
+            <div style={{ position: 'absolute', top: 105, left: 12, background: 'rgba(0,0,0,0.6)', padding: '6px 12px', borderRadius: 20, fontSize: 12, zIndex: 30 }}>
+              Video hii inaongezeka • {displayLikes} likes
+            </div>
+          )}
           <div onClick={() => setSoundEnabled(!soundEnabled)} style={{ position: 'absolute', top: 70, right: 16, background: 'rgba(0,0,0,0.6)', padding: '8px 12px', borderRadius: 20, cursor: 'pointer', zIndex: 30 }}>🔊 {soundEnabled ? 'ON' : 'OFF'}</div>
           <div style={{ position: 'absolute', right: 12, bottom: 130, display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center', zIndex: 20 }}>
             <div style={{ position: 'relative' }}>
@@ -789,9 +804,10 @@ function VibraTikTok() {
             <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={toggleFollow} style={{ background: isFollowing ? '#fff' : PINK, color: isFollowing ? '#000' : '#fff', border: 'none', padding: '7px 16px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>{isFollowing ? 'Following ✓' : 'Follow'}</button>
               <button onClick={() => setPanel('comments')} style={{ background: '#222', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 700, fontSize: 13 }}>Comments ({allComments.length})</button>
-              <button onClick={() => setLiveOn(true)} style={{ background: '#FF0000', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>● LIVE</button>
+              <button onClick={() => setLiveOn(true)} style={{ background: '#FF0000', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 800, fontSize: 13 }}>LIVE</button>
+              <button onClick={() => setBattleOn(true)} style={{ background: '#FFD700', color: '#000', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>BATTLE 8</button>
             </div>
-            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>{safeIdx + 1} / {visibleClips.length} - FULL SCREEN ✅</div>
+            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>{safeIdx + 1} / {visibleClips.length} - FULL SCREEN</div>
           </div>
           <div style={{ position: 'absolute', right: 12, bottom: 260, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 20 }}>
             <button onClick={prev} disabled={safeIdx === 0} style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', width: 36, height: 36, borderRadius: '50%', fontSize: 18, opacity: safeIdx === 0 ? 0.3 : 1 }}>↑</button>
@@ -817,12 +833,61 @@ function VibraTikTok() {
       )}
       {panel === 'gifts' && (
         <div style={{ position: 'fixed', bottom: 70, left: 0, right: 0, zIndex: 70, background: '#1a1a1a', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>🎁 Tuma Gift kwa @{current.creator}</b><span onClick={() => setPanel('')} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
-          <div style={{ fontSize: 13, opacity: 0.6, marginTop: 4 }}>Coins zako: 🪙 {coins} - Umetuma: {giftSent}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b>Tuma Gift kwa @{current.creator}</b><span onClick={() => setPanel('')} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
+          <div style={{ fontSize: 13, opacity: 0.6, marginTop: 4 }}>Coins zako: {coins} - Umetuma: {giftSent}</div>
           <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
             {[{ emoji: '🌹', name: 'Rose', cost: 1 }, { emoji: '❤️', name: 'Heart', cost: 5 }, { emoji: '🔥', name: 'Fire', cost: 10 }, { emoji: '💎', name: 'Diamond', cost: 50 }, { emoji: '👑', name: 'Crown', cost: 100 }].map((g) => (
-              <button key={g.name} onClick={() => sendGift(g)} style={{ background: '#222', color: '#fff', border: 'none', padding: '12px 14px', borderRadius: 14, cursor: 'pointer' }}><div style={{ fontSize: 24 }}>{g.emoji}</div><div style={{ fontSize: 12, fontWeight: 800 }}>{g.name}</div><div style={{ fontSize: 11, opacity: 0.6 }}>🪙 {g.cost}</div></button>
+              <button key={g.name} onClick={() => sendGift(g)} style={{ background: '#222', color: '#fff', border: 'none', padding: '12px 14px', borderRadius: 14, cursor: 'pointer' }}><div style={{ fontSize: 24 }}>{g.emoji}</div><div style={{ fontSize: 12, fontWeight: 800 }}>{g.name}</div><div style={{ fontSize: 11, opacity: 0.6 }}>{g.cost}</div></button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {battleOn && (
+        <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 95, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <b style={{ fontSize: 18 }}>BATTLE LIVE - {Math.floor(battleTime / 60)}:{String(battleTime % 60).padStart(2, '0')}</b>
+            <span onClick={() => setBattleOn(false)} style={{ cursor: 'pointer', fontSize: 22 }}>✕</span>
+          </div>
+          <div style={{ padding: '0 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontWeight: 900 }}>MIMI {battleScoreMe}</span>
+            <div style={{ flex: 1, height: 12, background: '#333', borderRadius: 6, overflow: 'hidden', display: 'flex' }}>
+              <div style={{ width: (battleScoreMe / (battleScoreMe + battleScoreOpp) * 100) + '%', background: PINK }} />
+              <div style={{ flex: 1, background: TEAL }} />
+            </div>
+            <span style={{ fontWeight: 900 }}>{battleScoreOpp} OPP</span>
+          </div>
+          <div style={{ display: 'flex', flex: 1, gap: 8, padding: 12 }}>
+            <div style={{ width: 90, display: 'flex', flexDirection: 'column', gap: 8, overflow: 'auto' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, textAlign: 'center', color: '#aaa' }}>WATU 8 KUSHOTO</div>
+              {battlePeople.map((p) => (
+                <div key={p.name} onClick={() => { setBattleScoreOpp(p.score); setBattleOppName(p.name); alert('Sasa unabattle na ' + p.name + '!') }} style={{ background: '#1a1a1a', borderRadius: 12, padding: 8, textAlign: 'center', cursor: 'pointer', border: p.live ? '2px solid #FF0000' : 'none' }}>
+                  <img src={p.avatar} style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} />
+                  <div style={{ fontSize: 11, fontWeight: 800 }}>{p.name}</div>
+                  <div style={{ fontSize: 10, color: '#00C853' }}>{p.live ? 'LIVE' : 'Offline'}</div>
+                  <div style={{ fontSize: 11 }}>{p.score}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ flex: 1, background: GRADIENT, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ fontSize: 50 }}>👤</div>
+                <b>MIMI - @{user?.name || 'Mgeni'}</b>
+                <div style={{ fontSize: 22, fontWeight: 900 }}>{battleScoreMe}</div>
+                <div style={{ fontSize: 12 }}>{battleScoreMe > battleScoreOpp ? 'UNAONGOZA!' : 'PIGANA!'}</div>
+              </div>
+              <div style={{ flex: 1, background: '#222', borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ fontSize: 50 }}>⚔️</div>
+                <b>VS - {battleOppName}</b>
+                <div style={{ fontSize: 22, fontWeight: 900 }}>{battleScoreOpp}</div>
+                <button onClick={() => { setBattleScoreMe((s) => s + 50); setCoins((c) => c + 10) }} style={{ background: PINK, color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 20, fontWeight: 900, marginTop: 8 }}>NIPIGIE KURA +50</button>
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: 12, display: 'flex', gap: 8, justifyContent: 'center' }}>
+            <button onClick={() => { setBattleScoreMe((s) => s + 10); alert('Umetuma Rose!') }} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: 12 }}>Rose</button>
+            <button onClick={() => { setBattleScoreMe((s) => s + 50); alert('Umetuma Diamond!') }} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: 12 }}>Diamond</button>
+            <button onClick={() => { setBattleScoreMe((s) => s + 100); alert('Umetuma Crown!') }} style={{ background: '#222', color: '#fff', border: 'none', padding: '10px 14px', borderRadius: 12 }}>Crown</button>
           </div>
         </div>
       )}
@@ -830,7 +895,7 @@ function VibraTikTok() {
       {liveOn && (
         <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 90, display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ background: '#FF0000', padding: '6px 12px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>● LIVE {liveRecording ? '• REC ⏺️' : ''}</span>
+            <span style={{ background: '#FF0000', padding: '6px 12px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>LIVE {liveRecording ? 'REC' : ''}</span>
             <span onClick={() => { stopLiveCamera(); setLiveOn(false) }} style={{ cursor: 'pointer', fontSize: 22 }}>✕</span>
           </div>
           <div style={{ flex: 1, position: 'relative', background: '#111', overflow: 'hidden' }}>
@@ -841,21 +906,21 @@ function VibraTikTok() {
                 <div style={{ fontSize: 60 }}>📹</div>
                 <div style={{ fontWeight: 900, fontSize: 18, marginTop: 10 }}>Uko tayari kwenda LIVE?</div>
                 <div style={{ opacity: 0.6, fontSize: 13, marginTop: 6 }}>Bonyeza Washa Kamera - Uso wako utaonekana LIVE kweli!</div>
-                <button onClick={startLiveCamera} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 900, marginTop: 14 }}>📹 WASHA KAMERA YA LIVE</button>
+                <button onClick={startLiveCamera} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 900, marginTop: 14 }}>WASHA KAMERA YA LIVE</button>
               </div>
             )}
             {liveStreamOn && (
               <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, display: 'flex', gap: 8 }}>
                 {!liveRecording ? (
-                  <button onClick={startLiveRecord} style={{ flex: 1, background: '#FF0000', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900 }}>⏺️ ANZA KURECORD LIVE - ITASAVE KWELI!</button>
+                  <button onClick={startLiveRecord} style={{ flex: 1, background: '#FF0000', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900 }}>ANZA KURECORD LIVE - ITASAVE KWELI!</button>
                 ) : (
-                  <button onClick={stopLiveRecord} style={{ flex: 1, background: '#00C853', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900 }}>⏹️ MALIZA NA SAVE LIVE ✅</button>
+                  <button onClick={stopLiveRecord} style={{ flex: 1, background: '#00C853', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900 }}>MALIZA NA SAVE LIVE</button>
                 )}
               </div>
             )}
           </div>
           <div style={{ padding: 14 }}>
-            <div style={{ fontSize: 12, color: '#00a884' }}>LIVE zilizosave: {liveSaved.length} - Zitaonekana kwenye Profile > Videos</div>
+            <div style={{ fontSize: 12, color: '#00a884' }}>LIVE zilizosave: {liveSaved.length} - Zitaonekana kwenye Profile</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, maxHeight: 100, overflow: 'auto' }}>
               {liveChat.map((m, i) => (
                 <div key={i} style={{ background: 'rgba(255,255,255,0.15)', padding: '8px 12px', borderRadius: 12, fontSize: 13 }}><b>{m.name}:</b> {m.text}</div>
@@ -892,14 +957,14 @@ function VibraTikTok() {
       {showSwitch && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div style={{ background: '#1a1a1a', padding: 22, borderRadius: 20, width: '100%', maxWidth: 360 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ fontSize: 19 }}>🔄 Switch Account</b><span onClick={() => setShowSwitch(false)} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ fontSize: 19 }}>Switch Account</b><span onClick={() => setShowSwitch(false)} style={{ cursor: 'pointer', fontSize: 20 }}>✕</span></div>
             <div style={{ fontSize: 13, opacity: 0.6, marginTop: 4 }}>Chagua akaunti</div>
             <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {accounts.length === 0 && <div style={{ opacity: 0.6, fontSize: 13 }}>Hakuna akaunti nyingine - Ongeza mpya chini!</div>}
               {accounts.map((a) => (
                 <div key={a.email} onClick={() => { setUser(a); setS('vibra_user', a); setShowSwitch(false); alert('Ume-switch kwenda @' + a.name) }} style={{ display: 'flex', alignItems: 'center', gap: 12, background: user?.email === a.email ? '#333' : '#222', padding: 12, borderRadius: 12, cursor: 'pointer', border: user?.email === a.email ? '2px solid ' + PINK : 'none' }}>
                   <span style={{ width: 38, height: 38, borderRadius: '50%', background: GRADIENT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{a.name[0].toUpperCase()}</span>
-                  <div style={{ flex: 1 }}><div style={{ fontWeight: 800 }}>{a.name} {user?.email === a.email && <span style={{ fontSize: 11, color: TEAL }}>• Active</span>}</div><div style={{ fontSize: 12, opacity: 0.6 }}>{a.email}</div></div>
+                  <div style={{ flex: 1 }}><div style={{ fontWeight: 800 }}>{a.name} {user?.email === a.email && <span style={{ fontSize: 11, color: TEAL }}>Active</span>}</div><div style={{ fontSize: 12, opacity: 0.6 }}>{a.email}</div></div>
                 </div>
               ))}
             </div>
@@ -916,40 +981,40 @@ function VibraTikTok() {
         <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 100, display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#000' }}>
             <span onClick={() => { stopCamera(); setShowCamera(false) }} style={{ cursor: 'pointer', fontSize: 22 }}>✕</span>
-            <b>🎬 Record Video - Kama TikTok</b>
+            <b>Record Video - Kama TikTok</b>
             <span onClick={toggleFacing} style={{ cursor: 'pointer', fontSize: 22 }}>🔄</span>
           </div>
           <div style={{ flex: 1, position: 'relative', background: '#111', overflow: 'hidden' }}>
             {camOn ? (
-              <>
-                <video ref={camVideoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', filter: FILTERS[activeFilter].css + (beauty > 0 ? ' brightness(' + (1 + beauty / 100) + ') saturate(1.2)' : '') }} />
+              <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                <video ref={camVideoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', filter: FILTERS[activeFilter].css }} />
                 {activeStickers.map((s, i) => (
                   <span key={i} onClick={() => setActiveStickers((p) => p.filter((_, j) => j !== i))} style={{ position: 'absolute', top: 20 + i * 50, left: 20 + (i % 3) * 60, fontSize: 48, cursor: 'pointer' }}>{s}</span>
                 ))}
-                {isRecording && <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: '#FF0000', padding: '6px 14px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>⏺️ REC {Math.floor(recordTime / 60)}:{String(recordTime % 60).padStart(2, '0')}</div>}
-              </>
+                {isRecording && <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', background: '#FF0000', padding: '6px 14px', borderRadius: 20, fontWeight: 900, fontSize: 13 }}>REC {Math.floor(recordTime / 60)}:{String(recordTime % 60).padStart(2, '0')}</div>}
+              </div>
             ) : (
               <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 60 }}>📷</div>
                 <div style={{ fontWeight: 900, fontSize: 18, marginTop: 10 }}>Record Video Yako!</div>
                 <div style={{ opacity: 0.6, fontSize: 13, marginTop: 6 }}>Kamera yako ya kweli itafunguka hapa - Chagua Filter na Sticker!</div>
-                <button onClick={startCamera} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 900, marginTop: 14 }}>📷 WASHA KAMERA</button>
+                <button onClick={startCamera} style={{ background: PINK, color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 25, fontWeight: 900, marginTop: 14 }}>WASHA KAMERA</button>
                 <div style={{ marginTop: 14, width: '100%' }}>
-                  <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="Au weka link ya video (mp4)..." style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
+                  <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="Au weka link ya video..." style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', outline: 'none', boxSizing: 'border-box' }} />
                   <textarea value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Andika caption... #vibra" style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', marginTop: 8, outline: 'none', minHeight: 60, boxSizing: 'border-box' }} />
                   <button onClick={handleUpload} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 900, marginTop: 8 }}>PAKIA KWA LINK</button>
                   <input ref={fileRef} type="file" accept="video/*" onChange={handleFile} style={{ display: 'none' }} />
-                  <button onClick={() => fileRef.current?.click()} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 800, marginTop: 8 }}>📁 Chagua Video Kutoka Simu</button>
+                  <button onClick={() => fileRef.current?.click()} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, fontWeight: 800, marginTop: 8 }}>Chagua Video Kutoka Simu</button>
                 </div>
               </div>
             )}
             {recordedUrl && (
               <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-                <div style={{ fontWeight: 900 }}>✅ Video Imerecordiwa!</div>
+                <div style={{ fontWeight: 900 }}>Video Imerecordiwa!</div>
                 <video src={recordedUrl} controls autoPlay loop style={{ width: '100%', maxHeight: 300, marginTop: 12, borderRadius: 12, objectFit: 'cover', filter: FILTERS[activeFilter].css }} />
                 <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Andika caption..." style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#222', color: '#fff', marginTop: 12, outline: 'none', boxSizing: 'border-box' }} />
-                <button onClick={saveRecordedVideo} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 13, borderRadius: 12, fontWeight: 900, marginTop: 10 }}>✅ SAVE NA PAKIA VIDEO</button>
-                <button onClick={() => { setRecordedUrl(''); startCamera() }} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, marginTop: 8 }}>🔄 Record Tena</button>
+                <button onClick={saveRecordedVideo} style={{ width: '100%', background: PINK, color: '#fff', border: 'none', padding: 13, borderRadius: 12, fontWeight: 900, marginTop: 10 }}>SAVE NA PAKIA VIDEO</button>
+                <button onClick={() => { setRecordedUrl(''); startCamera() }} style={{ width: '100%', background: '#333', color: '#fff', border: 'none', padding: 12, borderRadius: 12, marginTop: 8 }}>Record Tena</button>
               </div>
             )}
           </div>
@@ -966,7 +1031,7 @@ function VibraTikTok() {
                 ))}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: 13 }}>✨ Beauty</span>
+                <span style={{ fontSize: 13 }}>Beauty</span>
                 <input type="range" min="0" max="50" value={beauty} onChange={(e) => setBeauty(Number(e.target.value))} style={{ flex: 1 }} />
                 <span style={{ fontSize: 13 }}>{beauty}%</span>
                 <button onClick={() => setActiveStickers([])} style={{ background: '#222', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 10, fontSize: 12 }}>Futa Stickers</button>
@@ -978,7 +1043,7 @@ function VibraTikTok() {
                   <button onClick={stopRecording} style={{ width: 72, height: 72, borderRadius: 12, background: '#FF0000', border: '4px solid #fff', fontSize: 20, cursor: 'pointer' }}>⏹️</button>
                 )}
               </div>
-              <div style={{ textAlign: 'center', fontSize: 12, opacity: 0.6, marginTop: 6 }}>{isRecording ? 'Inarecord... Bonyeza ⏹️ kumaliza' : 'Bonyeza 🔴 kuanza kurecord • Bonyeza Sticker kuweka • Bonyeza Filter kubadilisha'}</div>
+              <div style={{ textAlign: 'center', fontSize: 12, opacity: 0.6, marginTop: 6 }}>Bonyeza Sticker kuweka - Bonyeza Filter kubadilisha</div>
             </div>
           )}
         </div>
