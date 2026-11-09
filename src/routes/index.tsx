@@ -3,7 +3,7 @@
 import { createFileRoute, useHydrated } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, type CloudVideo } from '@/lib/cloud-videos'
-import { VibraBanner } from '@/components/vibra-banner'
+import { demoCoinBalance } from '@/lib/vibra-rewards'
 import { useAuth } from '@/hooks/use-auth'
 import { readLocalAvatar, saveCreatorAvatar } from '@/lib/avatar'
 
