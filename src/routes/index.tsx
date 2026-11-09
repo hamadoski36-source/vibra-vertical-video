@@ -7,11 +7,9 @@ const SUPABASE_KEY = 'sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc'
 const SB_HEADERS: any = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' }
 type CloudVideo = { id: string; url: string; caption: string; user_email?: string; creator?: string }
 const readCloudVideos = async (): Promise<CloudVideo[]> => { try { const r = await fetch(`${SUPABASE_URL}/rest/v1/vibra_videos?select=*&order=created_at.desc&limit=50`, { headers: SB_HEADERS }); const j = await r.json(); return Array.isArray(j) ? j : [] } catch { return [] } }
-const uploadCloudVideo = async () => null
+const uploadCloudVideo = async () => nul
 import { demoCoinBalance } from '@/lib/vibra-rewards'
 import { useAuth } from '@/hooks/use-auth'
-import { readLocalAvatar, saveCreatorAvatar } from '@/lib/avatar'
-
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [{ title: 'Vibra Worldwide - Video feed' },{ name: 'description', content: 'Vibra Worldwide' }] }),
 })
