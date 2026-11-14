@@ -25,3 +25,7 @@ export async function uploadCloudVideo(file: File, username: string, caption: st
   onProgress(100);
   return data as CloudVideo;
 }
+export async function deleteCloudVideo(id: number | string) {
+  const { error } = await supabase.from('videos').delete().eq('id', id)
+  if (error) throw error
+}
