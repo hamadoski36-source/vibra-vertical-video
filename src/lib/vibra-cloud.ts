@@ -73,3 +73,24 @@ export async function deleteCloudVideo(id: number | string) {
   const { error } = await supabase.from('videos').delete().eq('id', id)
   if (error) throw error
 }
+
+// --- 4 ZILIZOBAKI - Chat Real, Login Real, Algorithm, Notifications ---
+export async function saveProfileCloud(id: string, email: string, name: string) {
+  await supabase.from('vibra_profiles').upsert({ id, email, name })
+}
+export async function sendMessageCloud(chatId: string, fromName: string, toName: string, text: string) {
+  await supabase.from('vibra_messages').insert({ chat_id: chatId, from_name: fromName, to_name: toName, text })
+  await supabase.from('vibra_notifications').insert({ to_name: toName, from_name: fromName, type: 'message', video_id: chatId })
+}
+export async function getMessagesCloud(chatId: string) {
+  const { data } = await supabase.from('vibra_messages').select('*').eq('chat_id', chatId).order('id', { ascending: true })
+  return data || []
+}
+export async function notifyCloud(toName: string, fromName: string, type: string, videoId: string) {
+  if (toName === fromName) return
+  await supabase.from('vibra_notifications').insert({ to_name: toName, from_name: fromName, type, video_id: videoId })
+}
+export async function getNotificationsCloud(myName: string) {
+  const { data } = await supabase.from('vibra_notifications').select('*').eq('to_name', myName).order('id', { ascending: false }).limit(20)
+  return data || []
+}
