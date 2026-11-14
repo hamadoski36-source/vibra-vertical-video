@@ -126,14 +126,15 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-function RootComponent() {
+
+ function RootComponent() {
   useEffect(() => {
     // MONETAG DIRECT LINK YA VIBRA
     (window as any).openMonetag = () => {
       const last = localStorage.getItem('vibra_ad');
       const now = Date.now();
       if (!last || now - parseInt(last) > 30 * 60 * 1000) {
-        window.open("https://uplcm.com/4/12154689", "_blank");
+        window.open("https://up1cm.com/4/12154689", "_blank");
         localStorage.setItem('vibra_ad', now.toString());
       }
     };
@@ -145,8 +146,9 @@ function RootComponent() {
         <div className="flex-1">
           <Outlet />
         </div>
+      </div>
+    </QueryClientProvider>
+  );
 }
-  
- 
       
     
