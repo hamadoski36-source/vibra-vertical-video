@@ -29,3 +29,51 @@ export async function deleteCloudVideo(id: number | string) {
   const { error } = await supabase.from('videos').delete().eq('id', id)
   if (error) throw error
 }
+
+// --- REAL SOCIAL - Followers / Likes / Views / Comments ---
+export async function toggleFollowCloud(follower: string, following: string, isFollowing: boolean) {
+  if (isFollowing) {
+    await supabase.from('vibra_follows').delete().eq('follower_name', follower).eq('following_name', following)
+  } else {
+    await supabase.from('vibra_follows').insert({ follower_name: follower, following_name: following })
+  }
+}
+export async function getFollowCounts(myName: string) {
+  const { data: followers } = await supabase.from('vibra_follows').select('id').eq('following_name', myName)
+  const { data: following } = await supabase.from('vibra_follows').select('id').eq('follower_name', myName)
+  return { followers: followers?.length || 0, following: following?.length || 0 }
+}
+export async function toggleLikeCloud(videoId: string, userName: string, isLiked: boolean) {
+  if (isLiked) {
+    await supabase.from('vibra_likes').delete().eq('video_id', videoId).eq('user_name', userName)
+  } else {
+    await supabase.from('vibra_likes').insert({ video_id: videoId, user_name: userName })
+  }
+}
+export async function getLikesMap() {
+  const { data } = await supabase.from('vibra_likes').select('video_id, user_name')
+  const map: Record<string, number> = {}
+  const mine: string[] = []
+  data?.forEach(r => { map[r.video_id] = (map[r.video_id] || 0) + 1 })
+  return { map, data: data || [] }
+}
+export async function addViewCloud(videoId: string, userName: string) {
+  await supabase.from('vibra_views').insert({ video_id: videoId, user_name: userName })
+}
+export async function getTotalViews() {
+  const { count } = await supabase.from('vibra_views').select('*', { count: 'exact', head: true })
+  return count || 0
+}
+export async function addCommentCloud(videoId: string, userName: string, comment: string) {
+  await supabase.from('vibra_comments').insert({ video_id: videoId, user_name: userName, comment })
+}
+export async function getCommentsMap() {
+  const { data } = await supabase.from('vibra_comments').select('video_id, user_name, comment').order('id', { ascending: true })
+  const map: Record<string, string[]> = {}
+  data?.forEach(r => { if (!map[r.video_id]) map[r.video_id] = []; map[r.video_id].push(r.user_name + ': ' + r.comment) })
+  return map
+}
+export async function deleteCloudVideo(id: number | string) {
+  const { error } = await supabase.from('videos').delete().eq('id', id)
+  if (error) throw error
+}
