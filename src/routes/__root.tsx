@@ -145,18 +145,6 @@ function RootComponent() {
         <div className="flex-1">
           <Outlet />
         </div>
-        <footer className="bg-black border-t border-zinc-800 text-gray-500 text-xs text-center py-6">
-          <div className="flex gap-4 justify-center mb-2">
-            <Link to="/about" className="hover:text-white">About</Link>
-            <Link to="/privacy" className="hover:text-white">Privacy</Link>
-            <Link to="/contact" className="hover:text-white">Contact</Link>
-          </div>
-          <p>© 2026 Vibra Worldwide • Built in Faraja, Bamburi - Mombasa</p>
-          <p className="mt-1">Email: vibra@hamadoski.com</p>
-        </footer>
-      </div>
-    </QueryClientProvider>
-  );
 }
   
  
