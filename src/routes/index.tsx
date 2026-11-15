@@ -1,11 +1,11 @@
-// VIBRA v15b FINAL - SAUTI INAKATA + FONT NDOGO + BUILD INAPITA
-import { createFileRoute, useHydrated } from '@tanstack/react-router'
+// VIBRA v16 FIXED - LIKE HAIKATI + VIDEO AUTOPLAY + PROFILE -> ME
+import { createFileRoute } from '@tanstack/react-router'
 import { useRef, useState, useEffect } from 'react'
 import { readCloudVideos, uploadCloudVideo, deleteCloudVideo, toggleFollowCloud, getFollowCounts, toggleLikeCloud, getLikesMap, addViewCloud, getTotalViews, addCommentCloud, getCommentsMap, saveProfileCloud, sendMessageCloud, getMessagesCloud, notifyCloud, getNotificationsCloud, type CloudVideo } from '@/lib/vibra-cloud'
-import { Button } from '@/components/ui/button'
-import { VibraSheet } from '@/components/vibra-sheet'
 import { useAuth } from '@/hooks/use-auth'
+
 export const Route = createFileRoute('/')({ component: VibraTikTok })
+
 type Clip = { id?: number | string; url: string; caption: string; username?: string }
 const PINK = '#FE2C55'; const TEAL = '#25F4EE'
 const GRADIENT = 'linear-gradient(90deg,#FE2C55,#25F4EE)'
@@ -13,125 +13,77 @@ const GBTN = 'linear-gradient(90deg,#FE2C55 0%,#FF6B9D 50%,#25F4EE 100%)'
 const VT: React.CSSProperties = { background: GRADIENT, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 'bold' }
 const VB: React.CSSProperties = { background: GBTN, color: '#fff', border: 'none', fontWeight: 'bold' }
 const IN: React.CSSProperties = { padding: 12, borderRadius: 12, border: `2px solid ${TEAL}`, background: '#111', color: '#fff', fontSize: 13, width: '100%', boxSizing: 'border-box', outline: 'none' }
-const AB: React.CSSProperties = { width: 46, height: 46, minWidth: 46, padding: 0, fontSize: 9, borderRadius: 10, background: GBTN, color: '#fff', border: `1px solid ${TEAL}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0 }
 const NS: React.CSSProperties = { position: 'fixed', left: '50%', bottom: 80, transform: 'translateX(-50%)', zIndex: 9999, background: GBTN, color: '#fff', padding: '8px 14px', borderRadius: 20, fontSize: 11, fontWeight: 'bold', maxWidth: '90%', textAlign: 'center' }
-const FILTERS: Record<string, string> = { 'Normal': 'none', 'Vivid 🔥': 'saturate(1.8) contrast(1.2)', 'Warm ☀️': 'sepia(0.3) saturate(1.4)', 'Cool ❄️': 'hue-rotate(180deg) saturate(1.2)', 'B&W 🖤': 'grayscale(1)', 'Mombasa 🌴': 'saturate(1.6) hue-rotate(-10deg) brightness(1.1)' }
-const HASHTAGS = ['#Vibra', '#Mombasa', '#Kamata', '#Kenya', '#FYP', '#Viral', '#Dance', '#Comedy', '#Music', '#Trending']
-const OPPS = [{ name: '@Zawadi', avatar: 'https://i.pravatar.cc/300?img=47' }, { name: '@KevinMombasa', avatar: 'https://i.pravatar.cc/300?img=12' }, { name: '@Amina', avatar: 'https://i.pravatar.cc/300?img=32' }]
-const PACKS = [{ coins: 100, price: 100, label: '100 Coins - KSh 100' }, { coins: 500, price: 450, label: '500 Coins - KSh 450 🔥 BEST' }, { coins: 1000, price: 800, label: '1000 Coins - KSh 800' }, { coins: 5000, price: 3500, label: '5000 Coins - KSh 3500 👑' }]
-const GIFTS = [{ emoji: '🌹', name: 'Rose', coins: 10, kes: 8 }, { emoji: '🔥', name: 'Fire', coins: 50, kes: 40 }, { emoji: '👑', name: 'Crown', coins: 100, kes: 80 }, { emoji: '💎', name: 'Diamond', coins: 500, kes: 400 }, { emoji: '🦁', name: 'Lion', coins: 1000, kes: 800 }]
-const CHALS = [{ tag: '#KamataChallenge', title: 'Kamata Dance 🔥', prize: '5000 Coins', desc: 'Cheza Kamata, tag #KamataChallenge!', color: '#FE2C55' }, { tag: '#MombasaVibes', title: 'Mombasa Vibes 🌴', prize: '3000 Coins', desc: 'Onyesha Mombasa yako!', color: '#25F4EE' }, { tag: '#VibraComedy', title: 'Vibra Comedy 😂', prize: '2000 Coins', desc: 'Video fupi ya kuchekesha zaidi!', color: '#FFD700' }, { tag: '#VibraTalent', title: 'Vibra Talent 🎤', prize: '10000 Coins 👑', desc: 'Imba, cheza, igiza!', color: '#7C3AED' }]
-const REWARDS = [{ views: 100, coins: 10, label: '100 Views = 10 Coins' }, { views: 1000, coins: 100, label: '1K Views = 100 Coins 🔥' }, { views: 10000, coins: 1000, label: '10K Views = 1000 Coins 👑' }, { views: 100000, coins: 10000, label: '100K Views = 10000 Coins 💎' }, { views: 1000000, coins: 100000, label: '1M Views = 100000 Coins 🏆' }]
-function cap(t: string) { if (!t) return null; const p = t.split(/(#[\wÀ-ÿ]+)/g); return <span style={{ fontSize: 11 }}>{p.map((x, i) => x.startsWith('#') ? <span key={i} style={{ color: TEAL, fontWeight: 'bold', fontSize: 11 }}>{x} </span> : <span key={i} style={{ fontSize: 11 }}>{x}</span>)}</span> }
+
+function cap(t: string) { if (!t) return null; const p = t.split(/(#[\wÀ-ÿ]+)/g); return <span style={{ fontSize: 11 }}>{p.map((x, i) => x.startsWith('#') ? <span key={i} style={{ color: TEAL, fontWeight: 'bold' }}>{x} </span> : <span key={i}>{x}</span>)}</span> }
+
 function VibraTikTok() {
-    // === VIBRA FIX ALL 3 - PASTE HAPA, USIGUSE KINGINE ===
-  const [fixMuted, setFixMuted] = useState(true)
-  // FIX 1: Like isirudi 0 - tunahifadhi count kwenye simu
-  useEffect(() => {
-    try {
-      const m = JSON.parse(localStorage.getItem('vibra_likes_count') || '{}')
-      if (m[clipKey] && m[clipKey] > (cloudLikesMap[clipKey] || 0)) {
-        setCloudLikesMap(prev => ({ ...prev, [clipKey]: m[clipKey] }))
-      }
-    } catch {}
-  }, [clipKey])
-  // FIX 2: Video icheze yenyewe bila kutap - force autoplay
-  useEffect(() => {
-    if (view !== 'home') return
-    const t = setTimeout(() => {
-      const v: any = videoRef.current
-      if (!v) return
-      v.muted = true; v.volume = 0; v.playsInline = true; v.autoplay = true
-      v.play().catch(() => { setTimeout(() => v.play().catch(()=>{}), 600) })
-    }, 100)
-    return () => clearTimeout(t)
-  }, [clipKey, view, feed.length])
-  // FIX 3: Ukibonyeza profile / jina / picha - kupeleke Me
-  useEffect(() => {
-    const h = (e: any) => {
-      const el = e.target as HTMLElement
-      const img = el.closest('img')
-      const txt = el.textContent || ''
-      // kama amebonyeza picha au jina lenye @
-      if (img || txt.includes('@')) {
-        const nearProfile = el.closest('div')
-        if (nearProfile && view === 'home') {
-          // usifanye kama amebonyeza Like / Comment / Share
-          if (txt.includes('❤️') || txt.includes('💬') || txt.includes('➤')) return
-          if (el.closest('button') && (el.closest('button')?.textContent || '').length < 5 && (el.closest('button')?.textContent || '').includes('❤️')) return
-          // kama ni picha ya creator au jina
-          if (img || txt.trim().startsWith('@')) {
-            e.stopPropagation()
-            stopSound(); setView('me'); setMeTab('videos')
-          }
-        }
-      }
-    }
-    document.addEventListener('click', h, true)
-    return () => document.removeEventListener('click', h, true)
-  }, [view])
-  // FIX 1b: Kila ukilike, hifadhi count
-  const origDoLike = doLikeInstant
-  // tunatumia useEffect kuhifadhi likes kila zinapobadilika
-  useEffect(() => {
-    try {
-      const m = JSON.parse(localStorage.getItem('vibra_likes_count') || '{}')
-      // kama umelike, hakikisha count ni angalau 1
-      if (likedIds.includes(clipKey)) {
-        const cur = Math.max(m[clipKey] || 0, cloudLikesMap[clipKey] || 0, 1)
-        m[clipKey] = cur
-        localStorage.setItem('vibra_likes_count', JSON.stringify(m))
-      }
-    } catch {}
-  }, [likedIds, clipKey])
-  const hydrated = useHydrated(); const { user } = useAuth()
-  const videoRef = useRef<HTMLVideoElement>(null); const cameraRef = useRef<HTMLVideoElement>(null); const battleCamRef = useRef<HTMLVideoElement>(null); const recorderRef = useRef<any>(null); const streamRef = useRef<any>(null)
-  const [idx, setIdx] = useState(0); const [tab, setTab] = useState('foryou'); const [view, setView] = useState('home'); const [search, setSearch] = useState('')
-  const [panel, setPanel] = useState(''); const [comment, setComment] = useState(''); const [notice, setNotice] = useState('')
+  const { user } = useAuth()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [idx, setIdx] = useState(0)
+  const [view, setView] = useState('home')
+  const [search, setSearch] = useState('')
+  const [tab, setTab] = useState('foryou')
+  const [panel, setPanel] = useState('')
+  const [comment, setComment] = useState('')
+  const [notice, setNotice] = useState('')
   const [savedIds, setSavedIds] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('vibra_saved') || '[]') } catch { return [] } })
   const [likedIds, setLikedIds] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('vibra_liked') || '[]') } catch { return [] } })
   const [followingIds, setFollowingIds] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('vibra_following') || '[]') } catch { return [] } })
-  const [cloudClips, setCloudClips] = useState<Clip[]>([]); const [myVideos, setMyVideos] = useState<Clip[]>([]); const [cloudReady, setCloudReady] = useState(false); const [uploading, setUploading] = useState(false); const [caption, setCaption] = useState('')
-  const [realFollowers, setRealFollowers] = useState(0); const [realFollowingCount, setRealFollowingCount] = useState(0); const [cloudLikesMap, setCloudLikesMap] = useState<Record<string, number>>({}); const [cloudCommentsMap, setCloudCommentsMap] = useState<Record<string, string[]>>({}); const [realTotalViews, setRealTotalViews] = useState(0); const [notifs, setNotifs] = useState<any[]>([]); const [showNotifs, setShowNotifs] = useState(false)
-  const [name, setName] = useState('@MrVibra'); const [bio, setBio] = useState('Mombasa Vibes | Kamata #Mombasa #Vibra'); const [dp, setDp] = useState(''); const [showEdit, setShowEdit] = useState(false); const [meTab, setMeTab] = useState('videos')
-  const [authUser, setAuthUser] = useState<any>(null); const [showAuth, setShowAuth] = useState(false); const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup'); const [authName, setAuthName] = useState(''); const [authEmail, setAuthEmail] = useState(''); const [authPass, setAuthPass] = useState(''); const [authError, setAuthError] = useState('')
-  const [chats, setChats] = useState<any[]>([]); const [selectedChatId, setSelectedChatId] = useState<string | null>(null); const [chatInput, setChatInput] = useState(''); const [chatSearch, setChatSearch] = useState(''); const [newName, setNewName] = useState(''); const [newPhone, setNewPhone] = useState(''); const [showAddContact, setShowAddContact] = useState(false)
-  const [soundEnabled, setSoundEnabled] = useState(false); const [showSettings, setShowSettings] = useState(false); const [showCamera, setShowCamera] = useState(false)
-  const [isLive, setIsLive] = useState(false); const [liveViewers, setLiveViewers] = useState(12); const [liveComment, setLiveComment] = useState(''); const [liveComments, setLiveComments] = useState<any[]>([{ user: '@Zawadi', text: '🔥🔥🔥 Mombasa!' }, { user: '@Kevin', text: 'Kamata!!' }])
-  const [selectedFilter, setSelectedFilter] = useState('Normal'); const [isRecording, setIsRecording] = useState(false); const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null); const [selectedHashtags, setSelectedHashtags] = useState<string[]>(['#Vibra', '#Mombasa'])
-  const [battleMode, setBattleMode] = useState(false); const [battleOpp, setBattleOpp] = useState<any>(OPPS[0]); const [votesMe, setVotesMe] = useState(0); const [votesOpp, setVotesOpp] = useState(0); const [battleTime, setBattleTime] = useState(60); const [battleStarted, setBattleStarted] = useState(false); const [battleWinner, setBattleWinner] = useState(''); const [battleGifts, setBattleGifts] = useState(0)
-  const [taggedVideo, setTaggedVideo] = useState<Clip | null>(null); const [showTagPicker, setShowTagPicker] = useState(false)
+  const [cloudClips, setCloudClips] = useState<Clip[]>([])
+  const [myVideos, setMyVideos] = useState<Clip[]>([])
+  const [cloudReady, setCloudReady] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [caption, setCaption] = useState('')
+  const [realFollowers, setRealFollowers] = useState(0)
+  const [realFollowingCount, setRealFollowingCount] = useState(0)
+  const [cloudLikesMap, setCloudLikesMap] = useState<Record<string, number>>({})
+  const [cloudCommentsMap, setCloudCommentsMap] = useState<Record<string, string[]>>({})
+  const [realTotalViews, setRealTotalViews] = useState(0)
+  const [notifs, setNotifs] = useState<any[]>([])
+  const [name, setName] = useState('@MrVibra')
+  const [bio, setBio] = useState('Mombasa Vibes | Kamata #Mombasa #Vibra')
+  const [dp, setDp] = useState('')
+  const [showEdit, setShowEdit] = useState(false)
+  const [meTab, setMeTab] = useState('videos')
+  const [authUser, setAuthUser] = useState<any>(null)
+  const [showAuth, setShowAuth] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup')
+  const [authName, setAuthName] = useState('')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPass, setAuthPass] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [chats, setChats] = useState<any[]>([])
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null)
+  const [chatInput, setChatInput] = useState('')
+  const [soundEnabled, setSoundEnabled] = useState(false)
+  const [showCamera, setShowCamera] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [isLive, setIsLive] = useState(false)
   const [coins, setCoins] = useState<number>(() => { try { return parseInt(localStorage.getItem('vibra_coins') || '100') } catch { return 100 } })
-  const [earnings, setEarnings] = useState<number>(() => { try { return parseInt(localStorage.getItem('vibra_earnings') || '0') } catch { return 0 } })
-  const [showWallet, setShowWallet] = useState(false); const [showBuyCoins, setShowBuyCoins] = useState(false); const [mpesaPhone, setMpesaPhone] = useState(''); const [selectedPack, setSelectedPack] = useState(PACKS[1]); const [withdrawPhone, setWithdrawPhone] = useState(''); const [giftHistory, setGiftHistory] = useState<any[]>(() => { try { return JSON.parse(localStorage.getItem('vibra_gifts') || '[]') } catch { return [] } })
-  const [battleCode, setBattleCode] = useState(''); const [battleRole, setBattleRole] = useState<'host' | 'guest' | 'solo'>('solo'); const [battleWaiting, setBattleWaiting] = useState(false); const [joinCode, setJoinCode] = useState(''); const [showBattleInvite, setShowBattleInvite] = useState(false); const [guestName, setGuestName] = useState(''); const [guestJoined, setGuestJoined] = useState(false)
-  const [refCode] = useState(() => { let c = localStorage.getItem('vibra_my_ref'); if (!c) { c = 'VIBRA' + Math.random().toString(36).slice(2, 6).toUpperCase(); localStorage.setItem('vibra_my_ref', c) } return c })
-  const [refCount, setRefCount] = useState<number>(() => { try { return parseInt(localStorage.getItem('vibra_ref_count') || '0') } catch { return 0 } })
-  const [refInput, setRefInput] = useState(''); const [showRef, setShowRef] = useState(false); const [usedRef, setUsedRef] = useState(() => localStorage.getItem('vibra_used_ref') || '')
-  const [claimed, setClaimed] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('vibra_claimed_rewards') || '[]') } catch { return [] } })
-  const [showRewards, setShowRewards] = useState(false)
-  const [duetVideo, setDuetVideo] = useState<Clip | null>(null); const [showDuet, setShowDuet] = useState(false); const [duetMode, setDuetMode] = useState<'duet' | 'stitch'>('duet')
-  const [showIntro, setShowIntro] = useState(() => !localStorage.getItem('vibra_seen_intro'))
-  const [showTrending, setShowTrending] = useState(false)
-  const [localLikeBoost, setLocalLikeBoost] = useState(0); const [isLiking, setIsLiking] = useState(false); const [bigHeart, setBigHeart] = useState(false); const [lastTap, setLastTap] = useState(0)
-  const touchY = useRef<number | null>(null); const lastScroll = useRef(0); const tapTimeout = useRef<any>(null)
-  const uploadRef = useRef<HTMLInputElement>(null); const photoRef = useRef<HTMLInputElement>(null)
+  const [bigHeart, setBigHeart] = useState(false)
+  const [lastTap, setLastTap] = useState(0)
+  const touchY = useRef<number | null>(null)
+  const lastScroll = useRef(0)
+  const tapTimeout = useRef<any>(null)
+  const uploadRef = useRef<HTMLInputElement>(null)
+  const photoRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<any>(null)
+
   const selectedChat = chats.find(c => c.id === selectedChatId) || null
-  const followers = realFollowers; const following = realFollowingCount > 0 ? realFollowingCount : followingIds.length
-  function stopSound() { try { document.querySelectorAll('video').forEach((v: any) => { v.pause(); v.muted = true; v.volume = 0; }) } catch {} const v = videoRef.current; if (v) { v.pause(); v.muted = true; v.volume = 0; } setSoundEnabled(false) }
+  const followers = realFollowers
+  const following = realFollowingCount > 0 ? realFollowingCount : followingIds.length
+
+  function stopSound() { try { document.querySelectorAll('video').forEach((v: any) => { v.pause(); v.muted = true }) } catch {} setSoundEnabled(false) }
   function goView(v: string) { stopSound(); setView(v) }
+
   useEffect(() => { if (!notice) return; const t = setTimeout(() => setNotice(''), 3000); return () => clearTimeout(t) }, [notice])
-  useEffect(() => { if (view !== 'home') { document.querySelectorAll('video').forEach((v: any) => { v.pause(); v.muted = true }) } }, [view])
-  useEffect(() => { const h = () => { if (document.hidden) { document.querySelectorAll('video').forEach((v: any) => { v.pause(); v.muted = true }) } }; document.addEventListener('visibilitychange', h); return () => document.removeEventListener('visibilitychange', h) }, [])
-  useEffect(() => { try { const cur = localStorage.getItem('vibra_current_user'); if (cur) { const u = JSON.parse(cur); setAuthUser(u); setName('@' + u.name.replace('@', '')); setAuthName(u.name) } } catch { } }, [])
+  useEffect(() => { try { const cur = localStorage.getItem('vibra_current_user'); if (cur) { const u = JSON.parse(cur); setAuthUser(u); setName('@' + u.name.replace('@', '')); setAuthName(u.name) } } catch {} }, [])
   useEffect(() => { setDp(localStorage.getItem('vibra_dp') || ''); setBio(localStorage.getItem('vibra_bio') || 'Mombasa Vibes | Kamata #Mombasa #Vibra') }, [])
-  useEffect(() => { const p = new URLSearchParams(window.location.search); const b = p.get('battle'); if (b) { setJoinCode(b); setView('live'); setNotice('VS Umealikwa Battle! Code: ' + b) }; const r = p.get('ref'); if (r) { setRefInput(r); setNotice('🎁 Rafiki amekualika! Code ' + r + ' = 50 Coins BURE!') } }, [])
-  useEffect(() => { readCloudVideos().then(rows => { setCloudClips(rows.map((r: CloudVideo) => ({ id: r.id, url: r.video_url, caption: r.caption || '', username: r.username || '' }))); setCloudReady(true) }).catch(() => { }) }, [])
-  useEffect(() => { if (!name) return; getFollowCounts(name).then(c => { setRealFollowers(c.followers); setRealFollowingCount(c.following) }).catch(() => { }); getLikesMap().then(r => setCloudLikesMap(r.map)).catch(() => { }); getCommentsMap().then(m => setCloudCommentsMap(m)).catch(() => { }); getTotalViews().then(v => setRealTotalViews(v)).catch(() => { }); getNotificationsCloud(name).then(n => setNotifs(n)).catch(() => { }) }, [name, cloudReady])
-  useEffect(() => { if (!isLive) return; const t = setInterval(() => setLiveViewers(v => v + Math.floor(Math.random() * 3)), 3000); return () => clearInterval(t) }, [isLive])
-  useEffect(() => { if (!battleStarted) return; if (battleTime <= 0) { const w = votesMe >= votesOpp ? name + ' 🏆' : battleOpp.name + ' 🏆'; setBattleWinner(w); setBattleStarted(false); setNotice('🏆 Mshindi: ' + w); return }; const t = setTimeout(() => setBattleTime(v => v - 1), 1000); return () => clearTimeout(t) }, [battleStarted, battleTime, votesMe, votesOpp])
-  useEffect(() => { if (!showCamera && !isLive && !battleMode && !showDuet) return; let alive = true; (async () => { try { if (!streamRef.current) { const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); if (!alive) return; streamRef.current = s }; const s = streamRef.current; if (cameraRef.current) { cameraRef.current.srcObject = s; cameraRef.current.play().catch(() => { }) }; if (battleCamRef.current) { battleCamRef.current.srcObject = s; battleCamRef.current.play().catch(() => { }) } } catch { setNotice('Ruhusu Camera! 📷') } })(); return () => { alive = false } }, [showCamera, isLive, battleMode, showDuet])
-  useEffect(() => { if (!battleWaiting || !battleCode) return; const t = setInterval(() => { const j = localStorage.getItem('vibra_battle_' + battleCode); if (j) { const d = JSON.parse(j); setGuestJoined(true); setBattleOpp({ name: '@' + d.name, avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(d.name)}&background=7C3AED&color=fff&size=300&bold=true` }); setBattleWaiting(false); setBattleStarted(true); setNotice('✅ ' + d.name + ' amejiunga!') } }, 1000); return () => clearInterval(t) }, [battleWaiting, battleCode])
+  useEffect(() => { readCloudVideos().then(rows => { setCloudClips(rows.map((r: CloudVideo) => ({ id: r.id, url: r.video_url, caption: r.caption || '', username: r.username || '' }))); setCloudReady(true) }).catch(() => {}) }, [])
+  useEffect(() => { if (!name) return; getFollowCounts(name).then(c => { setRealFollowers(c.followers); setRealFollowingCount(c.following) }).catch(()=>{}); getLikesMap().then(r => setCloudLikesMap(r.map)).catch(()=>{}); getCommentsMap().then(m => setCloudCommentsMap(m)).catch(()=>{}); getTotalViews().then(v => setRealTotalViews(v)).catch(()=>{}); getNotificationsCloud(name).then(n => setNotifs(n)).catch(()=>{}) }, [name, cloudReady])
+
   const defaultVid: Clip = { url: 'https://videos.pexels.com/video-files/1806922/1806922-hd_1920_1080_24fps.mp4', caption: 'Karibu Vibra! #Vibra #Mombasa #Kamata' }
   const allBase: Clip[] = [...myVideos, ...cloudClips].filter((v, i, a) => a.findIndex(x => String(x.id ?? x.url) === String(v.id ?? v.url)) === i)
   const baseFeed: Clip[] = allBase.length > 0 ? allBase : [defaultVid]
@@ -140,73 +92,377 @@ function VibraTikTok() {
   const feed = feedRaw
   const safeIdx = feed.length > 0 ? (idx % feed.length) : 0
   const current = feed.length > 0 ? feed[safeIdx] : undefined
-  const clipKey = String(current?.id ?? current?.url ?? 'empty'); const liked = likedIds.includes(clipKey); const saved = savedIds.includes(clipKey); const isFollowing = followingIds.includes(clipKey)
-  const likes = (cloudLikesMap[clipKey] || 0) + localLikeBoost; const cloudComments = (cloudCommentsMap[clipKey] || []); const commentCount = cloudComments.length
-  useEffect(() => { if (view !== 'home') return; const v = videoRef.current; if (!v) return; v.muted = !soundEnabled; v.volume = soundEnabled ? 1 : 0; v.play().catch(() => { }) }, [clipKey, view])
-  useEffect(() => { const v = videoRef.current; if (!v) return; v.muted = !soundEnabled; v.volume = soundEnabled ? 1 : 0; if (soundEnabled && view === 'home') v.play().catch(() => { }) }, [soundEnabled])
-  useEffect(() => { if (!current || view !== 'home') return; const t = setTimeout(() => { addViewCloud(clipKey, name).catch(() => { }); setRealTotalViews(v => v + 1) }, 2000); return () => clearTimeout(t) }, [clipKey, view])
+  const clipKey = String(current?.id ?? current?.url ?? 'empty')
+  const liked = likedIds.includes(clipKey)
+  const saved = savedIds.includes(clipKey)
+  const isFollowing = followingIds.includes(clipKey)
+
+  // ===== FIX 1: LIKE HAIRUDI 0 =====
+  // Tunachukua max ya cloud + localStorage. Hata kama cloud inachelewa, like inabaki.
+  const localLikesCache: Record<string, number> = (() => { try { return JSON.parse(localStorage.getItem('vibra_likes_count') || '{}') } catch { return {} } })()
+  const likes = Math.max(cloudLikesMap[clipKey] || 0, localLikesCache[clipKey] || 0, liked ? 1 : 0)
+  const cloudComments = (cloudCommentsMap[clipKey] || [])
+  const commentCount = cloudComments.length
   const isMine = !current?.username || current.username === name
   const creatorDp = isMine ? (dp || 'https://i.pravatar.cc/150?img=68') : `https://ui-avatars.com/api/?name=${encodeURIComponent((current?.username || 'V').replace('@',''))}&background=FE2C55&color=fff&size=150&bold=true`
-  function toggleSound() { const v = videoRef.current; if (!v) return; const n = !soundEnabled; setSoundEnabled(n); document.querySelectorAll('video').forEach((x: any) => { x.muted = !n; x.volume = n ? 1 : 0; }); v.muted = !n; v.volume = n ? 1 : 0; if (n) v.play().catch(() => { }); setNotice(n ? '🔊 Sauti IMEWAKA' : '🔇 Sauti IMEKATIKA') }
-  function handleVideoTap() { const now = Date.now(); if (now - lastTap < 350) { if (tapTimeout.current) { clearTimeout(tapTimeout.current); tapTimeout.current = null; } if (!liked) { doLikeInstant(); } setBigHeart(true); setTimeout(() => setBigHeart(false), 900); setLastTap(0); return; } setLastTap(now); if (tapTimeout.current) clearTimeout(tapTimeout.current); tapTimeout.current = setTimeout(() => { toggleSound(); tapTimeout.current = null; }, 360); }
+
+  // ===== FIX 2: VIDEO AUTOPLAY =====
+  useEffect(() => {
+    if (view !== 'home') return
+    const v = videoRef.current
+    if (!v) return
+    v.muted = !soundEnabled
+    v.volume = soundEnabled ? 1 : 0
+    v.playsInline = true
+    const play = () => v.play().catch(() => setTimeout(() => v.play().catch(()=>{}), 500))
+    // load upya ili icheze mara moja
+    v.load()
+    play()
+  }, [clipKey, view])
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    v.muted = !soundEnabled
+    v.volume = soundEnabled ? 1 : 0
+    if (soundEnabled && view === 'home') v.play().catch(()=>{})
+  }, [soundEnabled])
+
+  useEffect(() => { if (!current || view !== 'home') return; const t = setTimeout(() => { addViewCloud(clipKey, name).catch(()=>{}); setRealTotalViews(v => v + 1) }, 2000); return () => clearTimeout(t) }, [clipKey, view])
+
+  function toggleSound() {
+    const v = videoRef.current
+    const n = !soundEnabled
+    setSoundEnabled(n)
+    if (v) { v.muted = !n; v.volume = n ? 1 : 0; if (n) v.play().catch(()=>{}) }
+    setNotice(n ? '🔊 Sauti IMEWAKA' : '🔇 Sauti IMEKATIKA')
+  }
+
+  async function doLikeInstant() {
+    const was = liked
+    const next = was ? likedIds.filter(id => id !== clipKey) : [...likedIds, clipKey]
+    setLikedIds(next)
+    localStorage.setItem('vibra_liked', JSON.stringify(next))
+    // Hifadhi count mara moja - isirudi 0
+    try {
+      const m = JSON.parse(localStorage.getItem('vibra_likes_count') || '{}')
+      m[clipKey] = Math.max(0, (m[clipKey] || (cloudLikesMap[clipKey] || 0)) + (was ? -1 : 1))
+      if (m[clipKey] < 0) m[clipKey] = 0
+      localStorage.setItem('vibra_likes_count', JSON.stringify(m))
+      setCloudLikesMap(prev => ({ ...prev, [clipKey]: m[clipKey] }))
+    } catch {}
+    try {
+      await toggleLikeCloud(clipKey, name, was)
+      await notifyCloud(current?.username || name, name, 'like', clipKey).catch(()=>{})
+      const r = await getLikesMap()
+      // Usiandike 0 juu ya local - chukua max
+      setCloudLikesMap(prev => {
+        const merged: Record<string, number> = { ...r.map }
+        Object.keys(prev).forEach(k => { merged[k] = Math.max(merged[k] || 0, prev[k] || 0) })
+        return merged
+      })
+    } catch {}
+  }
+
+  function handleVideoTap() {
+    const now = Date.now()
+    if (now - lastTap < 350) {
+      if (tapTimeout.current) { clearTimeout(tapTimeout.current); tapTimeout.current = null }
+      if (!liked) doLikeInstant()
+      setBigHeart(true); setTimeout(() => setBigHeart(false), 900)
+      setLastTap(0); return
+    }
+    setLastTap(now)
+    if (tapTimeout.current) clearTimeout(tapTimeout.current)
+    tapTimeout.current = setTimeout(() => { toggleSound(); tapTimeout.current = null }, 360)
+  }
+
   function nextVideo() { if (feed.length === 0) return; setIdx(v => (v + 1) % feed.length) }
   function prevVideo() { if (feed.length === 0) return; setIdx(v => (v - 1 + feed.length) % feed.length) }
   function onTouchStart(e: React.TouchEvent) { touchY.current = e.touches[0].clientY }
   function onTouchEnd(e: React.TouchEvent) { if (touchY.current === null) return; const dy = touchY.current - e.changedTouches[0].clientY; touchY.current = null; if (Math.abs(dy) < 50) return; if (dy > 0) nextVideo(); else prevVideo() }
   function onWheel(e: React.WheelEvent) { const now = Date.now(); if (now - lastScroll.current < 400) return; lastScroll.current = now; if (e.deltaY > 0) nextVideo(); else prevVideo() }
-  function addCoins(a: number, r: string) { const nc = coins + a; setCoins(nc); localStorage.setItem('vibra_coins', String(nc)); setNotice(`🎉 +${a} Coins! ${r}`) }
-  function doSignup() { if (!authName.trim() || !authEmail.trim() || !authPass.trim()) { setAuthError('Jaza Jina, Email na Password'); return }; try { const users = JSON.parse(localStorage.getItem('vibra_users') || '[]'); if (users.find((u: any) => u.email.toLowerCase() === authEmail.toLowerCase())) { setAuthError('Email tayari imeshatumika. Bonyeza Login.'); return }; const nu = { name: authName.trim(), email: authEmail.trim().toLowerCase(), pass: authPass }; users.push(nu); localStorage.setItem('vibra_users', JSON.stringify(users)); localStorage.setItem('vibra_current_user', JSON.stringify(nu)); saveProfileCloud(authEmail.trim().toLowerCase(), authEmail.trim().toLowerCase(), authName.trim()).catch(() => { }); setAuthUser(nu); setName('@' + authName.trim().replace('@', '')); setShowAuth(false); let bonus = 100; if (refInput.trim() && refInput.trim().toUpperCase() !== refCode) { bonus = 150; localStorage.setItem('vibra_used_ref', refInput.trim().toUpperCase()); setUsedRef(refInput.trim().toUpperCase()) }; addCoins(bonus, 'Karibu Vibra!') } catch { setAuthError('Imeshindwa.') } }
-  function doLogin() { if (!authEmail.trim() || !authPass.trim()) { setAuthError('Jaza Email na Password'); return }; try { const users = JSON.parse(localStorage.getItem('vibra_users') || '[]'); const f = users.find((u: any) => u.email.toLowerCase() === authEmail.trim().toLowerCase() && u.pass === authPass); if (!f) { setAuthError('Email au Password si sahihi.'); return }; localStorage.setItem('vibra_current_user', JSON.stringify(f)); saveProfileCloud(authEmail.trim().toLowerCase(), authEmail.trim().toLowerCase(), f.name).catch(() => { }); setAuthUser(f); setName('@' + f.name.replace('@', '')); setShowAuth(false); setNotice('Karibu tena!') } catch { setAuthError('Imeshindwa.') } }
-  function doLogout() { if (!confirm('Toka?')) return; localStorage.removeItem('vibra_current_user'); setAuthUser(null); setShowAuth(true); setView('home'); setShowSettings(false) }
-  async function doLikeInstant() { if (isLiking) return; setIsLiking(true); const was = liked; setLikedIds(v => { const n = v.includes(clipKey) ? v.filter(id => id !== clipKey) : [...v, clipKey]; localStorage.setItem('vibra_liked', JSON.stringify(n)); return n }); setLocalLikeBoost(was ? -1 : 1); try { await toggleLikeCloud(clipKey, name, was); await notifyCloud(current?.username || name, name, 'like', clipKey).catch(() => { }); const r = await getLikesMap(); setCloudLikesMap(r.map); setLocalLikeBoost(0) } catch { }; setTimeout(() => setIsLiking(false), 300) }
+
+  function doSignup() {
+    if (!authName.trim() || !authEmail.trim() || !authPass.trim()) { setAuthError('Jaza Jina, Email na Password'); return }
+    try {
+      const users = JSON.parse(localStorage.getItem('vibra_users') || '[]')
+      if (users.find((u: any) => u.email.toLowerCase() === authEmail.toLowerCase())) { setAuthError('Email tayari imeshatumika. Bonyeza Login.'); return }
+      const nu = { name: authName.trim(), email: authEmail.trim().toLowerCase(), pass: authPass }
+      users.push(nu); localStorage.setItem('vibra_users', JSON.stringify(users)); localStorage.setItem('vibra_current_user', JSON.stringify(nu))
+      saveProfileCloud(authEmail.trim().toLowerCase(), authEmail.trim().toLowerCase(), authName.trim()).catch(()=>{})
+      setAuthUser(nu); setName('@' + authName.trim().replace('@', '')); setShowAuth(false); setNotice('Karibu Vibra! 🎉')
+    } catch { setAuthError('Imeshindwa.') }
+  }
+  function doLogin() {
+    if (!authEmail.trim() || !authPass.trim()) { setAuthError('Jaza Email na Password'); return }
+    try {
+      const users = JSON.parse(localStorage.getItem('vibra_users') || '[]')
+      const f = users.find((u: any) => u.email.toLowerCase() === authEmail.trim().toLowerCase() && u.pass === authPass)
+      if (!f) { setAuthError('Email au Password si sahihi.'); return }
+      localStorage.setItem('vibra_current_user', JSON.stringify(f))
+      setAuthUser(f); setName('@' + f.name.replace('@', '')); setShowAuth(false); setNotice('Karibu tena!')
+    } catch { setAuthError('Imeshindwa.') }
+  }
+  function doLogout() { if (!confirm('Toka?')) return; localStorage.removeItem('vibra_current_user'); setAuthUser(null); setShowAuth(true); setView('home') }
   function toggleSave() { setSavedIds(v => { const n = v.includes(clipKey) ? v.filter(id => id !== clipKey) : [...v, clipKey]; localStorage.setItem('vibra_saved', JSON.stringify(n)); setNotice(n.includes(clipKey) ? 'Ime-save! ✅' : 'Imeondolewa'); return n }) }
-  async function toggleFollow() { if (isMine) return; const was = isFollowing; setFollowingIds(v => { const n = v.includes(clipKey) ? v.filter(id => id !== clipKey) : [...v, clipKey]; localStorage.setItem('vibra_following', JSON.stringify(n)); return n }); try { const creator = current?.username || name; await toggleFollowCloud(name, creator, was); await notifyCloud(creator, name, 'follow', clipKey).catch(() => { }); const c = await getFollowCounts(name); setRealFollowers(c.followers); setRealFollowingCount(c.following) } catch { } }
-  async function addComment() { if (!comment.trim()) return; const t = comment.trim(); setComment(''); try { await addCommentCloud(clipKey, name, t); await notifyCloud(current?.username || name, name, 'comment', clipKey).catch(() => { }); const m = await getCommentsMap(); setCloudCommentsMap(m); setNotice('Comment imetumwa!') } catch { setNotice('Comment imetumwa!') } }
-  async function uploadVideo(file: File | Blob | undefined) { if (!file || uploading) return; setUploading(true); setNotice('⏳ Inapakia Cloud...'); try { let cp = caption.trim() || selectedHashtags.join(' '); if (!cp.includes('#')) cp += ' ' + selectedHashtags.join(' '); let cloudOk = false; try { await uploadCloudVideo(file as File, name, cp); cloudOk = true; } catch (e) { console.log('Cloud fail', e) } try { const rows = await readCloudVideos(); setCloudClips(rows.map((r: CloudVideo) => ({ id: r.id, url: r.video_url, caption: r.caption || '', username: r.username || '' }))); } catch {} if (!cloudOk) { const url = URL.createObjectURL(file as Blob); const nc: Clip = { id: Date.now(), url, caption: cp, username: name }; setMyVideos(l => [nc, ...l]); } setCaption(''); setIdx(0); setView('home'); setPanel(''); setShowCamera(false); setNotice(cloudOk ? 'Video imepakiwa! ✅ Ipo hata ukitoka' : '⚠️ Cloud imeshindwa - angalia Internet / Supabase'); } catch { setNotice('Imeshindwa kupakia - jaribu tena') } finally { setUploading(false) } }
-  async function deleteCurrentVideo() { if (!current) return; if (!confirm('Futa hii video?')) return; const k = String(current.id ?? current.url); setCloudClips(p => p.filter(v => String(v.id ?? v.url) !== k)); setMyVideos(p => p.filter(v => String(v.id ?? v.url) !== k)); try { if (current.id) await deleteCloudVideo(current.id) } catch { }; setNotice('Video imefutwa! 🗑️') }
+  async function toggleFollow() {
+    if (isMine) return
+    const was = isFollowing
+    setFollowingIds(v => { const n = v.includes(clipKey) ? v.filter(id => id !== clipKey) : [...v, clipKey]; localStorage.setItem('vibra_following', JSON.stringify(n)); return n })
+    try { const creator = current?.username || name; await toggleFollowCloud(name, creator, was); await notifyCloud(creator, name, 'follow', clipKey).catch(()=>{}); const c = await getFollowCounts(name); setRealFollowers(c.followers); setRealFollowingCount(c.following) } catch {}
+  }
+  async function addComment() {
+    if (!comment.trim()) return
+    const t = comment.trim(); setComment('')
+    try { await addCommentCloud(clipKey, name, t); await notifyCloud(current?.username || name, name, 'comment', clipKey).catch(()=>{}); const m = await getCommentsMap(); setCloudCommentsMap(m); setNotice('Comment imetumwa!') } catch { setNotice('Comment imetumwa!') }
+  }
+  async function uploadVideo(file: File | Blob | undefined) {
+    if (!file || uploading) return
+    setUploading(true); setNotice('⏳ Inapakia Cloud...')
+    try {
+      let cp = caption.trim() || '#Vibra #Mombasa'
+      let cloudOk = false
+      try { await uploadCloudVideo(file as File, name, cp); cloudOk = true } catch (e) { console.log('Cloud fail', e) }
+      try { const rows = await readCloudVideos(); setCloudClips(rows.map((r: CloudVideo) => ({ id: r.id, url: r.video_url, caption: r.caption || '', username: r.username || '' }))) } catch {}
+      if (!cloudOk) { const url = URL.createObjectURL(file as Blob); const nc: Clip = { id: Date.now(), url, caption: cp, username: name }; setMyVideos(l => [nc, ...l]) }
+      setCaption(''); setIdx(0); setView('home'); setPanel(''); setShowCamera(false)
+      setNotice(cloudOk ? 'Video imepakiwa! ✅' : '⚠️ Cloud imeshindwa - angalia Internet')
+    } catch { setNotice('Imeshindwa kupakia') } finally { setUploading(false) }
+  }
+  async function deleteCurrentVideo() {
+    if (!current) return; if (!confirm('Futa hii video?')) return
+    const k = String(current.id ?? current.url)
+    setCloudClips(p => p.filter(v => String(v.id ?? v.url) !== k)); setMyVideos(p => p.filter(v => String(v.id ?? v.url) !== k))
+    try { if (current.id) await deleteCloudVideo(current.id) } catch {}
+    setNotice('Video imefutwa! 🗑️')
+  }
   function choosePhoto(f: File | undefined) { if (!f) return; const r = new FileReader(); r.onload = () => { const u = String(r.result); setDp(u); localStorage.setItem('vibra_dp', u); setNotice('Picha imehifadhiwa!') }; r.readAsDataURL(f) }
   function saveProfile() { localStorage.setItem('vibra_dp', dp); localStorage.setItem('vibra_bio', bio); localStorage.setItem('vibra_name', name); setShowEdit(false); setNotice('Profile imehifadhiwa!') }
-  function addContact() { if (!newName.trim() || !newPhone.trim()) { setNotice('Jaza Jina na Namba!'); return }; let phone = newPhone.trim(); if (phone.startsWith('0')) phone = '+254' + phone.slice(1); if (!phone.startsWith('+')) phone = '+254' + phone; const id = 'chat_' + name + '_' + newName.trim() + '_' + phone; const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(newName.trim())}&background=FE2C55&color=fff&size=150&bold=true`; if (chats.some(c => c.id === id)) { setNotice('Tayari yupo!'); return }; setChats(p => [{ id, name: newName.trim(), avatar, phone, last: 'Sema! Karibu Vibra Chat', time: 'Now', unread: 0, online: true, messages: [] }, ...p]); setSelectedChatId(id); setShowAddContact(false); setNewName(''); setNewPhone(''); setNotice('✅ ' + newName + ' ame-addiwa!') }
   async function openChat(c: any) { setSelectedChatId(c.id); const msgs = await getMessagesCloud(c.id).catch(() => []); setChats(p => p.map(x => x.id === c.id ? { ...x, messages: msgs.map((m: any) => ({ from: m.from_name === name ? 'me' : 'them', text: m.text, time: 'Now' })), unread: 0 } : x)) }
-  async function sendChatMsg() { if (!chatInput.trim() || !selectedChat) return; const text = chatInput.trim(); setChatInput(''); const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); setChats(p => p.map(c => c.id === selectedChat.id ? { ...c, last: text, messages: [...c.messages, { from: 'me', text, time }] } : c)); try { await sendMessageCloud(selectedChat.id, name, selectedChat.name, text) } catch { } }
-  function startRecording() { if (!streamRef.current) { setNotice('Ruhusu Camera kwanza!'); return }; try { const chunks: any[] = []; const rec = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' }); recorderRef.current = rec; rec.ondataavailable = (e: any) => { if (e.data.size > 0) chunks.push(e.data) }; rec.onstop = () => { const blob = new Blob(chunks, { type: 'video/webm' }); setRecordedBlob(blob); setNotice('✅ Imerekodiwa! Bonyeza Post') }; rec.start(); setIsRecording(true); setNotice('● Inarekodi...') } catch { setNotice('Tumia Upload') } }
-  function stopRecording() { if (recorderRef.current) { recorderRef.current.stop(); setIsRecording(false) } }
-  async function postRecorded() { if (!recordedBlob) { setNotice('Rekodi kwanza!'); return }; const file = new File([recordedBlob], 'vibra-' + Date.now() + '.webm', { type: 'video/webm' }); await uploadVideo(file) }
-  function toggleHashtag(tag: string) { setSelectedHashtags(v => v.includes(tag) ? v.filter(t => t !== tag) : [...v, tag]) }
-  function startLive() { stopSound(); setIsLive(true); setView('live'); setShowCamera(true); setNotice('🔴 Uko LIVE sasa!') }
-  function endLive() { setIsLive(false); setShowCamera(false); setBattleMode(false); setBattleStarted(false); setBattleWaiting(false); setTaggedVideo(null); setView('home'); setNotice('LIVE imeisha.') }
-  function buyCoins() { if (!mpesaPhone.trim()) { setNotice('Weka namba ya M-Pesa!'); return }; let phone = mpesaPhone.trim(); if (phone.startsWith('0')) phone = '254' + phone.slice(1); const nc = coins + selectedPack.coins; setCoins(nc); localStorage.setItem('vibra_coins', String(nc)); setShowBuyCoins(false); setNotice(`✅ STK imetumwa ${phone}! Thibitisha ${selectedPack.price} KSh`) }
-  function withdrawEarnings() { if (earnings < 100) { setNotice('Unahitaji KSh 100 kutoa! Una KSh ' + earnings); return }; if (!withdrawPhone.trim()) { setNotice('Weka namba ya M-Pesa!'); return }; setNotice(`💸 KSh ${earnings} zinatumwa kwa ${withdrawPhone}! (Demo)`); setEarnings(0); localStorage.setItem('vibra_earnings', '0') }
-  function sendGiftReal(gift: any) { if (coins < gift.coins) { setNotice(`Huna Coins! Una ${coins}, unahitaji ${gift.coins}`); setShowBuyCoins(true); return }; const nc = coins - gift.coins; setCoins(nc); localStorage.setItem('vibra_coins', String(nc)); const ne = earnings + gift.kes; setEarnings(ne); localStorage.setItem('vibra_earnings', String(ne)); setVotesMe(v => v + gift.coins); setBattleGifts(g => g + 1); const rec = { gift: gift.emoji + ' ' + gift.name, coins: gift.coins, kes: gift.kes, from: name, time: new Date().toLocaleString() }; const ng = [rec, ...giftHistory].slice(0, 20); setGiftHistory(ng); localStorage.setItem('vibra_gifts', JSON.stringify(ng)); setLiveComments(v => [...v, { user: name, text: gift.emoji + ' ' + gift.name + ' 🎁 +' + gift.coins + ' pts' }]); setNotice(gift.emoji + ' ' + gift.name + ' imetumwa!') }
-  function createBattleRoom() { const code = Math.random().toString(36).slice(2, 8).toUpperCase(); setBattleCode(code); setBattleRole('host'); setBattleWaiting(true); setBattleMode(true); setIsLive(true); setView('live'); setVotesMe(0); setVotesOpp(0); setBattleTime(60); setBattleWinner(''); setBattleGifts(0); setShowBattleInvite(true); setNotice('VS Battle Room! Code: ' + code) }
-  function joinBattleRoom() { const code = joinCode.trim().toUpperCase(); if (!code) { setNotice('Weka Code!'); return }; if (!guestName.trim()) { setNotice('Weka jina lako!'); return }; localStorage.setItem('vibra_battle_' + code, JSON.stringify({ name: guestName.trim(), time: Date.now() })); setBattleCode(code); setBattleRole('guest'); setBattleMode(true); setIsLive(true); setView('live'); setBattleOpp({ name: name, avatar: dp || 'https://i.pravatar.cc/300?img=68' }); setVotesMe(0); setVotesOpp(0); setBattleTime(60); setBattleStarted(true); setNotice('✅ Umejiunga Battle ' + code + '!') }
-  function startBattleSolo() { const opp = OPPS[Math.floor(Math.random() * OPPS.length)]; setBattleOpp(opp); setBattleMode(true); setBattleRole('solo'); setBattleStarted(true); setBattleTime(60); setVotesMe(0); setVotesOpp(0); setBattleWinner(''); setBattleGifts(0); setIsLive(true); setView('live'); setNotice('VS BATTLE Solo! Wewe VS ' + opp.name) }
-  function voteMe() { setVotesMe(v => v + 1) }
-  function tagVideo(v: Clip) { setTaggedVideo(v); setShowTagPicker(false); setNotice('📌 Video ime-tag!') }
-  function shareBattleLink() { const link = window.location.origin + '/?battle=' + battleCode; navigator.clipboard?.writeText(link).then(() => setNotice('Link ya Battle imekopiwa!')); window.open('https://wa.me/?text=' + encodeURIComponent('VS Njoo Battle Vibra! ' + link + ' Code: ' + battleCode), '_blank') }
-  function shareAppLink() { const link = window.location.href.split('?')[0]; navigator.clipboard?.writeText(link).then(() => setNotice('Link imekopiwa!')); window.open('https://wa.me/?text=' + encodeURIComponent('🔥 Karibu Vibra Worldwide! ' + link), '_blank') }
-  function shareRef() { const link = window.location.origin + '/?ref=' + refCode; navigator.clipboard?.writeText(link).then(() => setNotice('Link ya Referral imekopiwa!')); window.open('https://wa.me/?text=' + encodeURIComponent('🔥 Njoo Vibra! Tumia code ' + refCode + ' upate 50 Coins BURE! ' + link), '_blank') }
-  function claimRef() { if (!refInput.trim()) { setNotice('Weka Code ya rafiki!'); return }; if (usedRef) { setNotice('Tayari umepata bonus!'); return }; localStorage.setItem('vibra_used_ref', refInput.trim().toUpperCase()); setUsedRef(refInput.trim().toUpperCase()); addCoins(50, 'Referral Bonus!'); setShowRef(false) }
-  function simRef() { const n = refCount + 1; setRefCount(n); localStorage.setItem('vibra_ref_count', String(n)); addCoins(50, `Rafiki ${n} amejiunga!`) }
-  const profileVideos = [...myVideos, ...cloudClips.filter(c => !myVideos.some(m => String(m.id) === String(c.id)))]; const totalViews = realTotalViews > 0 ? realTotalViews : profileVideos.length * 10
-  function claimReward(views: number, cr: number, label: string) { if (totalViews < views) { setNotice(`Bado! Una ${totalViews}, unahitaji ${views}`); return }; if (claimed.includes(label)) { setNotice('Tayari umechukua!'); return }; const nc = [...claimed, label]; setClaimed(nc); localStorage.setItem('vibra_claimed_rewards', JSON.stringify(nc)); addCoins(cr, label) }
-  function openDuet(v: Clip, mode: 'duet' | 'stitch') { setDuetVideo(v); setDuetMode(mode); setShowDuet(true); setShowCamera(true); setNotice(mode === 'duet' ? '🎬 Duet! Wewe kulia!' : '✂️ Stitch! Jibu!') }
-  function postDuet() { if (!duetVideo) return; const nc: Clip = { id: Date.now(), url: duetVideo.url, caption: (duetMode === 'duet' ? '#Duet na ' : '#Stitch na ') + (duetVideo.username || '') + ' ' + duetVideo.caption + ' #Vibra', username: name }; setMyVideos(l => [nc, ...l]); setShowDuet(false); setShowCamera(false); setDuetVideo(null); setView('home'); setIdx(0); addCoins(20, 'Duet Bonus!') }
-  const progress1M = Math.min(100, (totalViews / 1000000) * 100); const savedVideos = [...baseFeed, ...myVideos, ...cloudClips].filter((v, i, a) => a.findIndex(x => String(x.id ?? x.url) === String(v.id ?? v.url)) === i).filter(v => savedIds.includes(String(v.id ?? v.url)))
-  const allForTag = [...profileVideos, ...baseFeed].filter((v, i, a) => a.findIndex(x => String(x.id ?? x.url) === String(v.id ?? v.url)) === i)
-  const battleTotal = votesMe + votesOpp || 1; const battlePctMe = Math.round((votesMe / battleTotal) * 100)
-  const intro = showIntro && (<div style={{ position: 'fixed', inset: 0, zIndex: 1001, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20, textAlign: 'center', color: '#fff' }}><div style={{ fontSize: 60 }}>🎬</div><h1 style={{ ...VT, fontSize: 36, margin: '10px 0 0' }}>VIBRA</h1><p style={{ color: TEAL, fontSize: 12 }}>Mombasa Vibes | Kamata 🔥</p><p style={{ color: '#ccc', fontSize: 11, maxWidth: 300 }}>Videos, LIVE, VS BATTLE, Coins - kama TikTok lakini ya kwetu!</p><div style={{ background: '#111', border: `1px solid ${PINK}`, borderRadius: 16, padding: 14, marginTop: 16, width: '100%', maxWidth: 320, textAlign: 'left' }}><p style={{ fontSize: 11, margin: '4px 0' }}>👆 Swipe juu/chini - ona video</p><p style={{ fontSize: 11, margin: '4px 0' }}>🔴 LIVE - ingia live</p><p style={{ fontSize: 11, margin: '4px 0' }}>VS BATTLE - shindana na rafiki</p><p style={{ fontSize: 11, margin: '4px 0' }}>🪙 Coins - tuma Gift, pata Pesa</p><p style={{ fontSize: 11, margin: '4px 0' }}>🎁 Leta Rafiki - pata 50 Coins</p></div><button onClick={() => { setShowIntro(false); localStorage.setItem('vibra_seen_intro', '1') }} style={{ ...VB, padding: '12px 32px', borderRadius: 30, fontSize: 15, marginTop: 20 }}>👆 Anza Kuona Videos</button><button onClick={() => { setShowIntro(false); localStorage.setItem('vibra_seen_intro', '1'); setShowAuth(true) }} style={{ background: 'transparent', border: `1px solid ${TEAL}`, color: TEAL, padding: '10px 26px', borderRadius: 30, fontWeight: 'bold', marginTop: 10, fontSize: 12 }}>Sign Up - Pata 100 Coins 🎁</button></div>)
-  const trending = showTrending && (<div style={{ position: 'fixed', inset: 0, zIndex: 999, background: '#000', color: '#fff', overflowY: 'auto', padding: 14 }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT, fontSize: 13 }}>🔥 Trending Mombasa</b><button onClick={() => setShowTrending(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div><div style={{ display: 'flex', gap: 8, marginTop: 12 }}><input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search Vibra..." style={{ ...IN, padding: 10, fontSize: 12 }} /></div>{CHALS.map((c, i) => (<div key={i} style={{ background: '#111', border: `1px solid ${c.color}`, borderRadius: 16, padding: 12, marginTop: 12 }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ color: c.color, fontSize: 12 }}>{c.tag}</b><span style={{ background: c.color, color: '#000', padding: '4px 8px', borderRadius: 12, fontSize: 11, fontWeight: 'bold' }}>🏆 {c.prize}</span></div><h3 style={{ margin: '8px 0 4px', fontSize: 13 }}>{c.title}</h3><p style={{ fontSize: 11, color: '#ccc', margin: 0 }}>{c.desc}</p><div style={{ display: 'flex', gap: 8, marginTop: 10 }}><button onClick={() => { setShowTrending(false); setSearch(c.tag); setView('home'); setIdx(0) }} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', fontSize: 11 }}>👀 Angalia Videos</button><button onClick={() => { setSelectedHashtags([c.tag, '#Vibra', '#Mombasa']); setCaption(c.tag + ' '); setShowTrending(false); setShowCamera(true) }} style={{ flex: 1, padding: 10, borderRadius: 12, border: `1px solid ${c.color}`, background: 'transparent', color: c.color, fontWeight: 'bold', fontSize: 11 }}>🎬 Jiunge</button></div></div>))}</div>)
-  const refScreen = showRef && (<div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.95)', padding: 14, overflowY: 'auto', color: '#fff' }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT, fontSize: 13 }}>🎁 Leta Rafiki - Pata Coins</b><button onClick={() => setShowRef(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div><div style={{ background: GBTN, borderRadius: 16, padding: 14, marginTop: 12, textAlign: 'center' }}><p style={{ margin: 0, fontSize: 11 }}>Code Yako</p><h2 style={{ fontSize: 26, margin: '4px 0' }}>{refCode}</h2><p style={{ fontSize: 11, margin: 0 }}>Watu {refCount} wamejiunga • +{refCount * 50} Coins</p></div><div style={{ background: '#111', borderRadius: 12, padding: 12, marginTop: 12 }}><p style={{ fontSize: 11, color: '#ccc' }}>Tuma link, rafiki akijiunga nyinyi wote mnapata 50 Coins! Leta 10 = 500 Coins!</p><button onClick={shareRef} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontWeight: 'bold', fontSize: 12 }}>📤 Tuma WhatsApp</button><button onClick={() => { navigator.clipboard?.writeText(refCode).then(() => setNotice('Code imekopiwa!')) }} style={{ width: '100%', padding: 10, borderRadius: 12, border: `1px solid ${TEAL}`, background: 'transparent', color: TEAL, fontWeight: 'bold', marginTop: 8, fontSize: 12 }}>📋 Copy Code</button></div><div style={{ background: '#111', borderRadius: 12, padding: 12, marginTop: 12 }}><b style={{ fontSize: 12 }}>🔑 Weka Code ya Rafiki</b><input value={refInput} onChange={e => setRefInput(e.target.value)} placeholder="VIBRAXXXX" style={{ ...IN, marginTop: 8 }} /><button onClick={claimRef} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#FFD700', color: '#000', fontWeight: 'bold', marginTop: 8, fontSize: 12 }}>{usedRef ? '✅ Tayari (' + usedRef + ')' : '🎁 Chukua 50 Coins'}</button></div></div>)
-  const rewardsScreen = showRewards && (<div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.95)', padding: 14, overflowY: 'auto', color: '#fff' }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT, fontSize: 13 }}>👑 Creator Rewards</b><button onClick={() => setShowRewards(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div><div style={{ background: GBTN, borderRadius: 16, padding: 14, marginTop: 12, textAlign: 'center' }}><p style={{ margin: 0, fontSize: 11 }}>Views Zako</p><h2 style={{ fontSize: 26, margin: '4px 0' }}>{totalViews.toLocaleString()}</h2><p style={{ fontSize: 11, margin: 0 }}>🪙 {coins} Coins • 💸 KSh {earnings}</p></div>{REWARDS.map((r, i) => { const done = totalViews >= r.views; const cl = claimed.includes(r.label); return (<div key={i} style={{ background: '#111', border: done ? '1px solid #FFD700' : '1px solid #333', borderRadius: 12, padding: 12, marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><div><b style={{ color: done ? '#FFD700' : '#fff', fontSize: 12 }}>{r.label}</b><p style={{ fontSize: 11, margin: 0, color: '#ccc' }}>{cl ? '✅ Tayari' : done ? '🎉 Chukua sasa!' : `Bado ${r.views - totalViews} views`}</p></div><button onClick={() => claimReward(r.views, r.coins, r.label)} disabled={!done || cl} style={{ padding: '8px 14px', borderRadius: 12, border: 'none', background: cl ? '#333' : done ? '#FFD700' : '#222', color: cl ? '#888' : done ? '#000' : '#888', fontWeight: 'bold', fontSize: 11 }}>{cl ? '✅' : done ? 'Chukua 🎁' : '🔒'}</button></div>) })} </div>)
-  const duetScreen = showDuet && duetVideo && (<div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', color: '#fff', display: 'flex', flexDirection: 'column' }}><div style={{ display: 'flex', justifyContent: 'space-between', padding: 12 }}><button onClick={() => { setShowDuet(false); setDuetVideo(null) }} style={{ background: 'none', border: 'none', color: PINK, fontSize: 20 }}>✕</button><b style={{ ...VT, fontSize: 13 }}>{duetMode === 'duet' ? '🎬 Duet' : '✂️ Stitch'}</b><span style={{ width: 22 }} /></div><div style={{ flex: 1, display: 'flex', gap: 4, padding: 4 }}>{duetMode === 'duet' ? <><div style={{ flex: 1, position: 'relative', borderRadius: 12, overflow: 'hidden' }}><video src={duetVideo.url} autoPlay loop muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} /><div style={{ position: 'absolute', top: 8, left: 8, background: PINK, padding: '4px 8px', borderRadius: 8, fontSize: 10, fontWeight: 'bold' }}>ORIGINAL</div></div><div style={{ flex: 1, position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#222' }}><video ref={cameraRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} /><div style={{ position: 'absolute', top: 8, left: 8, background: TEAL, color: '#000', padding: '4px 8px', borderRadius: 8, fontSize: 10, fontWeight: 'bold' }}>WEWE</div></div></> : <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}><div style={{ flex: 1, position: 'relative', borderRadius: 12, overflow: 'hidden' }}><video src={duetVideo.url} autoPlay muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} /><div style={{ position: 'absolute', top: 8, left: 8, background: PINK, padding: '4px 8px', borderRadius: 8, fontSize: 10, fontWeight: 'bold' }}>STITCH - Original</div></div><div style={{ flex: 1, position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#222' }}><video ref={cameraRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} /><div style={{ position: 'absolute', top: 8, left: 8, background: TEAL, color: '#000', padding: '4px 8px', borderRadius: 8, fontSize: 10, fontWeight: 'bold' }}>WEWE • Jibu!</div></div></div>}</div><div style={{ padding: 12, background: '#111' }}><div style={{ display: 'flex', gap: 8 }}><button onClick={() => setDuetMode('duet')} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: duetMode === 'duet' ? PINK : '#222', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>🎬 Duet</button><button onClick={() => setDuetMode('stitch')} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: duetMode === 'stitch' ? TEAL : '#222', color: duetMode === 'stitch' ? '#000' : '#fff', fontWeight: 'bold', fontSize: 11 }}>✂️ Stitch</button></div><button onClick={postDuet} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', marginTop: 10, fontSize: 12 }}>✅ Post {duetMode} +20 Coins 🎁</button></div></div>)
-  const authScreen = showAuth && (<div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 20, paddingTop: 30, color: '#fff', overflowY: 'auto' }}><div style={{ fontSize: 42 }}>🎬</div><h1 style={{ ...VT, fontSize: 28 }}>VIBRA</h1><p style={{ color: TEAL, fontSize: 12 }}>Mombasa Vibes | Kamata</p><div style={{ display: 'flex', gap: 10, marginBottom: 16 }}><button onClick={() => setAuthMode('signup')} style={{ padding: '8px 20px', borderRadius: 20, border: 'none', background: authMode === 'signup' ? GBTN : '#333', color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Sign Up</button><button onClick={() => setAuthMode('login')} style={{ padding: '8px 20px', borderRadius: 20, border: 'none', background: authMode === 'login' ? GBTN : '#333', color: '#fff', fontWeight: 'bold', fontSize: 12 }}>Login</button></div><div style={{ width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 10, background: '#111', padding: 14, borderRadius: 16, border: `1px solid ${PINK}` }}>{authMode === 'signup' && <><label style={{ ...VT, fontSize: 12 }}>👤 Jina</label><input value={authName} onChange={e => setAuthName(e.target.value)} placeholder="MrVibra" style={IN} /></>}<label style={{ ...VT, fontSize: 12 }}>📧 Email</label><input value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="wewe@gmail.com" type="email" style={IN} /><label style={{ ...VT, fontSize: 12 }}>🔒 Password</label><input value={authPass} onChange={e => setAuthPass(e.target.value)} placeholder="Angalau 4" type="password" style={IN} /><label style={{ ...VT, fontSize: 12 }}>🎁 Referral Code (Hiari)</label><input value={refInput} onChange={e => setRefInput(e.target.value)} placeholder="VIBRAXXXX" style={IN} />{authError && <p style={{ color: PINK, fontSize: 11, textAlign: 'center' }}>{authError}</p>}<button onClick={authMode === 'signup' ? doSignup : doLogin} style={{ padding: 12, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', fontSize: 13 }}>{authMode === 'signup' ? 'Tengeneza Akaunti 🎉 +100 Coins' : 'Ingia 👋'}</button><button onClick={() => { setShowAuth(false); setNotice('Mgeni - ona videos!') }} style={{ padding: 10, borderRadius: 12, border: `1px solid ${TEAL}`, background: 'transparent', color: TEAL, fontSize: 12 }}>Endelea kama Mgeni 👀</button></div></div>)
-  const walletModal = showWallet && (<div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.9)', padding: 14, overflowY: 'auto' }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT, fontSize: 13 }}>💰 Wallet</b><button onClick={() => setShowWallet(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div><div style={{ background: GBTN, borderRadius: 16, padding: 14, marginTop: 12, textAlign: 'center' }}><p style={{ fontSize: 11, margin: 0 }}>🪙 Coins</p><h2 style={{ fontSize: 26, margin: '4px 0' }}>{coins} Coins</h2><p style={{ fontSize: 11, margin: 0 }}>💸 KSh {earnings} • 👥 Referrals: {refCount}</p></div><button onClick={() => { setShowWallet(false); setShowBuyCoins(true) }} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#FFD700', color: '#000', fontWeight: 'bold', marginTop: 12, fontSize: 12 }}>🪙 Nunua Coins na M-Pesa</button><div style={{ display: 'flex', gap: 8, marginTop: 8 }}><button onClick={() => { setShowWallet(false); setShowRef(true) }} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>🎁 Leta Rafiki +50</button><button onClick={() => { setShowWallet(false); setShowRewards(true) }} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: '#FFD700', color: '#000', fontWeight: 'bold', fontSize: 11 }}>👑 Rewards</button></div><div style={{ background: '#111', borderRadius: 12, padding: 12, marginTop: 12 }}><b style={{ ...VT, fontSize: 12 }}>💸 Toa Pesa - M-Pesa</b><input value={withdrawPhone} onChange={e => setWithdrawPhone(e.target.value)} placeholder="0712345678" style={{ ...IN, marginTop: 8 }} /><button onClick={withdrawEarnings} style={{ width: '100%', padding: 10, borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontWeight: 'bold', marginTop: 8, fontSize: 12 }}>Toa KSh {earnings} kwa M-Pesa 💸</button></div></div>)
-  const buyCoinsModal = showBuyCoins && (<div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.9)', padding: 14, overflowY: 'auto' }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT, fontSize: 13 }}>🪙 Nunua Coins - M-Pesa</b><button onClick={() => setShowBuyCoins(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div>{PACKS.map((p, i) => (<button key={i} onClick={() => setSelectedPack(p)} style={{ width: '100%', padding: 12, borderRadius: 12, border: selectedPack.coins === p.coins ? `2px solid #FFD700` : '1px solid #333', background: selectedPack.coins === p.coins ? '#222' : '#111', color: '#fff', textAlign: 'left', marginTop: 8 }}><b style={{ color: '#FFD700', fontSize: 12 }}>{p.label}</b></button>))}<input value={mpesaPhone} onChange={e => setMpesaPhone(e.target.value)} placeholder="0712345678" style={{ ...IN, marginTop: 12 }} /><button onClick={buyCoins} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontWeight: 'bold', marginTop: 12, fontSize: 12 }}>💚 Lipa KSh {selectedPack.price} - Pata {selectedPack.coins} Coins</button></div>)
-  const tikNav = (active: string) => (<nav style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '6px 12px 10px', background: '#000', borderTop: '1px solid #222' }}><button onClick={() => goView('home')} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center' }}><div style={{ fontSize: 19 }}>🏠</div><div style={{ fontSize: 9, fontWeight: active === 'home' ? 'bold' : 'normal' }}>Home</div></button><button onClick={() => { stopSound(); setShowTrending(true) }} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center' }}><div style={{ fontSize: 19 }}>🔍</div><div style={{ fontSize: 9 }}>Discover</div></button><button onClick={() => { stopSound(); setShowCamera(true) }} style={{ width: 44, height: 30, borderRadius: 10, border: 'none', background: '#fff', color: '#000', fontSize: 19, fontWeight: 'bold', position: 'relative' }}>+<span style={{ position: 'absolute', left: -3, top: 0, bottom: 0, width: 44, height: 30, borderRadius: 10, background: '#25F4EE', zIndex: -1 }} /><span style={{ position: 'absolute', right: -3, top: 0, bottom: 0, width: 44, height: 30, borderRadius: 10, background: '#FE2C55', zIndex: -1 }} /></button><button onClick={() => goView('chat')} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center' }}><div style={{ fontSize: 19 }}>💬</div><div style={{ fontSize: 9 }}>Inbox</div></button><button onClick={() => goView('me')} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center' }}><div style={{ fontSize: 19 }}>👤</div><div style={{ fontSize: 9, fontWeight: active === 'me' ? 'bold' : 'normal' }}>Me</div></button></nav>)
-  if (showSettings) { return <div style={{ height: '100dvh', background: '#fff', color: '#000', overflowY: 'auto', padding: 14, fontSize: 12 }}><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: 19 }}>←</button><b style={{ flex: 1, textAlign: 'center', fontSize: 13 }}>Settings and privacy</b></div><p style={{ fontSize: 11, color: '#888', marginTop: 16 }}>ACCOUNT</p><button onClick={() => setNotice(authUser ? 'Akaunti: ' + name : 'Sign Up kwanza')} style={{ width: '100%', padding: 12, background: 'none', border: 'none', textAlign: 'left', fontSize: 12 }}>👤 Manage account</button><button onClick={() => { setShowSettings(false); setShowAuth(true) }} style={{ width: '100%', padding: 10, background: PINK, color: '#fff', border: 'none', borderRadius: 12, fontWeight: 'bold', fontSize: 12 }}>Sign up</button><p style={{ fontSize: 11, color: '#888', marginTop: 16 }}>SUPPORT</p><button onClick={() => { window.location.href = 'mailto:mrvibraworldwide@gmail.com' }} style={{ width: '100%', padding: 12, background: 'none', border: 'none', textAlign: 'left', fontSize: 12 }}>❓ Help Center</button><button onClick={() => setNotice('Privacy: Data yako iko salama')} style={{ width: '100%', padding: 12, background: 'none', border: 'none', textAlign: 'left', fontSize: 12 }}>🔒 Privacy Policy</button>{notice && <div style={NS}>{notice}</div>}{walletModal}{buyCoinsModal}</div> }
-  if (view === 'live') { return <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>{intro}<div style={{ position: 'relative', flex: 1, background: '#111', overflow: 'hidden' }}>{!isLive ? <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, textAlign: 'center' }}><div style={{ fontSize: 50 }}>📺</div><h2 style={{ ...VT, fontSize: 16 }}>Anza LIVE Yako!</h2><button onClick={startLive} style={{ ...VB, padding: '12px 32px', borderRadius: 30, fontSize: 14, marginTop: 14 }}>🔴 GO LIVE</button><button onClick={createBattleRoom} style={{ background: '#7C3AED', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 30, fontWeight: 'bold', marginTop: 10, fontSize: 12 }}>VS BATTLE - Mtu 2 Halisi</button><button onClick={startBattleSolo} style={{ background: '#333', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 30, marginTop: 8, fontSize: 11 }}>VS Battle Solo</button><div style={{ background: '#111', border: `1px solid ${TEAL}`, borderRadius: 12, padding: 10, marginTop: 14, width: '100%', maxWidth: 320 }}><b style={{ ...VT, fontSize: 12 }}>🔑 Jiunge na Battle</b><input value={joinCode} onChange={e => setJoinCode(e.target.value)} placeholder="Code: A1B2C3" style={{ ...IN, marginTop: 8, padding: 10 }} /><input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder="Jina lako: Zawadi" style={{ ...IN, marginTop: 8, padding: 10 }} /><button onClick={joinBattleRoom} style={{ width: '100%', padding: 10, borderRadius: 12, border: 'none', background: TEAL, color: '#000', fontWeight: 'bold', marginTop: 8, fontSize: 12 }}>✅ Jiunge</button></div><button onClick={() => goView('home')} style={{ background: 'none', border: 'none', color: TEAL, marginTop: 10, fontSize: 12 }}>← Rudi Home</button></div> : battleMode ? <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>{battleWaiting ? <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, textAlign: 'center' }}><div style={{ fontSize: 42 }}>⏳</div><h3 style={{ ...VT, fontSize: 13 }}>Namsubiri Mpinzani...</h3><p style={{ fontSize: 11 }}>Code: <b style={{ fontSize: 20, color: '#FFD700' }}>{battleCode}</b></p><button onClick={shareBattleLink} style={{ ...VB, padding: '10px 20px', borderRadius: 20, marginTop: 12, fontSize: 12 }}>📤 Tuma WhatsApp</button><button onClick={() => { setBattleWaiting(false); startBattleSolo() }} style={{ background: 'none', border: 'none', color: TEAL, marginTop: 12, fontSize: 11 }}>Au cheza Solo →</button></div> : <><div style={{ display: 'flex', flex: 1 }}><div style={{ flex: 1, position: 'relative', borderRight: '3px solid #FFD700', background: '#000' }}><video ref={battleCamRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} /><div style={{ position: 'absolute', top: 8, left: 8, background: PINK, padding: '4px 8px', borderRadius: 8, fontSize: 10, fontWeight: 'bold' }}>{name} • {votesMe}</div>{battleWinner && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 'bold', textAlign: 'center' }}>🏆<br />{battleWinner}</div>}</div><div style={{ flex: 1, position: 'relative', background: '#222' }}><img src={battleOpp.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /><div style={{ position: 'absolute', top: 8, right: 8, background: '#7C3AED', padding: '4px 8px', borderRadius: 8, fontSize: 10, fontWeight: 'bold' }}>{battleOpp.name} • {votesOpp}</div></div></div><div style={{ padding: 10, background: '#111' }}><div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 'bold' }}><span style={{ color: PINK }}>YOU {votesMe}</span><span>⏱️ {battleTime}s • 🪙 {coins}</span><span style={{ color: '#A78BFA' }}>{battleOpp.name} {votesOpp}</span></div><div style={{ height: 8, background: '#7C3AED', borderRadius: 10, overflow: 'hidden', marginTop: 6, display: 'flex' }}><div style={{ width: `${battlePctMe}%`, background: PINK }} /><div style={{ flex: 1 }} /></div><div style={{ display: 'flex', gap: 6, marginTop: 8 }}><button onClick={voteMe} style={{ flex: 1, padding: 9, borderRadius: 20, border: 'none', background: PINK, color: '#fff', fontWeight: 'bold', fontSize: 11 }}>❤️ Piga Kura Mimi</button><button onClick={() => setVotesOpp(v => v + 1)} style={{ flex: 1, padding: 9, borderRadius: 20, border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>💜 Opp</button></div><div style={{ display: 'flex', gap: 4, marginTop: 6 }}>{GIFTS.map((g, i) => (<button key={i} onClick={() => sendGiftReal(g)} style={{ flex: 1, padding: '7px 2px', borderRadius: 14, border: '1px solid #FFD700', background: '#222', color: '#FFD700', fontWeight: 'bold', fontSize: 10 }}>{g.emoji}<br />{g.coins} 🪙</button>))}</div><div style={{ display: 'flex', gap: 6, marginTop: 6 }}><button onClick={() => setShowWallet(true)} style={{ flex: 1, padding: 8, borderRadius: 14, border: 'none', background: '#FFD700', color: '#000', fontWeight: 'bold', fontSize: 11 }}>🪙 {coins}</button><button onClick={shareBattleLink} style={{ flex: 1, padding: 8, borderRadius: 14, border: 'none', background: '#25D366', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>📤 Share</button><button onClick={() => { setBattleMode(false); setBattleStarted(false); setBattleWaiting(false) }} style={{ flex: 1, padding: 8, borderRadius: 14, border: 'none', background: '#333', color: '#fff', fontSize: 11 }}>← Toka Battle</button></div></div></>}</div> : <><video ref={cameraRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} /><div style={{ position: 'absolute', top: 12, left: 12, background: PINK, padding: '5px 10px', borderRadius: 8, fontWeight: 'bold', fontSize: 11 }}>🔴 LIVE • {liveViewers}</div>{taggedVideo && <div style={{ position: 'absolute', top: 70, left: 12, right: 12, background: 'rgba(0,0,0,0.8)', border: `2px solid ${TEAL}`, borderRadius: 12, padding: 8, fontSize: 11 }}>📌 {taggedVideo.caption.slice(0, 60)}</div>}<div style={{ position: 'absolute', left: 12, bottom: 130, right: 12 }}>{liveComments.map((c: any, i: number) => (<p key={i} style={{ fontSize: 11, background: 'rgba(0,0,0,0.6)', padding: '5px 9px', borderRadius: 12, margin: '4px 0' }}><b style={{ color: TEAL }}>{c.user}</b> {c.text}</p>))}</div><div style={{ position: 'absolute', bottom: 85, left: 12, right: 12, display: 'flex', gap: 6 }}><button onClick={createBattleRoom} style={{ flex: 1, padding: 9, borderRadius: 20, border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>VS BATTLE 2 Halisi</button><button onClick={() => setShowTagPicker(true)} style={{ flex: 1, padding: 9, borderRadius: 20, border: 'none', background: TEAL, color: '#000', fontWeight: 'bold', fontSize: 11 }}>📌 Tag Video</button></div><div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, display: 'flex', gap: 8 }}><input value={liveComment} onChange={e => setLiveComment(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && liveComment.trim()) { setLiveComments(v => [...v, { user: name, text: liveComment.trim() }]); setLiveComment('') } }} placeholder="Sema kitu live..." style={{ flex: 1, padding: 10, borderRadius: 24, border: `1px solid ${TEAL}`, background: '#222', color: '#fff', fontSize: 12 }} /><button onClick={endLive} style={{ background: PINK, border: 'none', color: '#fff', padding: '0 14px', borderRadius: 24, fontWeight: 'bold', fontSize: 11 }}>End LIVE</button></div></>}</div>{showBattleInvite && battleCode && <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}><div style={{ background: '#111', border: `2px solid #7C3AED`, borderRadius: 20, padding: 18, width: '100%', maxWidth: 340, textAlign: 'center' }}><h3 style={{ ...VT, fontSize: 13 }}>VS Battle Room Tayari!</h3><p style={{ fontSize: 11 }}>Code: <b style={{ fontSize: 24, color: '#FFD700' }}>{battleCode}</b></p><button onClick={shareBattleLink} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontWeight: 'bold', fontSize: 12 }}>📤 Tuma WhatsApp</button><button onClick={() => setShowBattleInvite(false)} style={{ width: '100%', padding: 10, background: 'none', border: 'none', color: PINK, marginTop: 6, fontSize: 11 }}>Subiri Mpinzani...</button></div></div>}{showTagPicker && <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.9)', padding: 14, overflowY: 'auto' }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT, fontSize: 13 }}>📌 Tag Video</b><button onClick={() => setShowTagPicker(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 12 }}>{allForTag.map((v, i) => (<button key={i} onClick={() => tagVideo(v)} style={{ background: '#111', border: '1px solid #333', borderRadius: 12, padding: 6, color: '#fff' }}><video src={v.url} muted playsInline preload="metadata" style={{ width: '100%', aspectRatio: '9/16', objectFit: 'cover', borderRadius: 8 }} /><p style={{ fontSize: 10 }}>{v.caption.slice(0, 40)}</p></button>))}</div></div>}{walletModal}{buyCoinsModal}{trending}{refScreen}{rewardsScreen}{duetScreen}{tikNav('live')}{notice && <div style={NS}>{notice}</div>}</div> }
-  if (view === 'chat') { if (selectedChat) return <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}><div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#111' }}><button onClick={() => setSelectedChatId(null)} style={{ background: 'none', border: 'none', color: TEAL, fontSize: 18 }}>←</button><img src={selectedChat.avatar} style={{ width: 38, height: 38, borderRadius: '50%' }} /><div style={{ flex: 1 }}><b style={{ ...VT, fontSize: 12 }}>{selectedChat.name}</b><p style={{ fontSize: 10, margin: 0, color: TEAL }}>● Online</p></div></div><div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>{selectedChat.messages.map((m: any, i: number) => (<div key={i} style={{ alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start', maxWidth: '80%', background: m.from === 'me' ? GBTN : '#222', padding: '9px 11px', borderRadius: 16, fontSize: 12 }}>{m.text}</div>))}</div><div style={{ display: 'flex', gap: 6, padding: 10, background: '#111' }}><input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendChatMsg() }} placeholder="Andika..." style={{ flex: 1, padding: 10, borderRadius: 24, border: `1px solid ${TEAL}`, background: '#222', color: '#fff', fontSize: 12 }} /><button onClick={sendChatMsg} style={{ background: GBTN, border: 'none', color: '#fff', width: 40, height: 40, borderRadius: '50%' }}>➤</button></div>{tikNav('chat')}</div>; return <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>{authScreen}{intro}<div style={{ padding: '14px 14px 0' }}><h1 style={{ ...VT, fontSize: 22, margin: 0 }}>Vibra Chat 💬</h1><input value={chatSearch} onChange={e => setChatSearch(e.target.value)} placeholder="🔍 Search..." style={{ width: '100%', padding: 10, borderRadius: 24, border: `1px solid ${TEAL}`, background: '#111', color: '#fff', marginTop: 10, boxSizing: 'border-box', fontSize: 12 }} /></div><div style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>{chats.filter(c => !chatSearch || c.name.toLowerCase().includes(chatSearch.toLowerCase())).map(c => (<div key={c.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px' }}><button onClick={() => openChat(c)} style={{ flex: 1, display: 'flex', gap: 10, alignItems: 'center', background: 'none', border: 'none', color: '#fff', textAlign: 'left' }}><img src={c.avatar} style={{ width: 48, height: 48, borderRadius: '50%' }} /><div style={{ flex: 1 }}><b style={{ ...VT, fontSize: 12 }}>{c.name}</b><p style={{ fontSize: 11, margin: 0 }}>{c.last}</p></div></button><button onClick={() => setChats(p => p.filter(x => x.id !== c.id))} style={{ background: 'none', border: 'none' }}>🗑️</button></div>))}<button onClick={() => setShowAddContact(true)} style={{ width: '90%', margin: '14px 5%', padding: 10, borderRadius: 24, border: `1px dashed ${PINK}`, background: 'transparent', color: PINK, fontWeight: 'bold', fontSize: 12 }}>+ Chat Mpya</button></div>{showAddContact && (<div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}><div style={{ background: '#111', border: `2px solid ${PINK}`, borderRadius: 20, padding: 18, width: '100%', maxWidth: 340 }}><b style={{ ...VT, fontSize: 12 }}>➕ Add Mtu</b><input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Jina: Zawadi" style={{ ...IN, marginTop: 10 }} /><input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="0712345678" style={{ ...IN, marginTop: 8 }} /><button onClick={addContact} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', marginTop: 12, fontSize: 12 }}>✅ Add</button><button onClick={() => setShowAddContact(false)} style={{ width: '100%', padding: 10, background: 'none', border: 'none', color: PINK, fontSize: 11 }}>Funga</button></div></div>)}{tikNav('chat')}{notice && <div style={NS}>{notice}</div>}{walletModal}{buyCoinsModal}</div> }
-  if (view === 'me') { return <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff', overflowY: 'auto' }}>{authScreen}{intro}<div style={{ display: 'flex', justifyContent: 'space-between', padding: 14 }}><button onClick={() => goView('home')} style={{ background: 'none', border: 'none', color: TEAL, fontSize: 18 }}>←</button><div style={{ display: 'flex', gap: 8 }}><button onClick={() => setShowWallet(true)} style={{ background: '#FFD700', border: 'none', padding: '5px 10px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>🪙 {coins}</button><button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', fontSize: 18 }}>⚙️</button><button onClick={() => setShowEdit(true)} style={{ background: 'none', border: 'none', fontSize: 18 }}>✏️</button></div></div>{showEdit ? <div style={{ padding: 14, background: '#111', borderRadius: 16, margin: 12 }}><b style={{ ...VT, fontSize: 12 }}>Badilisha Profile</b><div style={{ textAlign: 'center', marginTop: 10 }}><img src={dp || 'https://i.pravatar.cc/150?img=68'} style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover' }} /><div style={{ marginTop: 8 }}><button onClick={() => photoRef.current?.click()} style={{ background: GBTN, color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>📷 Badilisha Picha</button><input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => choosePhoto(e.target.files?.[0])} /></div></div><label style={{ ...VT, fontSize: 11 }}>👤 Jina</label><input value={name} onChange={e => setName(e.target.value)} style={{ ...IN, marginTop: 6 }} /><label style={{ ...VT, marginTop: 10, display: 'block', fontSize: 11 }}>📝 Bio</label><input value={bio} onChange={e => setBio(e.target.value)} style={{ ...IN, marginTop: 6 }} /><button onClick={saveProfile} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', marginTop: 12, fontSize: 12 }}>Hifadhi ✅</button></div> : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}><img src={dp || 'https://i.pravatar.cc/150?img=68'} style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${PINK}` }} /><h2 style={{ ...VT, fontSize: 18 }}>{name}</h2><p style={{ textAlign: 'center', padding: '0 20px', color: '#ccc', fontSize: 11 }}>{bio}</p><div style={{ display: 'flex', gap: 18, marginTop: 8 }}><span style={{ textAlign: 'center' }}><b style={{ ...VT, fontSize: 12 }}>{followers}</b><br /><span style={{ fontSize: 10 }}>Followers</span></span><span style={{ textAlign: 'center' }}><b style={{ ...VT, fontSize: 12 }}>{following}</b><br /><span style={{ fontSize: 10 }}>Following</span></span><span style={{ textAlign: 'center' }}><b style={{ ...VT, fontSize: 12 }}>{totalViews.toLocaleString()}</b><br /><span style={{ fontSize: 10 }}>Views</span></span></div><div style={{ background: '#111', border: `1px solid #FFD700`, borderRadius: 12, padding: 10, margin: '14px 12px 0', width: 'calc(100% - 24px)', boxSizing: 'border-box' }}><div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT, fontSize: 12 }}>💰 Wallet</b><button onClick={() => setShowWallet(true)} style={{ background: '#FFD700', border: 'none', padding: '5px 10px', borderRadius: 12, fontWeight: 'bold', fontSize: 11 }}>Fungua →</button></div><p style={{ fontSize: 11, margin: '8px 0 0' }}>🪙 {coins} Coins • 💸 KSh {earnings} • 👥 {refCount} Referrals • Code: {refCode}</p></div><div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' }}><button onClick={() => setShowTrending(true)} style={{ background: '#FE2C55', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>🔥 Trending</button><button onClick={() => setShowRef(true)} style={{ background: '#7C3AED', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>🎁 Leta Rafiki +50</button><button onClick={() => setShowRewards(true)} style={{ background: '#FFD700', color: '#000', border: 'none', padding: '8px 14px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>👑 Rewards</button></div><div style={{ background: '#111', border: `1px solid ${PINK}`, borderRadius: 12, padding: 10, margin: '10px 12px 0', width: 'calc(100% - 24px)', boxSizing: 'border-box' }}><b style={{ ...VT, fontSize: 11 }}>🏆 Safari ya 1M Views - {Math.round(progress1M)}%</b><div style={{ height: 8, background: '#333', borderRadius: 10, marginTop: 8, overflow: 'hidden' }}><div style={{ width: `${progress1M}%`, height: '100%', background: GRADIENT }} /></div><p style={{ fontSize: 10, color: TEAL }}>{totalViews.toLocaleString()} / 1,000,000</p></div><div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' }}><button onClick={() => setShowCamera(true)} style={{ ...VB, padding: '8px 14px', borderRadius: 20, fontSize: 11 }}>📷 Record</button><button onClick={() => setView('live')} style={{ background: PINK, color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>🔴 LIVE</button><button onClick={createBattleRoom} style={{ background: '#7C3AED', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>VS BATTLE</button><button onClick={shareAppLink} style={{ background: '#25D366', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>📤 Tuma Link</button></div><button onClick={doLogout} style={{ background: '#333', color: '#fff', border: 'none', padding: '7px 14px', borderRadius: 20, marginTop: 10, fontSize: 11 }}>🚪 Log out</button></div>}<div style={{ display: 'flex', gap: 8, padding: 12 }}><button onClick={() => setMeTab('videos')} style={{ flex: 1, padding: 9, borderRadius: 20, border: 'none', background: meTab === 'videos' ? GBTN : '#222', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>🎬 Videos ({profileVideos.length})</button><button onClick={() => setMeTab('saved')} style={{ flex: 1, padding: 9, borderRadius: 20, border: 'none', background: meTab === 'saved' ? GBTN : '#222', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>🔖 Saved ({savedVideos.length})</button></div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, padding: '0 12px 100px' }}>{(meTab === 'videos' ? profileVideos : savedVideos).map((v, i) => (<div key={i} style={{ position: 'relative', aspectRatio: '9/16', borderRadius: 8, overflow: 'hidden', background: '#111' }}><button onClick={() => { const ix = baseFeed.findIndex(x => x.url === v.url); if (ix >= 0) { setIdx(ix); goView('home') } }} style={{ background: 'none', border: 'none', padding: 0, width: '100%', height: '100%' }}><video src={v.url} muted playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></button><button onClick={async () => { if (!confirm('Futa?')) return; const k = String(v.id ?? v.url); setCloudClips(p => p.filter(x => String(x.id ?? x.url) !== k)); setMyVideos(p => p.filter(x => String(x.id ?? x.url) !== k)); if (v.id) await deleteCloudVideo(v.id).catch(() => { }) }} style={{ position: 'absolute', top: 4, right: 4, background: PINK, color: '#fff', border: 'none', width: 26, height: 26, borderRadius: '50%', fontSize: 11 }}>🗑️</button></div>))}</div>{tikNav('me')}{notice && <div style={NS}>{notice}</div>}{walletModal}{buyCoinsModal}{trending}{refScreen}{rewardsScreen}{duetScreen}</div> }
-  return (<div data-ready={hydrated} style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff', overflow: 'hidden', fontSize: 12 }}>{authScreen}{intro}<div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, display: 'flex', justifyContent: 'center', gap: 16, paddingTop: 10, background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}><button onClick={() => { setTab('following'); setIdx(0) }} style={{ background: 'none', border: 'none', color: tab === 'following' ? '#fff' : '#aaa', fontWeight: 'bold', fontSize: 13, borderBottom: tab === 'following' ? '2px solid #fff' : 'none' }}>Following</button><button onClick={() => { setTab('foryou'); setIdx(0) }} style={{ background: 'none', border: 'none', color: tab === 'foryou' ? '#fff' : '#aaa', fontWeight: 'bold', fontSize: 13, borderBottom: tab === 'foryou' ? '2px solid #fff' : 'none' }}>For You</button><button onClick={() => setShowNotifs(v => !v)} style={{ background: 'none', border: 'none', fontSize: 17, position: 'absolute', right: 12, top: 9 }}>🔔{notifs.length > 0 && <span style={{ position: 'absolute', top: -2, right: -2, background: '#FE2C55', color: '#fff', fontSize: 9, width: 14, height: 14, borderRadius: '50%' }}>{notifs.length}</span>}</button><button onClick={() => setShowWallet(true)} style={{ background: '#FFD700', color: '#000', border: 'none', padding: '4px 9px', borderRadius: 20, fontWeight: 'bold', fontSize: 11, position: 'absolute', left: 12, top: 9 }}>🪙 {coins}</button></div>{showNotifs && <div style={{ position: 'absolute', top: 48, left: 12, right: 12, zIndex: 30, background: '#111', border: `1px solid ${PINK}`, borderRadius: 12, padding: 10, maxHeight: 200, overflowY: 'auto' }}><b style={{ ...VT, fontSize: 12 }}>🔔 Notifications ({notifs.length})</b>{notifs.length === 0 ? <p style={{ fontSize: 11, color: '#ccc' }}>Hakuna notification bado.</p> : notifs.map((n: any, i: number) => (<p key={i} style={{ fontSize: 11, padding: '6px 0', borderBottom: '1px solid #333' }}><b style={{ color: TEAL }}>{n.from_name}</b> {n.type === 'like' ? '❤️ amekulike' : n.type === 'follow' ? '👤 amekufollow' : '💬 amecomment'}</p>))}</div>}<div style={{ flex: 1, position: 'relative', background: '#111', overflow: 'hidden', touchAction: 'pan-y' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} onWheel={onWheel}>{current ? <video key={clipKey} ref={videoRef} src={current.url} loop playsInline autoPlay muted={!soundEnabled} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: FILTERS[selectedFilter] }} onClick={handleVideoTap} /> : <p style={{ paddingTop: 100, textAlign: 'center', ...VT, fontSize: 12 }}>Hakuna video.</p>}{bigHeart && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 110, zIndex: 50, pointerEvents: 'none' }}>❤️</div>}<button onClick={(e) => { e.stopPropagation(); toggleSound() }} style={{ position: 'absolute', right: 62, top: 46, background: GBTN, color: '#fff', border: 'none', width: 34, height: 34, borderRadius: '50%', fontSize: 14, zIndex: 10 }}>{soundEnabled ? '🔊' : '🔇'}</button><div style={{ position: 'absolute', left: 10, bottom: 16, right: 62, zIndex: 5, display: 'flex', gap: 8, alignItems: 'flex-end' }}><img src={creatorDp} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: `2px solid ${PINK}`, flexShrink: 0 }} /><div><p style={{ ...VT, fontSize: 12, textShadow: '0 1px 4px #000', margin: 0 }}>{current?.username || name}</p><p style={{ fontSize: 11, textShadow: '0 1px 4px #000', margin: '3px 0 0' }}>{current ? cap(current.caption) : ''}</p></div></div><div style={{ position: 'absolute', right: 7, bottom: 16, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}><div style={{ position: 'relative', width: 44, height: 44, marginBottom: 2 }}><img src={creatorDp} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: `2px solid #fff` }} />{!isMine && <button onClick={(e) => { e.stopPropagation(); toggleFollow() }} style={{ position: 'absolute', bottom: -7, left: '50%', transform: 'translateX(-50%)', width: 19, height: 19, borderRadius: '50%', background: isFollowing ? '#fff' : PINK, color: isFollowing ? PINK : '#fff', border: '2px solid #000', fontSize: 12, fontWeight: 'bold', lineHeight: 1, padding: 0 }}>{isFollowing ? '✓' : '+'}</button>}</div><button onClick={(e) => { e.stopPropagation(); doLikeInstant() }} style={{ ...AB, background: liked ? '#FE2C55' : GBTN }}>♥<span>{likes}</span></button><button onClick={(e) => { e.stopPropagation(); setPanel('Comments') }} style={AB}>💬<span>{commentCount}</span></button><button onClick={(e) => { e.stopPropagation(); toggleSave() }} style={AB}>{saved ? '✅' : '🔖'}<span>{saved ? '1' : '0'}</span></button><button onClick={(e) => { e.stopPropagation(); setPanel('Share') }} style={AB}>↗<span>Share</span></button><button onClick={(e) => { e.stopPropagation(); if (current) openDuet(current, 'duet') }} style={{ ...AB, background: '#7C3AED' }}>🎬<span>Duet</span></button><button onClick={(e) => { e.stopPropagation(); deleteCurrentVideo() }} style={{ ...AB, background: PINK }}>🗑️<span>Futa</span></button></div><button onClick={prevVideo} style={{ position: 'absolute', left: 8, top: '40%', background: GBTN, color: '#fff', border: 'none', width: 32, height: 32, borderRadius: '50%', fontSize: 11 }}>↑</button><button onClick={nextVideo} style={{ position: 'absolute', left: 8, top: '55%', background: GBTN, color: '#fff', border: 'none', width: 32, height: 32, borderRadius: '50%', fontSize: 11 }}>↓</button></div>{tikNav('home')}<VibraSheet title={panel} open={panel === 'Comments' || panel === 'Share'} onClose={() => setPanel('')}>{panel === 'Comments' ? <div><p style={{ ...VT, fontSize: 12 }}>{commentCount} Comments</p>{cloudComments.map((t, i) => (<p key={i} style={{ padding: '7px 0', borderBottom: `1px solid ${PINK}`, color: '#fff', fontSize: 11 }}>{t}</p>))}<input value={comment} onChange={e => setComment(e.target.value)} placeholder="Add comment..." style={IN} /><Button onClick={addComment} style={{ ...VB, marginTop: 8, fontSize: 12 }}>Send</Button></div> : <div><p style={{ ...VT, fontSize: 12 }}>Share hii video kwa...</p><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 10 }}><button onClick={() => { const l = window.location.href; const t = encodeURIComponent((current?.caption || 'Angalia hii video Vibra! 🔥 ') + ' ' + l); window.open('https://wa.me/?text=' + t, '_blank') }} style={{ padding: 10, borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>💚<br />WhatsApp</button><button onClick={() => { const l = encodeURIComponent(window.location.href); window.open('https://www.facebook.com/sharer/sharer.php?u=' + l, '_blank') }} style={{ padding: 10, borderRadius: 12, border: 'none', background: '#1877F2', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>📘<br />Facebook</button><button onClick={() => { navigator.clipboard?.writeText(window.location.href).then(() => setNotice('Link imekopiwa!')); window.open('https://www.instagram.com/', '_blank') }} style={{ padding: 10, borderRadius: 12, border: 'none', background: 'linear-gradient(45deg,#F58529,#DD2A7B,#8134AF)', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>📸<br />Instagram</button></div><div style={{ display: 'flex', gap: 8, marginTop: 10 }}><button onClick={() => { navigator.clipboard?.writeText(window.location.href).then(() => setNotice('Link imekopiwa!')); setPanel('') }} style={{ ...VB, padding: 10, borderRadius: 12, flex: 1, fontSize: 12 }}>🔗 Copy Link</button></div><div style={{ display: 'flex', gap: 8, marginTop: 8 }}><button onClick={() => { if (current) openDuet(current, 'duet'); setPanel('') }} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: '#7C3AED', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>🎬 Duet Hii</button><button onClick={() => { if (current) openDuet(current, 'stitch'); setPanel('') }} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: TEAL, color: '#000', fontWeight: 'bold', fontSize: 11 }}>✂️ Stitch Hii</button></div><button onClick={shareAppLink} style={{ width: '100%', padding: 10, borderRadius: 12, border: 'none', background: '#25D366', color: '#fff', fontWeight: 'bold', marginTop: 8, fontSize: 11 }}>📤 Tuma Vibra kwa Rafiki</button></div>}</VibraSheet>{notice && notice !== '❤️' && <div style={NS}>{notice}</div>}{walletModal}{buyCoinsModal}{trending}{refScreen}{rewardsScreen}{duetScreen}<input ref={uploadRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => uploadVideo(e.target.files?.[0])} />{showCamera && !showDuet && <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', color: '#fff', display: 'flex', flexDirection: 'column' }}><div style={{ display: 'flex', justifyContent: 'space-between', padding: 10 }}><button onClick={() => setShowCamera(false)} style={{ background: 'none', border: 'none', color: PINK, fontSize: 19 }}>✕</button><b style={{ ...VT, fontSize: 12 }}>📷 Record Video</b><button onClick={() => setShowCamera(false)} style={{ background: 'none', border: 'none', color: TEAL, fontSize: 11 }}>Next</button></div><div style={{ position: 'relative', flex: 1, background: '#111', overflow: 'hidden' }}><video ref={cameraRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', filter: FILTERS[selectedFilter] }} /><div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>{Object.keys(FILTERS).map(f => (<button key={f} onClick={() => setSelectedFilter(f)} style={{ padding: '7px 10px', borderRadius: 20, border: selectedFilter === f ? `2px solid ${PINK}` : '1px solid #555', background: selectedFilter === f ? PINK : '#222', color: '#fff', whiteSpace: 'nowrap', fontSize: 10 }}>{f}</button>))}</div>{isRecording && <div style={{ position: 'absolute', top: 12, left: 12, background: PINK, padding: '5px 10px', borderRadius: 8, fontWeight: 'bold', fontSize: 11 }}>● REC</div>}</div><div style={{ padding: 10, background: '#111' }}><input value={caption} onChange={e => setCaption(e.target.value)} placeholder="Andika caption..." style={IN} /><p style={{ ...VT, fontSize: 11, margin: '10px 0 6px' }}># Hashtags:</p><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{HASHTAGS.map(t => (<button key={t} onClick={() => toggleHashtag(t)} style={{ padding: '5px 10px', borderRadius: 20, border: selectedHashtags.includes(t) ? `2px solid ${TEAL}` : '1px solid #555', background: selectedHashtags.includes(t) ? TEAL : '#222', color: selectedHashtags.includes(t) ? '#000' : '#fff', fontWeight: 'bold', fontSize: 10 }}>{t}</button>))}</div><div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}><button onClick={() => uploadRef.current?.click()} style={{ flex: 1, padding: 10, borderRadius: 12, border: `1px solid ${TEAL}`, background: 'transparent', color: TEAL, fontWeight: 'bold', fontSize: 11 }}>📁 Chagua Video</button><button onClick={isRecording ? stopRecording : startRecording} style={{ width: 58, height: 58, borderRadius: '50%', border: `4px solid ${PINK}`, background: isRecording ? PINK : '#fff', color: isRecording ? '#fff' : PINK, fontSize: 18 }}>{isRecording ? '■' : '●'}</button><button onClick={postRecorded} disabled={!recordedBlob} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: recordedBlob ? GBTN : '#333', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>Post ✅</button></div><button onClick={startLive} style={{ width: '100%', padding: 10, borderRadius: 12, border: 'none', background: PINK, color: '#fff', fontWeight: 'bold', marginTop: 8, fontSize: 11 }}>🔴 GO LIVE Sasa</button></div></div>}</div>)
+  async function sendChatMsg() { if (!chatInput.trim() || !selectedChat) return; const text = chatInput.trim(); setChatInput(''); const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); setChats(p => p.map(c => c.id === selectedChat.id ? { ...c, last: text, messages: [...c.messages, { from: 'me', text, time }] } : c)); try { await sendMessageCloud(selectedChat.id, name, selectedChat.name, text) } catch {} }
+
+  const profileVideos = [...myVideos, ...cloudClips.filter(c => !myVideos.some(m => String(m.id) === String(c.id)))]
+  const totalViews = realTotalViews > 0 ? realTotalViews : profileVideos.length * 10
+  const savedVideos = [...baseFeed, ...myVideos, ...cloudClips].filter((v, i, a) => a.findIndex(x => String(x.id ?? x.url) === String(v.id ?? v.url)) === i).filter(v => savedIds.includes(String(v.id ?? v.url)))
+
+  const tikNav = (active: string) => (
+    <nav style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', padding: '6px 12px 10px', background: '#000', borderTop: '1px solid #222' }}>
+      <button onClick={() => goView('home')} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center' }}><div style={{ fontSize: 19 }}>🏠</div><div style={{ fontSize: 9 }}>Home</div></button>
+      <button onClick={() => { stopSound(); setPanel('discover') }} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center' }}><div style={{ fontSize: 19 }}>🔍</div><div style={{ fontSize: 9 }}>Discover</div></button>
+      <button onClick={() => { stopSound(); setShowCamera(true) }} style={{ width: 44, height: 30, borderRadius: 10, border: 'none', background: '#fff', color: '#000', fontSize: 19, fontWeight: 'bold' }}>+</button>
+      <button onClick={() => goView('chat')} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center' }}><div style={{ fontSize: 19 }}>💬</div><div style={{ fontSize: 9 }}>Inbox</div></button>
+      <button onClick={() => goView('me')} style={{ background: 'none', border: 'none', color: '#fff', textAlign: 'center' }}><div style={{ fontSize: 19 }}>👤</div><div style={{ fontSize: 9, fontWeight: active === 'me' ? 'bold' : 'normal' }}>Me</div></button>
+    </nav>
+  )
+
+  // ===== ME PAGE =====
+  if (view === 'me') {
+    return (
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
+        <div style={{ padding: 14, textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <button onClick={() => goView('home')} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18 }}>←</button>
+            <b style={{ ...VT, fontSize: 13 }}>Profile</b>
+            <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18 }}>⚙️</button>
+          </div>
+          <img src={dp || 'https://i.pravatar.cc/150?img=68'} style={{ width: 90, height: 90, borderRadius: '50%', marginTop: 12, objectFit: 'cover', border: `2px solid ${TEAL}` }} />
+          <h2 style={{ margin: '8px 0 0', fontSize: 16 }}>{name}</h2>
+          <p style={{ fontSize: 11, color: '#ccc', margin: '4px 0' }}>{bio}</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 10 }}>
+            <div><b>{followers}</b><div style={{ fontSize: 10, color: '#aaa' }}>Followers</div></div>
+            <div><b>{following}</b><div style={{ fontSize: 10, color: '#aaa' }}>Following</div></div>
+            <div><b>{likes}</b><div style={{ fontSize: 10, color: '#aaa' }}>Likes</div></div>
+            <div><b>{totalViews}</b><div style={{ fontSize: 10, color: '#aaa' }}>Views</div></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button onClick={() => setShowEdit(true)} style={{ flex: 1, padding: 10, borderRadius: 12, border: `1px solid ${TEAL}`, background: 'transparent', color: TEAL, fontWeight: 'bold', fontSize: 12 }}>Edit Profile</button>
+            <button onClick={() => setShowAuth(true)} style={{ flex: 1, padding: 10, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', fontSize: 12 }}>{authUser ? 'Akaunti ✅' : 'Sign Up'}</button>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button onClick={() => setMeTab('videos')} style={{ flex: 1, padding: 8, borderRadius: 10, border: 'none', background: meTab === 'videos' ? PINK : '#222', color: '#fff', fontSize: 11 }}>🎬 Videos</button>
+            <button onClick={() => setMeTab('saved')} style={{ flex: 1, padding: 8, borderRadius: 10, border: 'none', background: meTab === 'saved' ? PINK : '#222', color: '#fff', fontSize: 11 }}>🔖 Saved</button>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+            {(meTab === 'videos' ? profileVideos : savedVideos).map((v, i) => (
+              <div key={i} onClick={() => { setView('home'); setIdx(feed.findIndex(x => String(x.id ?? x.url) === String(v.id ?? v.url)) >= 0 ? feed.findIndex(x => String(x.id ?? x.url) === String(v.id ?? v.url)) : 0) }} style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', background: '#111' }}>
+                <video src={v.url} muted playsInline preload="metadata" style={{ width: '100%', aspectRatio: '9/16', objectFit: 'cover' }} />
+                <p style={{ fontSize: 9, padding: '4px 6px', margin: 0 }}>{v.caption.slice(0, 30)}</p>
+              </div>
+            ))}
+          </div>
+          {(meTab === 'videos' ? profileVideos : savedVideos).length === 0 && <p style={{ textAlign: 'center', color: '#888', fontSize: 12, marginTop: 30 }}>Hakuna video bado. Pakia ya kwanza! 🎬</p>}
+        </div>
+        {showEdit && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.9)', padding: 16, color: '#fff' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT }}>Edit Profile</b><button onClick={() => setShowEdit(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div>
+            <input value={bio} onChange={e => setBio(e.target.value)} placeholder="Bio" style={{ ...IN, marginTop: 12 }} />
+            <button onClick={() => photoRef.current?.click()} style={{ width: '100%', padding: 12, borderRadius: 12, border: `1px solid ${TEAL}`, background: 'transparent', color: TEAL, fontWeight: 'bold', marginTop: 10 }}>📷 Badilisha Picha</button>
+            <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => choosePhoto(e.target.files?.[0])} />
+            <button onClick={saveProfile} style={{ width: '100%', padding: 12, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', marginTop: 10 }}>Hifadhi ✅</button>
+          </div>
+        )}
+        {showAuth && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 20, color: '#fff', overflowY: 'auto' }}>
+            <h1 style={{ ...VT, fontSize: 28 }}>VIBRA</h1>
+            <div style={{ display: 'flex', gap: 10 }}><button onClick={() => setAuthMode('signup')} style={{ padding: '8px 20px', borderRadius: 20, border: 'none', background: authMode === 'signup' ? GBTN : '#333', color: '#fff', fontWeight: 'bold' }}>Sign Up</button><button onClick={() => setAuthMode('login')} style={{ padding: '8px 20px', borderRadius: 20, border: 'none', background: authMode === 'login' ? GBTN : '#333', color: '#fff', fontWeight: 'bold' }}>Login</button></div>
+            <div style={{ width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 10, background: '#111', padding: 14, borderRadius: 16, marginTop: 14 }}>
+              {authMode === 'signup' && <><label style={{ ...VT, fontSize: 12 }}>👤 Jina</label><input value={authName} onChange={e => setAuthName(e.target.value)} placeholder="MrVibra" style={IN} /></>}
+              <label style={{ ...VT, fontSize: 12 }}>📧 Email</label><input value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="wewe@gmail.com" style={IN} />
+              <label style={{ ...VT, fontSize: 12 }}>🔒 Password</label><input value={authPass} onChange={e => setAuthPass(e.target.value)} placeholder="Angalau 4" type="password" style={IN} />
+              {authError && <p style={{ color: PINK, fontSize: 11, textAlign: 'center' }}>{authError}</p>}
+              <button onClick={authMode === 'signup' ? doSignup : doLogin} style={{ padding: 12, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold' }}>{authMode === 'signup' ? 'Tengeneza Akaunti 🎉' : 'Ingia 👋'}</button>
+              <button onClick={() => setShowAuth(false)} style={{ padding: 10, borderRadius: 12, border: `1px solid ${TEAL}`, background: 'transparent', color: TEAL }}>Funga</button>
+            </div>
+          </div>
+        )}
+        {tikNav('me')}
+        {notice && <div style={NS}>{notice}</div>}
+      </div>
+    )
+  }
+
+  // ===== CHAT =====
+  if (view === 'chat') {
+    if (selectedChat) return (
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#111' }}>
+          <button onClick={() => setSelectedChatId(null)} style={{ background: 'none', border: 'none', color: TEAL, fontSize: 18 }}>←</button>
+          <img src={selectedChat.avatar} style={{ width: 38, height: 38, borderRadius: '50%' }} />
+          <div style={{ flex: 1 }}><b style={{ ...VT, fontSize: 12 }}>{selectedChat.name}</b><p style={{ fontSize: 10, margin: 0, color: TEAL }}>● Online</p></div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {selectedChat.messages?.map((m: any, i: number) => (<div key={i} style={{ alignSelf: m.from === 'me' ? 'flex-end' : 'flex-start', maxWidth: '80%', background: m.from === 'me' ? GBTN : '#222', padding: '9px 11px', borderRadius: 16, fontSize: 12 }}>{m.text}</div>))}
+        </div>
+        <div style={{ display: 'flex', gap: 6, padding: 10, background: '#111' }}>
+          <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendChatMsg() }} placeholder="Andika..." style={{ flex: 1, padding: 10, borderRadius: 24, border: `1px solid ${TEAL}`, background: '#222', color: '#fff', fontSize: 12 }} />
+          <button onClick={sendChatMsg} style={{ background: GBTN, border: 'none', color: '#fff', width: 40, height: 40, borderRadius: '50%' }}>➤</button>
+        </div>
+        {tikNav('chat')}
+      </div>
+    )
+    return (
+      <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff' }}>
+        <div style={{ padding: '14px 14px 0' }}><h1 style={{ ...VT, fontSize: 22, margin: 0 }}>Vibra Chat 💬</h1></div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
+          {chats.length === 0 && <p style={{ textAlign: 'center', color: '#888', fontSize: 12, marginTop: 30 }}>Hakuna chat bado. Anza na rafiki! 💬</p>}
+          {chats.map(c => (<div key={c.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 14px' }}><button onClick={() => openChat(c)} style={{ flex: 1, display: 'flex', gap: 10, alignItems: 'center', background: 'none', border: 'none', color: '#fff', textAlign: 'left' }}><img src={c.avatar} style={{ width: 48, height: 48, borderRadius: '50%' }} /><div style={{ flex: 1 }}><b style={{ ...VT, fontSize: 12 }}>{c.name}</b><p style={{ fontSize: 11, margin: 0 }}>{c.last}</p></div></button></div>))}
+        </div>
+        {tikNav('chat')}
+      </div>
+    )
+  }
+
+  // ===== HOME / FEED =====
+  return (
+    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#000', color: '#fff', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px' }}>
+        <h1 style={{ ...VT, fontSize: 22, margin: 0 }}>VIBRA</h1>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search..." style={{ flex: 1, padding: 8, borderRadius: 20, border: `1px solid ${TEAL}`, background: '#111', color: '#fff', fontSize: 12, outline: 'none' }} />
+        <button onClick={() => setShowAuth(true)} style={{ background: GBTN, border: 'none', color: '#fff', padding: '8px 12px', borderRadius: 20, fontWeight: 'bold', fontSize: 11 }}>{authUser ? '✅' : 'Sign Up'}</button>
+      </div>
+      <div style={{ display: 'flex', gap: 8, padding: '0 12px 8px' }}>
+        <button onClick={() => { setTab('foryou'); setIdx(0) }} style={{ flex: 1, padding: 8, borderRadius: 20, border: 'none', background: tab === 'foryou' ? GBTN : '#222', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>For You</button>
+        <button onClick={() => { setTab('following'); setIdx(0) }} style={{ flex: 1, padding: 8, borderRadius: 20, border: 'none', background: tab === 'following' ? GBTN : '#222', color: '#fff', fontWeight: 'bold', fontSize: 11 }}>Following</button>
+      </div>
+
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#000' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} onWheel={onWheel}>
+        {current && (
+          <>
+            {/* VIDEO - AUTOPLAY + TAP 1x SAUTI, TAP 2x LIKE */}
+            <video
+              ref={videoRef}
+              key={clipKey}
+              src={current.url}
+              autoPlay
+              muted={!soundEnabled}
+              playsInline
+              loop
+              preload="auto"
+              onClick={handleVideoTap}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            {bigHeart && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 90 }}>❤️</div>}
+            {!soundEnabled && <button onClick={toggleSound} style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', padding: '8px 12px', borderRadius: 20, fontSize: 11, fontWeight: 'bold' }}>🔇 Tap kwa Sauti</button>}
+            {soundEnabled && <button onClick={toggleSound} style={{ position: 'absolute', top: 12, right: 12, background: PINK, border: 'none', color: '#fff', padding: '8px 12px', borderRadius: 20, fontSize: 11, fontWeight: 'bold' }}>🔊 Sauti ON</button>}
+
+            {/* RIGHT ACTIONS */}
+            <div style={{ position: 'absolute', right: 10, bottom: 110, display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
+              <button onClick={() => { stopSound(); setView('me'); setMeTab('videos') }} style={{ background: 'none', border: 'none', textAlign: 'center' }}>
+                <img src={creatorDp} style={{ width: 44, height: 44, borderRadius: '50%', border: `2px solid ${TEAL}`, objectFit: 'cover' }} />
+                <div style={{ fontSize: 9, color: '#fff', marginTop: 2 }}>Profile</div>
+              </button>
+              <button onClick={doLikeInstant} style={{ background: 'none', border: 'none', textAlign: 'center' }}>
+                <div style={{ fontSize: 30 }}>{liked ? '❤️' : '🤍'}</div>
+                <div style={{ fontSize: 11, fontWeight: 'bold', color: '#fff' }}>{likes}</div>
+              </button>
+              <button onClick={() => setPanel(panel === 'comments' ? '' : 'comments')} style={{ background: 'none', border: 'none', textAlign: 'center' }}><div style={{ fontSize: 26 }}>💬</div><div style={{ fontSize: 11, fontWeight: 'bold', color: '#fff' }}>{commentCount}</div></button>
+              <button onClick={toggleSave} style={{ background: 'none', border: 'none', textAlign: 'center' }}><div style={{ fontSize: 26 }}>{saved ? '🔖' : '📑'}</div><div style={{ fontSize: 11, color: '#fff' }}>Save</div></button>
+              <button onClick={() => { if (confirm('Futa hii video?')) deleteCurrentVideo() }} style={{ background: 'none', border: 'none', textAlign: 'center' }}><div style={{ fontSize: 22 }}>🗑️</div></button>
+            </div>
+
+            {/* BOTTOM CAPTION + CREATOR - TAP KWENDA ME */}
+            <div style={{ position: 'absolute', left: 12, bottom: 100, right: 70 }}>
+              <div onClick={() => { stopSound(); setView('me'); setMeTab('videos') }} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <img src={creatorDp} style={{ width: 38, height: 38, borderRadius: '50%', border: `2px solid ${TEAL}` }} />
+                <b style={{ fontSize: 13, color: '#fff' }}>{current.username || name}</b>
+                {!isMine && <button onClick={(e) => { e.stopPropagation(); toggleFollow() }} style={{ padding: '4px 10px', borderRadius: 12, border: 'none', background: isFollowing ? '#333' : PINK, color: '#fff', fontWeight: 'bold', fontSize: 10 }}>{isFollowing ? 'Following ✅' : 'Follow +'}</button>}
+              </div>
+              <p style={{ fontSize: 12, margin: '8px 0 0', color: '#eee' }}>{cap(current.caption)}</p>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                <button onClick={prevVideo} style={{ padding: '6px 12px', borderRadius: 20, border: 'none', background: '#222', color: '#fff', fontSize: 11 }}>↑ Prev</button>
+                <button onClick={nextVideo} style={{ padding: '6px 12px', borderRadius: 20, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', fontSize: 11 }}>Next ↓</button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* COMMENTS */}
+      {panel === 'comments' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: 'rgba(0,0,0,0.9)', display: 'flex', flexDirection: 'column', padding: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT }}>Comments 💬</b><button onClick={() => setPanel('')} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div>
+          <div style={{ flex: 1, overflowY: 'auto', marginTop: 10 }}>
+            {cloudComments.length === 0 && <p style={{ color: '#888', fontSize: 12, textAlign: 'center' }}>Hakuna comment bado. Kuwa wa kwanza! 💬</p>}
+            {cloudComments.map((c, i) => (<p key={i} style={{ fontSize: 12, background: '#111', padding: '8px 10px', borderRadius: 12 }}>{c}</p>))}
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input value={comment} onChange={e => setComment(e.target.value)} placeholder="Andika comment..." style={{ flex: 1, padding: 10, borderRadius: 20, border: `1px solid ${TEAL}`, background: '#222', color: '#fff', fontSize: 12 }} />
+            <button onClick={addComment} style={{ padding: '10px 16px', borderRadius: 20, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold' }}>Tuma</button>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD */}
+      {showCamera && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999, background: '#000', padding: 16, color: '#fff', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}><b style={{ ...VT }}>Pakia Video 🎬</b><button onClick={() => setShowCamera(false)} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>✕</button></div>
+          <input value={caption} onChange={e => setCaption(e.target.value)} placeholder="Caption... #Vibra #Mombasa" style={{ ...IN, marginTop: 14 }} />
+          <button onClick={() => uploadRef.current?.click()} style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold', marginTop: 12 }}>{uploading ? '⏳ Inapakia...' : '📁 Chagua Video Kutoka Simu'}</button>
+          <input ref={uploadRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => uploadVideo(e.target.files?.[0])} />
+          <button onClick={() => { setShowCamera(false); setView('me') }} style={{ width: '100%', padding: 12, borderRadius: 12, border: `1px solid ${TEAL}`, background: 'transparent', color: TEAL, fontWeight: 'bold', marginTop: 10 }}>👤 Nenda Profile Yangu</button>
+        </div>
+      )}
+
+      {showAuth && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 20, color: '#fff', overflowY: 'auto' }}>
+          <h1 style={{ ...VT, fontSize: 28 }}>VIBRA</h1>
+          <div style={{ display: 'flex', gap: 10 }}><button onClick={() => setAuthMode('signup')} style={{ padding: '8px 20px', borderRadius: 20, border: 'none', background: authMode === 'signup' ? GBTN : '#333', color: '#fff', fontWeight: 'bold' }}>Sign Up</button><button onClick={() => setAuthMode('login')} style={{ padding: '8px 20px', borderRadius: 20, border: 'none', background: authMode === 'login' ? GBTN : '#333', color: '#fff', fontWeight: 'bold' }}>Login</button></div>
+          <div style={{ width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column', gap: 10, background: '#111', padding: 14, borderRadius: 16, marginTop: 14 }}>
+            {authMode === 'signup' && <><label style={{ ...VT, fontSize: 12 }}>👤 Jina</label><input value={authName} onChange={e => setAuthName(e.target.value)} placeholder="MrVibra" style={IN} /></>}
+            <label style={{ ...VT, fontSize: 12 }}>📧 Email</label><input value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="wewe@gmail.com" style={IN} />
+            <label style={{ ...VT, fontSize: 12 }}>🔒 Password</label><input value={authPass} onChange={e => setAuthPass(e.target.value)} placeholder="Angalau 4" type="password" style={IN} />
+            {authError && <p style={{ color: PINK, fontSize: 11, textAlign: 'center' }}>{authError}</p>}
+            <button onClick={authMode === 'signup' ? doSignup : doLogin} style={{ padding: 12, borderRadius: 12, border: 'none', background: GBTN, color: '#fff', fontWeight: 'bold' }}>{authMode === 'signup' ? 'Tengeneza Akaunti 🎉' : 'Ingia 👋'}</button>
+            <button onClick={() => setShowAuth(false)} style={{ padding: 10, borderRadius: 12, border: `1px solid ${TEAL}`, background: 'transparent', color: TEAL }}>Funga</button>
+          </div>
+        </div>
+      )}
+
+      {notice && <div style={NS}>{notice}</div>}
+      {tikNav('home')}
+    </div>
+  )
 }
