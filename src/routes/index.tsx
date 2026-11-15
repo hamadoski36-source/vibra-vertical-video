@@ -24,6 +24,66 @@ const CHALS = [{ tag: '#KamataChallenge', title: 'Kamata Dance 🔥', prize: '50
 const REWARDS = [{ views: 100, coins: 10, label: '100 Views = 10 Coins' }, { views: 1000, coins: 100, label: '1K Views = 100 Coins 🔥' }, { views: 10000, coins: 1000, label: '10K Views = 1000 Coins 👑' }, { views: 100000, coins: 10000, label: '100K Views = 10000 Coins 💎' }, { views: 1000000, coins: 100000, label: '1M Views = 100000 Coins 🏆' }]
 function cap(t: string) { if (!t) return null; const p = t.split(/(#[\wÀ-ÿ]+)/g); return <span style={{ fontSize: 11 }}>{p.map((x, i) => x.startsWith('#') ? <span key={i} style={{ color: TEAL, fontWeight: 'bold', fontSize: 11 }}>{x} </span> : <span key={i} style={{ fontSize: 11 }}>{x}</span>)}</span> }
 function VibraTikTok() {
+    // === VIBRA FIX ALL 3 - PASTE HAPA, USIGUSE KINGINE ===
+  const [fixMuted, setFixMuted] = useState(true)
+  // FIX 1: Like isirudi 0 - tunahifadhi count kwenye simu
+  useEffect(() => {
+    try {
+      const m = JSON.parse(localStorage.getItem('vibra_likes_count') || '{}')
+      if (m[clipKey] && m[clipKey] > (cloudLikesMap[clipKey] || 0)) {
+        setCloudLikesMap(prev => ({ ...prev, [clipKey]: m[clipKey] }))
+      }
+    } catch {}
+  }, [clipKey])
+  // FIX 2: Video icheze yenyewe bila kutap - force autoplay
+  useEffect(() => {
+    if (view !== 'home') return
+    const t = setTimeout(() => {
+      const v: any = videoRef.current
+      if (!v) return
+      v.muted = true; v.volume = 0; v.playsInline = true; v.autoplay = true
+      v.play().catch(() => { setTimeout(() => v.play().catch(()=>{}), 600) })
+    }, 100)
+    return () => clearTimeout(t)
+  }, [clipKey, view, feed.length])
+  // FIX 3: Ukibonyeza profile / jina / picha - kupeleke Me
+  useEffect(() => {
+    const h = (e: any) => {
+      const el = e.target as HTMLElement
+      const img = el.closest('img')
+      const txt = el.textContent || ''
+      // kama amebonyeza picha au jina lenye @
+      if (img || txt.includes('@')) {
+        const nearProfile = el.closest('div')
+        if (nearProfile && view === 'home') {
+          // usifanye kama amebonyeza Like / Comment / Share
+          if (txt.includes('❤️') || txt.includes('💬') || txt.includes('➤')) return
+          if (el.closest('button') && (el.closest('button')?.textContent || '').length < 5 && (el.closest('button')?.textContent || '').includes('❤️')) return
+          // kama ni picha ya creator au jina
+          if (img || txt.trim().startsWith('@')) {
+            e.stopPropagation()
+            stopSound(); setView('me'); setMeTab('videos')
+          }
+        }
+      }
+    }
+    document.addEventListener('click', h, true)
+    return () => document.removeEventListener('click', h, true)
+  }, [view])
+  // FIX 1b: Kila ukilike, hifadhi count
+  const origDoLike = doLikeInstant
+  // tunatumia useEffect kuhifadhi likes kila zinapobadilika
+  useEffect(() => {
+    try {
+      const m = JSON.parse(localStorage.getItem('vibra_likes_count') || '{}')
+      // kama umelike, hakikisha count ni angalau 1
+      if (likedIds.includes(clipKey)) {
+        const cur = Math.max(m[clipKey] || 0, cloudLikesMap[clipKey] || 0, 1)
+        m[clipKey] = cur
+        localStorage.setItem('vibra_likes_count', JSON.stringify(m))
+      }
+    } catch {}
+  }, [likedIds, clipKey])
   const hydrated = useHydrated(); const { user } = useAuth()
   const videoRef = useRef<HTMLVideoElement>(null); const cameraRef = useRef<HTMLVideoElement>(null); const battleCamRef = useRef<HTMLVideoElement>(null); const recorderRef = useRef<any>(null); const streamRef = useRef<any>(null)
   const [idx, setIdx] = useState(0); const [tab, setTab] = useState('foryou'); const [view, setView] = useState('home'); const [search, setSearch] = useState('')
