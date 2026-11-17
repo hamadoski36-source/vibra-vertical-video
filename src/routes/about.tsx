@@ -16,7 +16,7 @@ function AboutPage() {
   return (
     <div className="min-h-screen bg-black text-white p-6 max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold mb-4">About Vibra</h1>
-      <p className="text-gray-300 leading-7">
+    <div className="text-gray-300 leading-7 space-y-4">  
        <p>
 Vibra is a worldwide vertical video platform built from Mombasa, Kenya.
 </p>
@@ -32,8 +32,8 @@ If you are a creator in Kenya, Tanzania, Uganda or anywhere in the world, Vibra 
 <p>
 Contact us: vibra254@gmail.com - Mombasa, Kenya
 </p>
-      </p>
-      <a href="/" className="mt-6 inline-block text-cyan-400">← Back to Vibra</a>
+    </div>
+         <a href="/" className="mt-6 inline-block text-cyan-400">← Back to Vibra</a>
     </div>
   )
 }
