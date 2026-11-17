@@ -80,15 +80,12 @@ button{cursor:pointer;border:none;outline:none}
 </style>
 </head>
 <body>
-
 <div class="top" id="topTabs">
   <span data-tab="following">Following</span>
   <span data-tab="foryou" class="on">For You</span>
   <span data-tab="live" class="live">● LIVE</span>
 </div>
-
 <div id="main"></div>
-
 <div class="bottom">
   <button class="on" onclick="showPage('home',this)"><i>🏠</i>Home</button>
   <button onclick="showPage('live',this)"><i>📺</i>LIVE</button>
@@ -96,8 +93,6 @@ button{cursor:pointer;border:none;outline:none}
   <button onclick="showPage('ai',this)"><i>✨</i>VIBRA AI</button>
   <button onclick="showPage('me',this)"><i>👤</i>Me</button>
 </div>
-
-<!-- SHARE MODAL -->
 <div class="modal" id="shareModal">
   <div class="sheet">
     <button class="close" onclick="closeModal('shareModal')">✕</button>
@@ -107,8 +102,6 @@ button{cursor:pointer;border:none;outline:none}
     <p style="font-size:11px;color:#888;margin-top:12px;text-align:center">Instagram link itacopiwa, CapCut itafungua kuedit video.</p>
   </div>
 </div>
-
-<!-- AI MODAL / PAGE -->
 <div class="modal" id="aiModal">
   <div class="sheet">
     <button class="close" onclick="closeModal('aiModal')">✕</button>
@@ -120,8 +113,6 @@ button{cursor:pointer;border:none;outline:none}
     <div class="inputRow"><input id="aiInput" placeholder="Ask VIBRA AI..."><button onclick="sendAI()">Send</button></div>
   </div>
 </div>
-
-<!-- SETTINGS / ACCOUNTS -->
 <div class="modal" id="settingsModal">
   <div class="sheet">
     <button class="close" onclick="closeModal('settingsModal')">✕</button>
@@ -139,8 +130,8 @@ button{cursor:pointer;border:none;outline:none}
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-<script>const supabaseClient = supabase.createClient('https://svrjacetnlwlwesferwz.supabase.co', 'sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc');
+<script>
+const supabaseClient = supabase.createClient('https://svrjacetnlwlwesferwz.supabase.co', 'sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc');
 let videos=[
 {id:1,user:"@vibra_user",name:"Vibra",caption:"Karibu VIBRA! 🔥 Video yangu ya kwanza. #vibra #tanzania",likes:12,comments:4,liked:false,img:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80",isMine:true},
 {id:2,user:"@neema",name:"Neema",caption:"Dance challenge mpya! Unaeza? 💃 #dance",likes:245,comments:32,liked:false,img:"https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&q=80",isMine:false},
@@ -188,8 +179,6 @@ async function toggleLike(id,btn){
   videos=videos.map(v=>v.id===id?{...v,liked:newLiked,likes:newLiked?v.likes+1:v.likes-1}:v);
   renderFeed();
   if(document.getElementById('mePage')) renderMe();
-
-  // Tuma kwenda Supabase - sasa kila mtu ataona
   try{
     if(newLiked){
       await supabaseClient.from('likes').insert([{ video_id: String(id), user_id: currentUser }]);
@@ -212,80 +201,4 @@ function openShare(id){
     <button class="shareBtn" onclick="copyAndOpenInstagram()"><span>📸</span>Instagram</button>
     <button class="shareBtn" onclick="window.open('https://t.me/share/url?url=${url}&text=${text}')"><span>✈️</span>Telegram</button>
     <button class="shareBtn" onclick="window.open('https://chatgpt.com/?q=${text}')"><span>🤖</span>ChatGPT</button>
-    <button class="shareBtn" onclick="window.open('https://www.capcut.com/')"><span>✂️</span>CapCut</button>
-    <button class="shareBtn" onclick="copyLink()"><span>🔗</span>Copy Link</button>
-    <button class="shareBtn" onclick="moreShare()"><span>•••</span>More</button>`;
-  document.getElementById('shareModal').classList.add('open');
-}
-function copyAndOpenInstagram(){navigator.clipboard.writeText(location.href+" - "+(currentVideo?currentVideo.caption:"VIBRA"));alert('Link imecopiwa! Sasa fungua Instagram na paste kwenye Story / DM.');window.open('https://www.instagram.com/');}
-function copyLink(){navigator.clipboard.writeText(location.href);alert('Link imecopiwa!');}
-function moreShare(){if(navigator.share){navigator.share({title:'VIBRA',text:currentVideo.caption,url:location.href})}else{copyLink()}}
-function openAI(){
-  document.getElementById('aiModal').classList.add('open');
-  document.getElementById('aiPills').innerHTML=quickQs.map(q=>`<button onclick="askQuick('${q}')">${q}</button>`).join('');
-}
-function askQuick(q){
-  let box=document.getElementById('chatBox');
-  box.innerHTML+=`<div><b>Wewe:</b> ${q}</div><div><b>VIBRA AI:</b> ${aiAnswers[q]||'Nimepokea swali lako, nakuandalia jibu kamili...'}</div>`;
-  box.scrollTop=box.scrollHeight;
-}
-function sendAI(){
-  let inp=document.getElementById('aiInput');
-  if(!inp.value.trim())return;
-  let q=inp.value; inp.value='';
-  let box=document.getElementById('chatBox');
-  box.innerHTML+=`<div><b>Wewe:</b> ${q}</div><div><b>VIBRA AI:</b> Swali zuri! Kuhusu "${q}" - jaribu kubonyeza maswali ya blue juu kwa majibu ya haraka, au niambie zaidi nikuwekee jibu kamili.</div>`;
-  box.scrollTop=box.scrollHeight;
-}
-function showPage(page,btn){
-  document.querySelectorAll('.bottom button').forEach(b=>b.classList.remove('on'));
-  if(btn) btn.classList.add('on');
-  if(page==='home'){document.getElementById('topTabs').style.display='flex';renderFeed();}
-  if(page==='live'){currentTab='live';document.getElementById('topTabs').style.display='flex';renderFeed();alert('LIVE - Karibu kwenye Live za VIBRA!');}
-  if(page==='ai'){openAI();}
-  if(page==='me'){renderMe();}
-}
-function renderMe(){
-  document.getElementById('topTabs').style.display='none';
-  let mine=myVideos();
-  let html=`<div class="me" id="mePage">
-    <div style="display:flex;justify-content:space-between"><b style="font-size:20px">VIBRA</b><button onclick="openSettings()" style="background:none;color:#fff;font-size:20px">⚙️ Settings</button></div>
-    <div class="meHead"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&q=80"><h2>${currentUser}</h2><p>@${currentUser.replace('@','')} • Tanzania 🇹🇿</p></div>
-    <div class="stats"><div><b>2</b><span>Following</span></div><div><b>12</b><span>Followers</span></div><div><b>${totalLikes()}</b><span>Likes</span></div></div>
-    <p style="text-align:center;font-size:11px;color:#888;margin-bottom:10px">Likes = jumla ya likes watu wamekupatia kwenye video zako (${mine.length} video)</p>
-    <div class="btnRow"><button class="pink" onclick="openSettings()">Edit Profile</button><button onclick="openSettings()">Settings</button><button onclick="openSettings()">+ Add Account</button></div>
-    <div class="tabs"><span class="on">Videos</span><span>Liked ❤️</span><span>Saved</span></div>
-    <div class="vgrid">${mine.map(v=>`<div><img src="${v.img}"><small>❤️ ${v.likes}</small></div>`).join('')||'<p style="grid-column:1/4;text-align:center;color:#888;padding:20px">Huna video bado. Bonyeza + ku-upload.</p>'}</div>
-  </div>`;
-  document.getElementById('main').innerHTML=html;
-}
-function openSettings(){
-  document.getElementById('settingsModal').classList.add('open');
-  renderAccounts();
-}
-function renderAccounts(){
-  document.getElementById('currentAccText').innerText=currentUser+" • Active";
-  document.getElementById('accList').innerHTML=accounts.map((a,i)=>`<div class="accRow"><img src="${a.img}"><div><b>${a.name}</b><br><small>${a.active?'Active sasa':'Bonyeza Switch'}</small></div><button onclick="switchAcc(${i})">${a.active?'Active':'Switch'}</button></div>`).join('');
-}
-function addAccount(){
-  let inp=document.getElementById('newAccName');
-  let name=inp.value.trim(); if(!name) return alert('Andika jina la account kwanza');
-  if(!name.startsWith('@')) name='@'+name;
-  accounts.push({name,img:"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80",active:false});
-  inp.value=''; renderAccounts(); alert('Account '+name+' imeongezwa! Bonyeza Switch kuitumia.');
-}
-function switchAcc(i){
-  accounts.forEach((a,idx)=>a.active=(idx===i));
-  currentUser=accounts[i].name;
-  renderAccounts(); alert('Umebadilisha kwenda '+currentUser);
-  renderMe();
-}
-function logoutAcc(){alert('Umelog out. Karibu tena!');closeModal('settingsModal');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-function openUpload(){alert('Upload Video - Chagua video kutoka Gallery yako ku-post kwenye VIBRA!');}
-document.querySelectorAll('#topTabs span').forEach(s=>s.onclick=()=>{currentTab=s.dataset.tab;renderFeed();});
-document.getElementById('aiInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')sendAI()});
-renderFeed();
-</script>
-</body>
-</html>
+    
