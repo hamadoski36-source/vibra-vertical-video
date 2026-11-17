@@ -138,8 +138,9 @@ button{cursor:pointer;border:none;outline:none}
     <button onclick="logoutAcc()" style="width:100%;background:#333;color:#fff;padding:12px;border-radius:10px;margin-top:10px">Log Out</button>
   </div>
 </div>
-
-<script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+<script>const supabaseClient = supabase.createClient('https://svrjacetnlwlwesferwz.supabase.co', 'sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc');
 let videos=[
 {id:1,user:"@vibra_user",name:"Vibra",caption:"Karibu VIBRA! 🔥 Video yangu ya kwanza. #vibra #tanzania",likes:12,comments:4,liked:false,img:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80",isMine:true},
 {id:2,user:"@neema",name:"Neema",caption:"Dance challenge mpya! Unaeza? 💃 #dance",likes:245,comments:32,liked:false,img:"https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=600&q=80",isMine:false},
@@ -180,11 +181,22 @@ function renderFeed(){
   html+='</div>';
   document.getElementById('main').innerHTML=html;
   document.querySelectorAll('#topTabs span').forEach(s=>s.classList.toggle('on',s.dataset.tab===currentTab));
-}
-function toggleLike(id,btn){
-  videos=videos.map(v=>v.id===id?{...v,liked:!v.liked,likes:v.liked?v.likes-1:v.likes+1}:v);
+  }
+async function toggleLike(id,btn){
+  const video = videos.find(v=>v.id===id);
+  const newLiked = !video.liked;
+  videos=videos.map(v=>v.id===id?{...v,liked:newLiked,likes:newLiked?v.likes+1:v.likes-1}:v);
   renderFeed();
   if(document.getElementById('mePage')) renderMe();
+
+  // Tuma kwenda Supabase - sasa kila mtu ataona
+  try{
+    if(newLiked){
+      await supabaseClient.from('likes').insert([{ video_id: String(id), user_id: currentUser }]);
+    } else {
+      await supabaseClient.from('likes').delete().eq('video_id', String(id)).eq('user_id', currentUser);
+    }
+  }catch(e){ console.log('Like saved locally', e); }
 }
 function followUser(e){e.stopPropagation();alert('Umemfollow!');}
 function openShare(id){
