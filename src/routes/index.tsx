@@ -1,3 +1,4 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
 type Video = { id: number; user: string; caption: string; likes: number; liked: boolean; comments: number }
@@ -10,7 +11,7 @@ const initialVideos: Video[] = [
   { id: 4, user: '@tech_tz', caption: 'Jinsi ya kupata pesa na AI 🤖', likes: 40, liked: false, comments: 15 },
 ]
 
-export default function App() {
+function App() {
   const [tab, setTab] = useState<'foryou' | 'following' | 'live' | 'me' | 'ai'>('foryou')
   const [videos, setVideos] = useState(initialVideos)
   const [currentIdx, setCurrentIdx] = useState(0)
@@ -27,7 +28,6 @@ export default function App() {
   const [aiMessages, setAiMessages] = useState<{ q: string; a: string }[]>([])
 
   const current = videos[currentIdx]
-  // FIX LIKES: Jumla ya likes ulizopata, sio ulizotoa
   const totalLikesReceived = videos.reduce((sum, v) => sum + v.likes, 0)
   const myVideos = videos
 
@@ -57,7 +57,7 @@ export default function App() {
     if (platform === 'telegram') window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank')
     if (platform === 'chatgpt') window.open(`https://chatgpt.com/?q=${text}`, '_blank')
     if (platform === 'capcut') window.open(`https://www.capcut.com/`, '_blank')
-    if (platform === 'instagram') { navigator.clipboard.writeText(shareUrl); alert('Link imecopiwa! Sasa fungua Instagram na paste kwenye Story.') ; window.open('https://www.instagram.com/', '_blank') }
+    if (platform === 'instagram') { navigator.clipboard.writeText(shareUrl); alert('Link imecopiwa! Sasa fungua Instagram na paste kwenye Story.'); window.open('https://www.instagram.com/', '_blank') }
     if (platform === 'copy') { navigator.clipboard.writeText(shareUrl); alert('Link imecopiwa!') }
     if (platform === 'more' && (navigator as any).share) (navigator as any).share({ title: 'VIBRA', text: shareText, url: shareUrl })
   }
@@ -76,7 +76,6 @@ export default function App() {
 
   return (
     <div style={{ maxWidth: 430, margin: '0 auto', background: '#000', color: '#fff', minHeight: '100vh', fontFamily: 'sans-serif', position: 'relative', paddingBottom: 70 }}>
-      {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 18, padding: 12, position: 'sticky', top: 0, background: '#000', zIndex: 10 }}>
         <button onClick={() => setTab('foryou')} style={{ background: 'none', border: 'none', color: tab === 'foryou' ? '#fff' : '#888', fontWeight: 'bold', fontSize: 16 }}>For You</button>
         <button onClick={() => setTab('following')} style={{ background: 'none', border: 'none', color: tab === 'following' ? '#fff' : '#888', fontWeight: 'bold' }}>Following</button>
@@ -84,7 +83,6 @@ export default function App() {
         <button onClick={() => setTab('ai')} style={{ background: '#2563eb', border: 'none', color: '#fff', borderRadius: 20, padding: '4px 10px', fontWeight: 'bold' }}>🤖 VIBRA AI</button>
       </div>
 
-      {/* FOR YOU / FOLLOWING */}
       {(tab === 'foryou' || tab === 'following') && current && (
         <div style={{ padding: 12 }}>
           <div style={{ background: 'linear-gradient(180deg,#333,#111)', height: 520, borderRadius: 16, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 14, position: 'relative' }}>
@@ -112,7 +110,6 @@ export default function App() {
         </div>
       )}
 
-      {/* LIVE */}
       {tab === 'live' && (
         <div style={{ padding: 20, textAlign: 'center' }}>
           <h2>🔴 LIVE Sasa</h2>
@@ -122,7 +119,6 @@ export default function App() {
         </div>
       )}
 
-      {/* AI */}
       {tab === 'ai' && (
         <div style={{ padding: 14 }}>
           <h2 style={{ margin: 0 }}>🤖 VIBRA AI</h2>
@@ -148,7 +144,6 @@ export default function App() {
         </div>
       )}
 
-      {/* ME */}
       {tab === 'me' && (
         <div style={{ padding: 16, textAlign: 'center' }}>
           <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#ff2d55', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto' }}>😎</div>
@@ -173,7 +168,6 @@ export default function App() {
         </div>
       )}
 
-      {/* BOTTOM NAV */}
       <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 430, background: '#000', borderTop: '1px solid #222', display: 'flex', justifyContent: 'space-around', padding: '10px 0' }}>
         <button onClick={() => setTab('foryou')} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>🏠</button>
         <button onClick={() => setTab('ai')} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>🤖</button>
@@ -182,7 +176,6 @@ export default function App() {
         <button onClick={() => setTab('me')} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 20 }}>👤</button>
       </div>
 
-      {/* SHARE MODAL - Imejaa */}
       {showShare && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 99 }}>
           <div style={{ background: '#111', width: '100%', maxWidth: 430, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18 }}>
@@ -203,7 +196,6 @@ export default function App() {
         </div>
       )}
 
-      {/* SETTINGS + ADD ACCOUNT */}
       {showSettings && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 99 }}>
           <div style={{ background: '#111', width: '100%', maxWidth: 430, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 18, maxHeight: '80vh', overflowY: 'auto' }}>
@@ -235,3 +227,7 @@ export default function App() {
     </div>
   )
 }
+
+export const Route = createFileRoute('/')({
+  component: App,
+})
