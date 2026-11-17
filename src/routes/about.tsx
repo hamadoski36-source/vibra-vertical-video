@@ -17,7 +17,21 @@ function AboutPage() {
     <div className="min-h-screen bg-black text-white p-6 max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold mb-4">About Vibra</h1>
       <p className="text-gray-300 leading-7">
-        Vibra is a worldwide vertical video platform built from Mombasa, Kenya - Faraja Bamburi. Created by Hamadoski to give everyone a voice.
+       <p>
+Vibra is a worldwide vertical video platform built from Mombasa, Kenya.
+</p>
+<p>
+Vibra was created to give young creators a place to share funny videos, love stories, couple goals, and everyday moments that make people smile. Anyone can watch videos for free, follow their favourite creators, like and comment.
+</p>
+<p>
+Our mission is simple: make someone smile every day. We believe laughter brings people together, no matter where you come from.
+</p>
+<p>
+If you are a creator in Kenya, Tanzania, Uganda or anywhere in the world, Vibra is your home. Post your videos, grow your fans, and be part of the Vibra family.
+</p>
+<p>
+Contact us: vibra254@gmail.com - Mombasa, Kenya
+</p>
       </p>
       <a href="/" className="mt-6 inline-block text-cyan-400">← Back to Vibra</a>
     </div>
