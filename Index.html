@@ -6,14 +6,14 @@
 <title>Vibra</title>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <style>
-*{ -webkit-tap-highlight-color:transparent; }
-html,body{ height:100%; background:#000; overflow:hidden; }
-body{ font-family:'Inter',sans-serif; color:#fff; }
-.no-scrollbar::-webkit-scrollbar{ display:none; }
-.no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-.video-feed{ scroll-snap-type:mandatory; overflow-y:scroll; height:100dvh; }
-.video-feed > section{ scroll-snap-align:start; scroll-snap-stop:always; }
-.glass{ background:rgba(20,20,20,.72); backdrop-filter:blur(16px); }
+*{-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#000;overflow:hidden}
+body{font-family:'Inter',sans-serif;color:#fff}
+.no-scrollbar::-webkit-scrollbar{display:none}
+.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+.video-feed{scroll-snap-type:mandatory;overflow-y:scroll;height:100dvh}
+.video-feed>section{scroll-snap-align:start;scroll-snap-stop:always}
+.glass{background:rgba(20,20,20,.72);backdrop-filter:blur(16px)}
 </style>
 </head>
 <body>
@@ -21,16 +21,33 @@ body{ font-family:'Inter',sans-serif; color:#fff; }
 <div id="toast" class="fixed left-1/2 bottom-24 -translate-x-1/2 glass px-4 py-2 rounded-full text-[13px] font-semibold hidden z-[100]"></div>
 <script>
 const VIDEOS=[
-{id:'v1',user:'@auramoves',name:'Aura Moves',avatar:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',caption:'Feeling the vibe 🔥 #vibra',likes:'12.4K',comments:342,video:'https://www.w3schools.com/html/mov_bbb.mp4'},
+{id:'v1',user:'@Mr Vibra',name:'Mr Vibra',avatar:'MV',caption:'Feeling the vibe 🔥 #vibra',likes:'12.4K',comments:342,video:'https://www.w3schools.com/html/mov_bbb.mp4'},
 {id:'v2',user:'@citybeats',name:'City Beats',avatar:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',caption:'City nights 🌃 #vibra',likes:'8.1K',comments:210,video:'https://www.w3schools.com/html/movie.mp4'},
 {id:'v3',user:'@oceanvibes',name:'Ocean Vibes',avatar:'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',caption:'Ocean vibes 🌊',likes:'20K',comments:500,video:'https://www.w3schools.com/html/mov_bbb.mp4'},
 {id:'v4',user:'@urbanflow',name:'Urban Flow',avatar:'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',caption:'Urban flow 💃',likes:'5K',comments:120,video:'https://www.w3schools.com/html/movie.mp4'},
 {id:'v5',user:'@neonlights',name:'Neon Lights',avatar:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',caption:'Neon nights ✨',likes:'15K',comments:300,video:'https://www.w3schools.com/html/mov_bbb.mp4'},
 ];
-let state={view:'home',user:null,liked:new Set(),following:new Set(['@auramoves']),saved:new Set(),showComments:null,muted:false};
+let state={view:'home',user:null,liked:new Set(),following:new Set(['@Mr Vibra']),saved:new Set(),showComments:null,muted:false};
 let currentVideoIndex=0;
+function getMyDP(){ return localStorage.getItem('vibra_dp') || ''; }
+function getAvatar(v){
+  const dp = getMyDP();
+  if(v.avatar==='MV' || v.user.toLowerCase().includes('mr vibra') || v.user.toLowerCase().includes('mr.vibra')){
+    if(dp) return dp;
+    return 'MV';
+  }
+  return v.avatar;
+}
+function syncDP(){
+  const dp = getMyDP();
+  if(!dp) return;
+  document.querySelectorAll('*').forEach(el=>{
+    if(el.children.length===0 && el.textContent.trim()==='MV'){
+      el.innerHTML = `<img src="${dp}" style="width:100%;height:100%;object-fit:cover;border-radius:9999px;display:block">`;
+    }
+  });
+}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),2500);}
-function formatNum(n){if(n>=1000000)return (n/1000000).toFixed(1)+'M';if(n>=1000)return (n/1000).toFixed(1)+'K';return n;}
 function render(){
 const app=document.getElementById('app');
 if(state.view==='home')app.innerHTML=HomeScreen();
@@ -40,6 +57,7 @@ else if(state.view==='upload')app.innerHTML=UploadScreen();
 else if(state.view==='inbox')app.innerHTML=InboxScreen();
 else if(state.view==='profile')app.innerHTML=ProfileScreen();
 attachVideoHandlers();
+setTimeout(syncDP,100);
 }
 function BottomNav(active){
 const items=[{id:'home',label:'Home'},{id:'discover',label:'Discover'},{id:'ai',label:'VIBRA AI'},{id:'upload',label:'+'},{id:'inbox',label:'Inbox'},{id:'profile',label:'Me'}];
@@ -48,47 +66,43 @@ if(it.id==='upload')return `<button onclick="go('upload')" class="flex flex-col 
 const isActive=active===it.id;
 return `<button onclick="go('${it.id}')" class="flex flex-col items-center gap-0.5 ${isActive?'text-white':'text-white/60'}"><span class="text-[18px]">${it.id==='home'?'🏠':it.id==='discover'?'🔍':it.id==='ai'?'✨':it.id==='inbox'?'💬':'👤'}</span><span class="text-[11px]">${it.label}</span></button>`}).join('')}</div></nav>`;
 }
+function avatarHTML(avatar,cls){
+  if(avatar==='MV'){
+    const dp=getMyDP();
+    if(dp) return `<img src="${dp}" class="${cls} object-cover">`;
+    return `<div class="${cls} bg-zinc-700 flex items-center justify-center font-bold">MV</div>`;
+  }
+  return `<img src="${avatar}" class="${cls} object-cover">`;
+}
 function VideoCard(v,idx){
-const isLiked=state.liked.has(v.id);const isFollowing=state.following.has(v.user);
+const isLiked=state.liked.has(v.id);const isFollowing=state.following.has(v.user);const av=getAvatar(v);
 return `<section data-idx="${idx}" class="relative h-[100dvh] w-full bg-black overflow-hidden">
 <video src="${v.video}" class="w-full h-full object-cover" loop playsinline preload="auto"></video>
 <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 pointer-events-none"></div>
 <div class="absolute top-0 left-0 right-0 z-20 pt-[env(safe-area-inset-top)]"><div class="flex items-center justify-center gap-6 pt-3 text-[15px] font-semibold"><button onclick="showToast('Following feed coming soon')" class="text-white/60">Following</button><span class="text-white">For You</span><button onclick="go('discover')" class="text-white/60">Explore</button></div></div>
 <div class="absolute right-2.5 bottom-[110px] z-20 flex flex-col items-center gap-4">
-<div class="relative flex flex-col items-center"><img src="${v.avatar}" class="w-11 h-11 rounded-full object-cover border-2 border-white"><button onclick="toggleFollow('${v.user}',event)" class="absolute -bottom-2 bg-[#FE2C55] w-5 h-5 rounded-full text-[14px]">${isFollowing?'✓':'+'}</button></div>
+<div class="relative flex flex-col items-center">${avatarHTML(av,'w-11 h-11 rounded-full border-2 border-white')}<button onclick="toggleFollow('${v.user}',event)" class="absolute -bottom-2 bg-[#FE2C55] w-5 h-5 rounded-full text-[14px]">${isFollowing?'✓':'+'}</button></div>
 <button onclick="toggleLike('${v.id}',event)" class="flex flex-col items-center gap-1"><span class="text-[26px]">${isLiked?'❤️':'🤍'}</span><span class="text-[12px]">${v.likes}</span></button>
 <button onclick="openComments('${v.id}')" class="flex flex-col items-center gap-1"><span class="text-[26px]">💬</span><span class="text-[12px]">${v.comments}</span></button>
 <button onclick="toggleSave('${v.id}')" class="flex flex-col items-center gap-1"><span class="text-[26px]">🔖</span><span class="text-[12px]">Save</span></button>
 <button onclick="shareVideo()" class="flex flex-col items-center gap-1"><span class="text-[26px]">↗️</span><span class="text-[12px]">Share</span></button>
-<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 mt-1"><img src="${v.avatar}" class="w-full h-full object-cover"></div></div>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 mt-1">${avatarHTML(av,'w-full h-full')}</div></div>
 <div class="absolute left-3 right-[70px] bottom-[110px] z-20"><div class="flex items-center gap-2 mb-2"><span class="font-bold text-[16px]">${v.user}</span><span class="text-[13px] text-white/70">${v.name}</span></div><p class="text-[13.5px] leading-snug text-white/95">${v.caption}</p><div class="flex items-center gap-2 mt-2 text-[12px] text-white/70"><span>🎵 Original sound - ${v.name}</span></div></div>
 <button onclick="toggleMuteAll()" class="absolute top-[70px] right-3 z-20 w-9 h-9 rounded-full glass flex items-center justify-center">${state.muted?'🔇':'🔊'}</button>
 </section>`;
 }
-function HomeScreen(){
-return `<div class="relative h-full"><div id="feed" class="video-feed no-scrollbar">${VIDEOS.map((v,i)=>VideoCard(v,i)).join('')}${BottomNav('home')}${state.showComments?CommentsSheet():''}</div></div>`;
-}
-function DiscoverScreen(){
-return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 pt-3 pb-3"><h1 class="text-[26px] font-bold">Discover</h1><div class="flex gap-2 mt-3 overflow-x-auto no-scrollbar">${['Trending','Music','Dance','Comedy','Food'].map(t=>`<button class="bg-zinc-800 px-4 py-1.5 rounded-full text-[13px] whitespace-nowrap">${t}</button>`).join('')}</div></div><div class="flex-1 overflow-y-auto no-scrollbar pb-[90px]"><div class="grid grid-cols-3 gap-[2px]">${VIDEOS.map(v=>`<div class="aspect-[3/4] bg-zinc-800 relative"><img src="${v.avatar}" class="w-full h-full object-cover"><span class="absolute bottom-1 left-1 text-[11px]">▶️ ${v.likes}</span></div>`).join('')}</div></div>${BottomNav('discover')}</div>`;
-}
-function AIScreen(){
-return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 py-3"><h1 class="text-[22px] font-bold">VIBRA AI ✨</h1><p class="text-white/60 text-[13px]">Uliza Kiswahili nitajibu Kiswahili. Ask English I answer English.</p></div><div id="aiChat" class="flex-1 overflow-y-auto px-4 space-y-3 pb-2"><div class="bg-zinc-800 p-3 rounded-2xl">Habari! Mimi ni VIBRA AI. Niambie unataka nini? Unaweza kuniuliza kuhusu app, video, au chochote.</div></div><div class="p-3 flex gap-2 pb-[90px]"><input id="aiInput" placeholder="Uliza chochote..." class="flex-1 bg-zinc-800 p-3 rounded-full text-white outline-none"><button onclick="askAI()" class="bg-[#FE2C55] px-5 rounded-full font-bold">Tuma</button></div>${BottomNav('ai')}</div>`;
-}
-function UploadScreen(){
-return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 py-3 flex items-center justify-between"><button onclick="go('home')">✕</button><span class="font-bold">Upload</span><span></span></div><div class="flex-1 flex flex-col items-center justify-center px-6 text-center"><div class="w-full aspect-[9/13] max-h-[52vh] bg-zinc-900 rounded-2xl overflow-hidden flex items-center justify-center"><video id="previewVideo" class="w-full h-full object-cover hidden" controls loop playsinline></video><div id="uploadPlaceholder" class="flex flex-col items-center gap-3 p-6"><span class="text-[40px]">🎬</span><p class="text-[14px] text-white/70">Chagua video kutoka simu yako</p></div></div><input id="captionInput" placeholder="Write a caption... #vibra" class="mt-4 w-full bg-zinc-800 p-3 rounded-xl text-white outline-none"><label class="mt-3 w-full bg-zinc-800 p-3 rounded-xl text-center cursor-pointer">📁 Chagua Video<input type="file" accept="video/*" class="hidden" onchange="handleFile(event)"></label><button onclick="publishVideo()" class="mt-3 w-full bg-[#FE2C55] p-3 rounded-xl font-bold">Post Video</button></div>${BottomNav('upload')}</div>`;
-}
-function InboxScreen(){
-return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 py-3 flex items-center justify-between"><h1 class="text-[22px] font-bold">Inbox</h1><span>💬</span></div><div class="flex-1 overflow-y-auto px-4 pb-[90px]"><p class="text-[13px] font-bold text-white/50 mt-2 mb-2">MESSAGES</p>${VIDEOS.map(v=>`<div class="flex items-center gap-3 py-3 border-b border-white/5" onclick="showToast('Chat coming soon')"><img src="${v.avatar}" class="w-11 h-11 rounded-full object-cover"><div><p class="font-semibold text-[14px]">${v.name}</p><p class="text-[12px] text-white/60">${v.caption}</p></div></div>`).join('')}</div>${BottomNav('inbox')}</div>`;
-}
+function HomeScreen(){ return `<div class="relative h-full"><div id="feed" class="video-feed no-scrollbar">${VIDEOS.map((v,i)=>VideoCard(v,i)).join('')}${BottomNav('home')}${state.showComments?CommentsSheet():''}</div></div>`; }
+function DiscoverScreen(){ return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 pt-3 pb-3"><h1 class="text-[26px] font-bold">Discover</h1><div class="flex gap-2 mt-3 overflow-x-auto no-scrollbar">${['Trending','Music','Dance','Comedy','Food'].map(t=>`<button class="bg-zinc-800 px-4 py-1.5 rounded-full text-[13px] whitespace-nowrap">${t}</button>`).join('')}</div></div><div class="flex-1 overflow-y-auto no-scrollbar pb-[90px]"><div class="grid grid-cols-3 gap-[2px]">${VIDEOS.map(v=>{const av=getAvatar(v); return `<div class="aspect-[3/4] bg-zinc-800 relative">${av==='MV' ? `<div class="w-full h-full bg-zinc-700 flex items-center justify-center font-bold">MV</div>` : `<img src="${av}" class="w-full h-full object-cover">`}<span class="absolute bottom-1 left-1 text-[11px]">▶️ ${v.likes}</span></div>`}).join('')}</div></div>${BottomNav('discover')}</div>`; }
+function AIScreen(){ return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 py-3"><h1 class="text-[22px] font-bold">VIBRA AI ✨</h1><p class="text-white/60 text-[13px]">Uliza Kiswahili nitajibu Kiswahili. Ask English I answer English.</p></div><div id="aiChat" class="flex-1 overflow-y-auto px-4 space-y-3 pb-2"><div class="bg-zinc-800 p-3 rounded-2xl">Habari! Mimi ni VIBRA AI. Niambie unataka nini?</div></div><div class="p-3 flex gap-2 pb-[90px]"><input id="aiInput" placeholder="Uliza chochote..." class="flex-1 bg-zinc-800 p-3 rounded-full text-white outline-none"><button onclick="askAI()" class="bg-[#FE2C55] px-5 rounded-full font-bold">Tuma</button></div>${BottomNav('ai')}</div>`; }
+function UploadScreen(){ return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 py-3 flex items-center justify-between"><button onclick="go('home')">✕</button><span class="font-bold">Upload</span><span></span></div><div class="flex-1 flex flex-col items-center justify-center px-6 text-center"><div class="w-full aspect-[9/13] max-h-[52vh] bg-zinc-900 rounded-2xl overflow-hidden flex items-center justify-center"><video id="previewVideo" class="w-full h-full object-cover hidden" controls loop playsinline></video><div id="uploadPlaceholder" class="flex flex-col items-center gap-3 p-6"><span class="text-[40px]">🎬</span><p class="text-[14px] text-white/70">Chagua video kutoka simu yako</p></div></div><input id="captionInput" placeholder="Write a caption... #vibra" class="mt-4 w-full bg-zinc-800 p-3 rounded-xl text-white outline-none"><label class="mt-3 w-full bg-zinc-800 p-3 rounded-xl text-center cursor-pointer">📁 Chagua Video<input type="file" accept="video/*" class="hidden" onchange="handleFile(event)"></label><button onclick="publishVideo()" class="mt-3 w-full bg-[#FE2C55] p-3 rounded-xl font-bold">Post Video</button></div>${BottomNav('upload')}</div>`; }
+function InboxScreen(){ return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 py-3 flex items-center justify-between"><h1 class="text-[22px] font-bold">Inbox</h1><span>💬</span></div><div class="flex-1 overflow-y-auto px-4 pb-[90px]"><p class="text-[13px] font-bold text-white/50 mt-2 mb-2">MESSAGES</p>${VIDEOS.map(v=>{const av=getAvatar(v); return `<div class="flex items-center gap-3 py-3 border-b border-white/5" onclick="showToast('Chat coming soon')">${av==='MV' ? `<div class="w-11 h-11 rounded-full bg-zinc-700 flex items-center justify-center font-bold">MV</div>` : `<img src="${av}" class="w-11 h-11 rounded-full object-cover">`}<div><p class="font-semibold text-[14px]">${v.name}</p><p class="text-[12px] text-white/60">${v.caption}</p></div></div>`}).join('')}</div>${BottomNav('inbox')}</div>`; }
 function ProfileScreen(){
-const user=state.user||{name:'Guest',username:'@guest',avatar:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80'};
-return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 py-3 flex items-center justify-between"><span class="font-bold">${user.username}</span><span>⚙️</span></div><div class="flex flex-col items-center pt-2 pb-4"><img src="${user.avatar}" class="w-[92px] h-[92px] rounded-full object-cover"><h2 class="font-bold text-[17px] mt-2">${user.name}</h2><div class="flex gap-6 mt-3 text-center"><div><p class="font-bold">12</p><p class="text-[12px] text-white/60">Following</p></div><div><p class="font-bold">1.2K</p><p class="text-[12px] text-white/60">Followers</p></div><div><p class="font-bold">${VIDEOS.length}</p><p class="text-[12px] text-white/60">Likes</p></div></div><div class="flex gap-2 mt-4"><button onclick="showToast('Edit profile coming soon')" class="bg-zinc-800 px-6 py-2 rounded-lg text-[13px]">Edit profile</button><label class="bg-[#FE2C55] px-6 py-2 rounded-lg text-[13px] cursor-pointer">Badilisha DP<input type="file" accept="image/*" class="hidden" onchange="changeDP(event)"></label></div></div><div class="grid grid-cols-3 gap-[2px] flex-1 overflow-y-auto no-scrollbar pb-[90px]">${VIDEOS.map(v=>`<div class="aspect-[3/4] bg-zinc-800"><img src="${v.avatar}" class="w-full h-full object-cover"></div>`).join('')}</div>${BottomNav('profile')}</div>`;
+const dp=getMyDP();
+const avatar=dp || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80';
+return `<div class="relative h-full bg-black flex flex-col"><div class="pt-[env(safe-area-inset-top)] px-4 py-3 flex items-center justify-between"><span class="font-bold">@Mr Vibra</span><span>⚙️</span></div><div class="flex flex-col items-center pt-2 pb-4">${dp ? `<img src="${dp}" class="w-[92px] h-[92px] rounded-full object-cover">` : `<div class="w-[92px] h-[92px] rounded-full bg-zinc-700 flex items-center justify-center text-[24px] font-bold">MV</div>`}<h2 class="font-bold text-[17px] mt-2">Mr Vibra</h2><div class="flex gap-6 mt-3 text-center"><div><p class="font-bold">12</p><p class="text-[12px] text-white/60">Following</p></div><div><p class="font-bold">1.2K</p><p class="text-[12px] text-white/60">Followers</p></div><div><p class="font-bold">${VIDEOS.length}</p><p class="text-[12px] text-white/60">Likes</p></div></div><div class="flex gap-2 mt-4"><button onclick="showToast('Edit profile coming soon')" class="bg-zinc-800 px-6 py-2 rounded-lg text-[13px]">Edit profile</button><label class="bg-[#FE2C55] px-6 py-2 rounded-lg text-[13px] cursor-pointer">Badilisha DP<input type="file" accept="image/*" class="hidden" onchange="changeDP(event)"></label></div></div><div class="grid grid-cols-3 gap-[2px] flex-1 overflow-y-auto no-scrollbar pb-[90px]">${VIDEOS.map(v=>{const av=getAvatar(v); return `<div class="aspect-[3/4] bg-zinc-800">${av==='MV' ? `<div class="w-full h-full bg-zinc-700 flex items-center justify-center font-bold">MV</div>` : `<img src="${av}" class="w-full h-full object-cover">`}</div>`}).join('')}</div>${BottomNav('profile')}</div>`;
 }
-function CommentsSheet(){
-return `<div class="absolute inset-0 z-[60] flex flex-col justify-end"><div class="absolute inset-0 bg-black/60" onclick="closeComments()"></div><div class="relative bg-zinc-900 rounded-t-[20px] h-[65%] flex flex-col"><div class="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2"></div><div class="flex items-center justify-between px-4 py-3 border-b border-white/10"><span class="font-bold">Comments</span><button onclick="closeComments()">✕</button></div><div class="flex-1 overflow-y-auto px-4 py-3 space-y-4"><div class="flex gap-2"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" class="w-8 h-8 rounded-full"><div><p class="text-[13px]"><b>Maya</b> <span class="text-white/50">2h</span></p><p class="text-[13px]">Love this! 🔥</p></div></div></div><div class="p-3 border-t border-white/10 flex gap-2 pb-[env(safe-area-inset-bottom)]"><input placeholder="Add comment..." class="flex-1 bg-zinc-800 p-2.5 rounded-full text-[13px]"><button class="text-[#FE2C55] font-bold">Post</button></div></div></div>`;
-}
-function go(view){state.view=view;state.showComments=null;render();window.scrollTo(0,0);}
-function openUpload(){state.view='upload';render();}
+function CommentsSheet(){ return `<div class="absolute inset-0 z-[60] flex flex-col justify-end"><div class="absolute inset-0 bg-black/60" onclick="closeComments()"></div><div class="relative bg-zinc-900 rounded-t-[20px] h-[65%] flex flex-col"><div class="w-10 h-1 bg-white/20 rounded-full mx-auto mt-2"></div><div class="flex items-center justify-between px-4 py-3 border-b border-white/10"><span class="font-bold">Comments</span><button onclick="closeComments()">✕</button></div><div class="flex-1 overflow-y-auto px-4 py-3 space-y-4"><div class="flex gap-2"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80" class="w-8 h-8 rounded-full"><div><p class="text-[13px]"><b>Maya</b> <span class="text-white/50">2h</span></p><p class="text-[13px]">Love this! 🔥</p></div></div></div><div class="p-3 border-t border-white/10 flex gap-2"><input placeholder="Add comment..." class="flex-1 bg-zinc-800 p-2.5 rounded-full text-[13px]"><button class="text-[#FE2C55] font-bold">Post</button></div></div></div>`; }
+function go(view){state.view=view;state.showComments=null;render();}
 function openComments(id){state.showComments=id;render();}
 function closeComments(){state.showComments=null;render();}
 function toggleLike(id,e){if(e)e.stopPropagation();if(state.liked.has(id))state.liked.delete(id);else state.liked.add(id);render();}
@@ -97,15 +111,24 @@ function toggleSave(id){if(state.saved.has(id))state.saved.delete(id);else state
 function shareVideo(){if(navigator.share)navigator.share({title:'Vibra',text:'Check this video on Vibra'});else showToast('Link copied!');}
 function toggleMuteAll(){state.muted=!state.muted;document.querySelectorAll('video').forEach(v=>v.muted=state.muted);showToast(state.muted?'Muted':'Sound on');}
 function handleFile(e){const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);const vid=document.getElementById('previewVideo');vid.src=url;vid.classList.remove('hidden');document.getElementById('uploadPlaceholder').classList.add('hidden');vid.play();}
-function publishVideo(){const cap=document.getElementById('captionInput')?.value||'My new video #vibra';showToast('Video posted!');go('home');}
-function changeDP(e){const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);state.user={name:'Mr.Vibra',username:'@mr.vibra',avatar:url};showToast('DP imebadilishwa!');render();}
+function publishVideo(){showToast('Video posted!');go('home');}
+function changeDP(e){
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=function(){
+    localStorage.setItem('vibra_dp', reader.result);
+    showToast('DP imewekwa! Sasa itaonekana kila mahali');
+    render();
+  };
+  reader.readAsDataURL(f);
+}
 function askAI(){
 const inp=document.getElementById('aiInput');const q=inp.value.trim();if(!q)return;
 const box=document.getElementById('aiChat');
 box.innerHTML+=`<div class="bg-zinc-900 p-3 rounded-2xl ml-6">Wewe: ${q}</div>`;
 const sw=['nini','nifanye','vipi','habari','mimi','wewe','yako','sawa','kwani','naomba','tafadhali','asante','karibu','ndiyo','hapana','je','kwa','ya','za','ni','na','taka','nataka','fanya','weka','badili','install','sijui','sielewi','choka','nimechoka'];
 const isSw=sw.some(w=>q.toLowerCase().includes(w));
-const ans=isSw ? "Sawa, nimekuelewa kabisa. Umesema: '"+q+"'. Hili ni jibu la Kiswahili. Kama unataka kuweka DP, nenda Me > Badilisha DP. Kama unataka ku-install app, fungua Chrome > dots 3 juu > Add to Home screen. Niambie nini kingine unataka nikusaidie?" : "Got it. You said: '"+q+"'. This is an English answer. To set DP, go to Me > Change DP. To install, open Chrome > 3-dot menu > Add to Home screen. What else do you want help with?";
+const ans=isSw ? "Sawa, nimekuelewa kabisa. Umesema: '"+q+"'. Hili ni jibu la Kiswahili. Kama unataka kuweka DP, nenda Me > Badilisha DP. Kama unataka ku-install, fungua Chrome > dots 3 > Add to Home screen." : "Got it. You said: '"+q+"'. This is an English answer. To set DP, go to Me > Change DP. To install, open Chrome > 3-dot menu > Add to Home screen.";
 setTimeout(()=>{box.innerHTML+=`<div class="bg-zinc-800 p-3 rounded-2xl">VIBRA AI: ${ans}</div>`;box.scrollTop=box.scrollHeight;},400);
 inp.value="";
 }
@@ -114,7 +137,6 @@ const feed=document.getElementById('feed');if(!feed)return;
 const videos=feed.querySelectorAll('video');
 const obs=new IntersectionObserver((entries)=>{entries.forEach(en=>{if(en.isIntersecting){en.target.play().catch(()=>{});en.target.muted=state.muted;}})},{threshold:0.6});
 videos.forEach(v=>obs.observe(v));
-feed.querySelectorAll('section').forEach(sec=>{sec.addEventListener('dblclick',()=>{const id=VIDEOS[sec.dataset.idx].id;if(!state.liked.has(id))state.liked.add(id);render();});});
 }
 document.addEventListener('DOMContentLoaded',()=>{render();});
 </script>
