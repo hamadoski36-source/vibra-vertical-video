@@ -22,16 +22,16 @@ button{cursor:pointer;border:none;font-family:inherit}
 .feed{height:calc(100dvh - 156px);overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
 .feed::-webkit-scrollbar{display:none}
 .video-card{height:calc(100dvh - 156px);scroll-snap-align:start;position:relative;background:#111;overflow:hidden;flex-shrink:0}
-.video-card img,.video-card video{width:100%;height:100%;object-fit:cover;display:block}
-.v-gradient{position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.9))}
-.rightBar{position:absolute;right:8px;bottom:110px;display:flex;flex-direction:column;gap:14px;align-items:center;z-index:5}
+.video-card .mainImg{width:100%;height:100%;object-fit:cover;display:block}
+.v-gradient{position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.9));pointer-events:none}
+.rightBar{position:absolute;right:10px;bottom:145px;display:flex;flex-direction:column;gap:12px;align-items:center;z-index:10}
 .rbtn{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid #444;color:#fff}
 .rbtn.liked{background:#ff2d55}
 .rbtn small{display:block;font-size:11px;text-align:center}
-.dpSmall{width:48px;height:48px;border-radius:50%;border:2px solid #ff2d55;object-fit:cover}
+.dpSmall{width:48px !important;height:48px !important;min-width:48px;min-height:48px;border-radius:50% !important;border:2px solid #ff2d55;object-fit:cover;display:block}
 .v-info{position:absolute;left:10px;bottom:70px;right:70px;z-index:5}
 .v-user{display:flex;align-items:center;gap:8px}
-.v-user img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #fff}
+.v-user img{width:38px !important;height:38px !important;min-width:38px;min-height:38px;border-radius:50% !important;object-fit:cover;border:2px solid #fff}
 .followBtn{background:#ff2d55;color:#fff;padding:5px 10px;border-radius:15px;font-weight:700;font-size:12px}
 .caption{margin:8px 0;font-size:14px;line-height:1.4}
 .tags{color:#00e5ff;font-size:13px}
@@ -53,7 +53,7 @@ input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#ff
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
 .grid3 img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px}
 .profileTop{text-align:center;padding:14px}
-.profileTop img{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #ff2d55}
+.profileTop img{width:80px !important;height:80px !important;border-radius:50%;object-fit:cover;border:3px solid #ff2d55}
 .stats{display:flex;justify-content:space-around;background:#111;border-radius:12px;padding:12px;margin:10px;text-align:center}
 .stats b{font-size:17px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:none;align-items:flex-end;justify-content:center}
@@ -75,13 +75,10 @@ input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#ff
 <div class="topbar"><div class="logo">VIBRA<span>•</span></div><input class="search" id="searchInput" placeholder="Search... video, mtu, hashtag" oninput="searchVideos(this.value)"><span style="font-size:22px" onclick="openSheet('settingsSheet')">⚙️</span></div>
 <div class="topTabs"><button class="active" onclick="switchTop(this,'For You')">For You</button><button onclick="switchTop(this,'Following')">Following</button><button onclick="showPage('livePage',this)">🔴 LIVE</button></div>
 
-<!-- HOME -->
 <div id="homePage" class="page active"><div class="feed" id="feed"></div></div>
 
-<!-- DISCOVER -->
 <div id="discoverPage" class="page"><div class="scrollPage"><div class="card"><h3>🔥 Trending Hashtags</h3><div id="trends"></div></div><div class="card"><h3>Discover Videos</h3><div class="grid3" id="discoverGrid"></div></div></div></div>
 
-<!-- LIVE -->
 <div id="livePage" class="page"><div class="scrollPage">
 <div class="card"><span class="liveBadge">● LIVE</span><h3 style="margin-top:8px">Live Sasa - @Mr Vibra</h3><img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800" style="width:100%;border-radius:12px;height:220px;object-fit:cover"><p style="margin:8px 0">Karibu Live! Tag video, tuma zawadi, shindana Battle!</p>
 <input id="tagInput" placeholder="Tag video: e.g #Mombasa #Comedy"><button class="btn btn-pink" onclick="tagVideo()">🏷️ Tag Video Hii Live</button><p id="tagResult" style="font-size:13px;color:#00e5ff;margin-top:6px"></p></div>
@@ -89,19 +86,16 @@ input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#ff
 <div class="card"><h3>🎁 Tuma Zawadi</h3><div style="display:flex;gap:8px"><button class="btn btn-dark" onclick="sendGift('🌹 Rose')">🌹 Rose</button><button class="btn btn-dark" onclick="sendGift('🦁 Simba')">🦁 Simba</button><button class="btn btn-dark" onclick="sendGift('💎 Diamond')">💎 Diamond</button></div><p id="giftMsg"></p></div>
 </div></div>
 
-<!-- INBOX -->
 <div id="inboxPage" class="page"><div class="scrollPage"><div class="card"><h3>📩 Inbox</h3><div class="cmt"><b>@Zawadi</b><p>Nimeipenda video yako ya Mombasa! 🔥</p></div><div class="cmt"><b>@System</b><p>Hongera! Video yako imefikisha 1.2K likes.</p></div></div><div class="card"><h3>💬 Chat</h3><input id="chatInput" placeholder="Andika ujumbe..."><button class="btn btn-blue" onclick="sendChat()">Tuma</button><div id="chatBox"></div></div></div></div>
 
-<!-- ME / PROFILE -->
 <div id="mePage" class="page"><div class="scrollPage">
 <div class="profileTop"><img id="myDP" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300"><h2>@Mr Vibra</h2><p>Vibra Creator • Tanzania 🇹🇿</p><button class="btn btn-pink" onclick="document.getElementById('dpFile').click()">Badilisha DP</button><input type="file" id="dpFile" hidden accept="image/*" onchange="changeDP(event)"><button class="btn btn-blue" onclick="saveProfile()">Save Profile</button></div>
-<div class="stats"><div><b id="statFollowing">12</b><br><small>Following</small></div><div><b id="statFollowers">1.2K</b><br><small>Followers</small></div><div><b id="statLikes">45</b><br><small>Likes</small></div></div>
+<div class="stats"><div><b>12</b><br><small>Following</small></div><div><b>1.2K</b><br><small>Followers</small></div><div><b id="statLikes">45</b><br><small>Likes</small></div></div>
 <div class="card"><h3>🎨 Creator Marketplace</h3><p>Biashara zinaweza kukutafuta kwa matangazo. Weka bei yako:</p><input id="creatorPrice" placeholder="Bei kwa matangazo: e.g 50,000 TZS"><button class="btn btn-pink" onclick="saveCreator()">Weka Kwenye Marketplace</button><div id="marketList"></div></div>
 <div class="card"><h3>Videos Zangu</h3><div class="grid3" id="myGrid"></div><p style="font-size:12px;color:#aaa;margin-top:8px">DP yako ikibadilika hapa, itabadilika pia kwenye Feed automatically.</p></div>
 </div></div>
 
-<!-- RECORD -->
-<div id="recordPage" class="page"><div class="scrollPage"><div class="card"><h3>🎬 Record / Upload</h3><video id="preview" style="width:100%;border-radius:12px;background:#000;height:300px" playsinline muted></video><div class="filterBar" style="position:static;margin:10px 0"><button onclick="applyFilter('none',this)" class="on">Normal</button><button onclick="applyFilter('grayscale(1)',this)">B&W</button><button onclick="applyFilter('sepia(1)',this)">Sepia</button><button onclick="applyFilter('contrast(1.4) saturate(1.6)',this)">Vivid</button><button onclick="applyFilter('blur(1px) brightness(1.2)',this)">Glow</button><button onclick="applyFilter('hue-rotate(90deg)',this)">Neon</button></div><input id="newCaption" placeholder="Andika caption..."><input id="newTags" placeholder="#Hashtags"><button class="btn btn-pink" onclick="startCamera()">📷 Fungua Kamera</button><button class="btn btn-blue" onclick="publishVideo()">🚀 Post Video</button><p style="font-size:12px;color:#aaa">Kamera itaomba ruhusa. Ukishapost, video inaenda Feed na Me.</p></div></div></div>
+<div id="recordPage" class="page"><div class="scrollPage"><div class="card"><h3>🎬 Record / Upload</h3><video id="preview" style="width:100%;border-radius:12px;background:#000;height:300px" playsinline muted></video><div class="filterBar" style="position:static;margin:10px 0"><button onclick="applyFilter('none',this)" class="on">Normal</button><button onclick="applyFilter('grayscale(1)',this)">B&W</button><button onclick="applyFilter('sepia(1)',this)">Sepia</button><button onclick="applyFilter('contrast(1.4) saturate(1.6)',this)">Vivid</button><button onclick="applyFilter('blur(1px) brightness(1.2)',this)">Glow</button><button onclick="applyFilter('hue-rotate(90deg)',this)">Neon</button></div><input id="newCaption" placeholder="Andika caption..."><input id="newTags" placeholder="#Hashtags"><button class="btn btn-pink" onclick="startCamera()">📷 Fungua Kamera</button><button class="btn btn-blue" onclick="publishVideo()">🚀 Post Video</button></div></div></div>
 
 <div class="bottomNav">
 <button class="active" onclick="showPage('homePage',this)">🏠<span>Home</span></button>
@@ -112,10 +106,8 @@ input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#ff
 <button onclick="showPage('mePage',this)">👤<span>Me</span></button>
 </div>
 
-<!-- COMMENTS SHEET -->
 <div class="modal" id="commentModal"><div class="sheet"><div style="display:flex;justify-content:space-between"><h3>💬 Comments</h3><button onclick="closeModal('commentModal')" style="background:none;color:#fff;font-size:20px">✕</button></div><div id="commentList"></div><div style="display:flex;gap:8px;margin-top:10px"><input id="commentInput" placeholder="Andika comment..."><button onclick="addComment()" style="background:#ff2d55;color:#fff;padding:10px 16px;border-radius:10px">Tuma</button></div></div></div>
 
-<!-- SHARE SHEET -->
 <div class="modal" id="shareModal"><div class="sheet"><h3>Share Video</h3><div class="shareRow">
 <div class="shareItem" onclick="shareTo('whatsapp')"><div style="background:#25D366">💬</div>WhatsApp</div>
 <div class="shareItem" onclick="shareTo('facebook')"><div style="background:#1877F2">f</div>Facebook</div>
@@ -126,7 +118,6 @@ input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#ff
 <div class="shareItem" onclick="copyLink()"><div style="background:#333">🔗</div>Copy Link</div>
 </div><button class="btn btn-dark" onclick="closeModal('shareModal')">Funga</button></div></div>
 
-<!-- SETTINGS -->
 <div class="modal" id="settingsSheet"><div class="sheet"><h3>⚙️ Settings kama TikTok</h3>
 <p>Account</p><select><option>Public Account</option><option>Private Account</option></select>
 <p>Privacy</p><select><option>Everyone can comment</option><option>Friends only</option><option>Nobody</option></select>
@@ -152,7 +143,7 @@ function render(){
  let feed=document.getElementById('feed'); feed.innerHTML='';
  videos.forEach(v=>{
   let div=document.createElement('div'); div.className='video-card';
-  div.innerHTML=`<img src="${v.img}" style="filter:${currentFilter}"><div class="v-gradient"></div>
+  div.innerHTML=`<img class="mainImg" src="${v.img}" style="filter:${currentFilter}"><div class="v-gradient"></div>
   <div class="filterBar"><button class="${currentFilter=='none'?'on':''}" onclick="setGlobalFilter('none')">Normal</button><button onclick="setGlobalFilter('grayscale(1)')">B&W</button><button onclick="setGlobalFilter('sepia(1)')">Sepia</button><button onclick="setGlobalFilter('contrast(1.4) saturate(1.6)')">Vivid</button></div>
   <button class="playBtn" onclick="this.style.display='none'">▶</button>
   <div class="rightBar"><img class="dpSmall" src="${v.user=='@Mr Vibra'?DP:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'}">
@@ -188,12 +179,11 @@ function tagVideo(){let t=document.getElementById('tagInput').value; document.ge
 function voteBattle(who){if(who=='A'){let el=document.getElementById('scoreA'); el.innerText=parseInt(el.innerText)+10;}else{let el=document.getElementById('scoreB'); el.innerText=parseInt(el.innerText)+10;}}
 function sendGift(g){document.getElementById('giftMsg').innerText=`Umetuma ${g} 🎁 Asante!`; }
 function sendChat(){let t=document.getElementById('chatInput').value; if(!t) return; document.getElementById('chatBox').innerHTML+=`<div class="cmt"><b>Wewe</b><p>${t}</p></div>`; document.getElementById('chatInput').value='';}
-function searchVideos(q){if(!q) {render(); return;} let f=videos.filter(v=> (v.caption+v.tags+v.user).toLowerCase().includes(q.toLowerCase())); let feed=document.getElementById('feed'); feed.innerHTML=f.length? '':'<p style="padding:20px">Hakuna matokeo</p>'; /* render filtered simplified */ if(f.length){ feed.innerHTML=''; f.forEach(v=>{let d=document.createElement('div'); d.className='video-card'; d.innerHTML=`<img src="${v.img}"><div class="v-info"><b>${v.user}</b><p>${v.caption}</p></div>`; feed.appendChild(d);});}}
+function searchVideos(q){if(!q) {render(); return;} let f=videos.filter(v=> (v.caption+v.tags+v.user).toLowerCase().includes(q.toLowerCase())); let feed=document.getElementById('feed'); feed.innerHTML=f.length? '':'<p style="padding:20px">Hakuna matokeo</p>'; if(f.length){ feed.innerHTML=''; f.forEach(v=>{let d=document.createElement('div'); d.className='video-card'; d.innerHTML=`<img class="mainImg" src="${v.img}"><div class="v-info"><b>${v.user}</b><p>${v.caption}</p></div>`; feed.appendChild(d);});}}
 function setGlobalFilter(f){currentFilter=f; render();}
 function applyFilter(f,btn){currentFilter=f; document.getElementById('preview').style.filter=f; document.querySelectorAll('#recordPage .filterBar button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); render();}
-async function startCamera(){try{let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('preview').srcObject=s; document.getElementById('preview').play();}catch(e){alert('Ruhusa ya kamera inahitajika. Tumia Upload badala yake.');}}
-function publishVideo(){let cap=document.getElementById('newCaption').value||'Video mpya Vibra 🔥'; let tags=document.getElementById('newTags').value||'#Vibra #ForYou'; let imgs=["https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800","https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800","https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800"]; videos.unshift({id:Date.now(),user:"@Mr Vibra",img:imgs[Math.floor(Math.random()*imgs.length)],caption:cap,tags:tags,likes:0,comments:[],saved:false}); save(); render(); showPage('homePage'); alert('Video imepost ✅ Iko Feed na Me');}
-// Battle timer
+async function startCamera(){try{let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('preview').srcObject=s; document.getElementById('preview').play();}catch(e){alert('Ruhusa ya kamera inahitajika.');}}
+function publishVideo(){let cap=document.getElementById('newCaption').value||'Video mpya Vibra 🔥'; let tags=document.getElementById('newTags').value||'#Vibra #ForYou'; let imgs=["https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800","https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800","https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800"]; videos.unshift({id:Date.now(),user:"@Mr Vibra",img:imgs[Math.floor(Math.random()*imgs.length)],caption:cap,tags:tags,likes:0,comments:[],saved:false}); save(); render(); showPage('homePage'); alert('Video imepost ✅');}
 let secs=120; setInterval(()=>{secs--; if(secs<0) secs=120; let m=String(Math.floor(secs/60)).padStart(2,'0'); let s=String(secs%60).padStart(2,'0'); let el=document.getElementById('battleTimer'); if(el) el.innerText=`${m}:${s}`;},1000);
 render();
 </script>
