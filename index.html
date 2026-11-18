@@ -1,192 +1,201 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sw">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>VIBRA</title>
+<title>VIBRA - TikTok ya Kitanzania</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
-body{background:#000;color:#fff;overflow-x:hidden;padding-bottom:70px}
-header{position:sticky;top:0;z-index:20;background:#000;padding:10px;display:flex;align-items:center;gap:10px}
-.logo{font-weight:900;font-size:22px;color:#ff2d55;letter-spacing:1px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#000;color:#fff;font-family:Arial,sans-serif;overflow:hidden;height:100dvh}
+a{color:#00e5ff;text-decoration:none}
+button{cursor:pointer;border:none;font-family:inherit}
+.topbar{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:8px;padding:10px;background:linear-gradient(#000,transparent)}
+.logo{font-size:22px;font-weight:900;color:#ff2d55;letter-spacing:1px}
 .logo span{color:#00e5ff}
-.search{flex:1;background:#1a1a1a;border-radius:20px;padding:8px 14px;color:#888;font-size:13px}
-.tabs{display:flex;gap:8px;padding:8px 10px;position:sticky;top:52px;background:#000;z-index:20}
-.tab{flex:1;text-align:center;padding:8px;border-radius:20px;font-size:13px;font-weight:700;background:#222;cursor:pointer}
-.tab.active{background:linear-gradient(90deg,#ff2d55,#00e5ff);color:#fff}
-.feed{max-width:480px;margin:0 auto}
-.video-card{position:relative;background:#111;margin-bottom:12px;border-radius:12px;overflow:hidden}
-.video-card video{width:100%;display:block;max-height:75vh;object-fit:cover;background:#000}
-.video-card img.cover{width:100%;display:block;max-height:75vh;object-fit:cover}
-.side-actions{position:absolute;right:10px;bottom:120px;display:flex;flex-direction:column;gap:14px;align-items:center;z-index:5}
-.side-actions button{background:rgba(0,0,0,.5);border:none;color:#fff;width:44px;height:44px;border-radius:50%;font-size:18px;cursor:pointer}
-.side-actions span{font-size:11px;margin-top:-10px}
-.user-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #ff2d55;background:#333}
-.info{position:absolute;left:10px;bottom:10px;right:70px;z-index:5;text-shadow:0 1px 4px #000}
-.info b{font-size:14px}
-.info p{font-size:13px;line-height:1.4;margin-top:4px;color:#eee}
-.hashtags{color:#00e5ff;font-size:12px}
-.row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.row button{background:#222;border:none;color:#fff;padding:6px 10px;border-radius:15px;font-size:11px;cursor:pointer}
-.row button.red{background:#ff2d55}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#000;border-top:1px solid #222;display:flex;justify-content:space-around;padding:8px 0 12px;z-index:30}
-.bottom-nav div{text-align:center;font-size:11px;cursor:pointer;color:#aaa}
-.bottom-nav div.active{color:#fff}
-.bottom-nav .plus{background:#fff;color:#000;width:42px;height:26px;border-radius:8px;font-size:20px;line-height:26px;margin:0 auto}
-.page{display:none;max-width:480px;margin:0 auto;padding:16px}
+.search{flex:1;background:#222;border-radius:20px;padding:8px 12px;color:#fff;border:none;outline:none}
+.topTabs{display:flex;gap:6px;justify-content:center;padding:48px 10px 6px;background:#000;position:fixed;top:0;left:0;right:0;z-index:90}
+.topTabs button{flex:1;padding:9px;border-radius:20px;background:#222;color:#fff;font-weight:700}
+.topTabs button.active{background:linear-gradient(90deg,#ff2d55,#00e5ff)}
+.page{display:none;height:100dvh;padding-top:88px;padding-bottom:68px;overflow:hidden}
 .page.active{display:block}
-.me-top{text-align:center;padding:20px 0}
-.me-avatar-wrap{position:relative;width:110px;height:110px;margin:0 auto}
-.me-avatar-wrap img{width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid #ff2d55;background:#333}
-.me-avatar-wrap label{position:absolute;bottom:0;right:0;background:#ff2d55;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
-.me-top h2{margin-top:10px}
-.me-top p{color:#aaa;font-size:13px}
-.stats{display:flex;justify-content:space-around;background:#111;padding:14px;border-radius:12px;margin:14px 0}
-.stats b{display:block;font-size:16px}
-.stats span{font-size:12px;color:#aaa}
-.btn{width:100%;padding:12px;background:#ff2d55;border:none;color:#fff;border-radius:10px;font-weight:700;margin-top:10px;cursor:pointer}
-.btn.blue{background:#00c2ff}
-.grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:12px}
-.grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#222}
-input[type=file]{display:none}
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:8px 16px;border-radius:20px;font-size:13px;display:none;z-index:99}
+#homePage{padding-top:88px}
+.feed{height:calc(100dvh - 156px);overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
+.feed::-webkit-scrollbar{display:none}
+.video-card{height:calc(100dvh - 156px);scroll-snap-align:start;position:relative;background:#111;overflow:hidden;flex-shrink:0}
+.video-card img,.video-card video{width:100%;height:100%;object-fit:cover;display:block}
+.v-gradient{position:absolute;inset:0;background:linear-gradient(transparent 55%,rgba(0,0,0,.9))}
+.rightBar{position:absolute;right:8px;bottom:110px;display:flex;flex-direction:column;gap:14px;align-items:center;z-index:5}
+.rbtn{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid #444;color:#fff}
+.rbtn.liked{background:#ff2d55}
+.rbtn small{display:block;font-size:11px;text-align:center}
+.dpSmall{width:48px;height:48px;border-radius:50%;border:2px solid #ff2d55;object-fit:cover}
+.v-info{position:absolute;left:10px;bottom:70px;right:70px;z-index:5}
+.v-user{display:flex;align-items:center;gap:8px}
+.v-user img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #fff}
+.followBtn{background:#ff2d55;color:#fff;padding:5px 10px;border-radius:15px;font-weight:700;font-size:12px}
+.caption{margin:8px 0;font-size:14px;line-height:1.4}
+.tags{color:#00e5ff;font-size:13px}
+.v-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.v-actions button{padding:6px 10px;border-radius:15px;background:#222;color:#fff;font-size:12px}
+.playBtn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;background:rgba(0,0,0,.6);font-size:32px;color:#fff;z-index:4}
+.filterBar{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:6px;z-index:6;overflow-x:auto}
+.filterBar button{white-space:nowrap;padding:6px 12px;border-radius:15px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;border:1px solid #555}
+.filterBar button.on{background:#ff2d55}
+.bottomNav{position:fixed;bottom:0;left:0;right:0;height:62px;background:#000;border-top:1px solid #222;display:flex;justify-content:space-around;align-items:center;z-index:200;padding-bottom:4px}
+.bottomNav button{background:none;color:#999;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bottomNav button.active{color:#fff}
+.bottomNav .plus{width:48px;height:32px;background:#fff;color:#000;border-radius:8px;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.card{background:#111;border-radius:14px;padding:14px;margin:10px}
+.card h3{margin-bottom:8px}
+input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#fff;padding:11px;border-radius:10px;margin:6px 0;outline:none}
+.btn{width:100%;padding:12px;border-radius:12px;font-weight:800;margin-top:8px}
+.btn-pink{background:#ff2d55;color:#fff}.btn-blue{background:#00e5ff;color:#000}.btn-dark{background:#222;color:#fff}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.grid3 img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px}
+.profileTop{text-align:center;padding:14px}
+.profileTop img{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #ff2d55}
+.stats{display:flex;justify-content:space-around;background:#111;border-radius:12px;padding:12px;margin:10px;text-align:center}
+.stats b{font-size:17px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.modal.open{display:flex}
+.sheet{background:#151515;width:100%;max-height:85dvh;border-radius:20px 20px 0 0;padding:16px;overflow-y:auto}
+.shareRow{display:flex;gap:12px;overflow-x:auto;padding:10px 0}
+.shareItem{min-width:62px;text-align:center;font-size:11px}
+.shareItem div{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 4px}
+.cmt{padding:10px;background:#222;border-radius:10px;margin:6px 0}
+.battleBox{display:flex;gap:8px}
+.battleBox div{flex:1;text-align:center;background:#222;border-radius:12px;padding:12px}
+.liveBadge{background:red;color:#fff;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:800}
+.scrollPage{height:100%;overflow-y:auto;padding-bottom:20px}
+.chip{display:inline-block;background:#222;padding:6px 12px;border-radius:15px;margin:3px;font-size:12px}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">VIBRA</div>
-  <div class="search">Search...</div>
-  <div>✅</div>
-</header>
+<div class="topbar"><div class="logo">VIBRA<span>•</span></div><input class="search" id="searchInput" placeholder="Search... video, mtu, hashtag" oninput="searchVideos(this.value)"><span style="font-size:22px" onclick="openSheet('settingsSheet')">⚙️</span></div>
+<div class="topTabs"><button class="active" onclick="switchTop(this,'For You')">For You</button><button onclick="switchTop(this,'Following')">Following</button><button onclick="showPage('livePage',this)">🔴 LIVE</button></div>
 
-<div class="tabs">
-  <div class="tab active" onclick="showTab(this,'foryou')">For You</div>
-  <div class="tab" onclick="showTab(this,'following')">Following</div>
-  <div class="tab" onclick="showTab(this,'live')">LIVE</div>
+<!-- HOME -->
+<div id="homePage" class="page active"><div class="feed" id="feed"></div></div>
+
+<!-- DISCOVER -->
+<div id="discoverPage" class="page"><div class="scrollPage"><div class="card"><h3>🔥 Trending Hashtags</h3><div id="trends"></div></div><div class="card"><h3>Discover Videos</h3><div class="grid3" id="discoverGrid"></div></div></div></div>
+
+<!-- LIVE -->
+<div id="livePage" class="page"><div class="scrollPage">
+<div class="card"><span class="liveBadge">● LIVE</span><h3 style="margin-top:8px">Live Sasa - @Mr Vibra</h3><img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800" style="width:100%;border-radius:12px;height:220px;object-fit:cover"><p style="margin:8px 0">Karibu Live! Tag video, tuma zawadi, shindana Battle!</p>
+<input id="tagInput" placeholder="Tag video: e.g #Mombasa #Comedy"><button class="btn btn-pink" onclick="tagVideo()">🏷️ Tag Video Hii Live</button><p id="tagResult" style="font-size:13px;color:#00e5ff;margin-top:6px"></p></div>
+<div class="card"><h3>⚔️ LIVE BATTLE</h3><div class="battleBox"><div><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200" style="width:60px;height:60px;border-radius:50%;object-fit:cover"><p>@Mr Vibra</p><h2 id="scoreA">1250</h2><button class="btn btn-pink" onclick="voteBattle('A')">Vote Mr Vibra ❤️</button></div><div><p style="font-size:28px">VS</p><p id="battleTimer">02:00</p></div><div><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200" style="width:60px;height:60px;border-radius:50%;object-fit:cover"><p>@Zawadi</p><h2 id="scoreB">980</h2><button class="btn btn-blue" onclick="voteBattle('B')">Vote Zawadi 💙</button></div></div></div>
+<div class="card"><h3>🎁 Tuma Zawadi</h3><div style="display:flex;gap:8px"><button class="btn btn-dark" onclick="sendGift('🌹 Rose')">🌹 Rose</button><button class="btn btn-dark" onclick="sendGift('🦁 Simba')">🦁 Simba</button><button class="btn btn-dark" onclick="sendGift('💎 Diamond')">💎 Diamond</button></div><p id="giftMsg"></p></div>
+</div></div>
+
+<!-- INBOX -->
+<div id="inboxPage" class="page"><div class="scrollPage"><div class="card"><h3>📩 Inbox</h3><div class="cmt"><b>@Zawadi</b><p>Nimeipenda video yako ya Mombasa! 🔥</p></div><div class="cmt"><b>@System</b><p>Hongera! Video yako imefikisha 1.2K likes.</p></div></div><div class="card"><h3>💬 Chat</h3><input id="chatInput" placeholder="Andika ujumbe..."><button class="btn btn-blue" onclick="sendChat()">Tuma</button><div id="chatBox"></div></div></div></div>
+
+<!-- ME / PROFILE -->
+<div id="mePage" class="page"><div class="scrollPage">
+<div class="profileTop"><img id="myDP" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300"><h2>@Mr Vibra</h2><p>Vibra Creator • Tanzania 🇹🇿</p><button class="btn btn-pink" onclick="document.getElementById('dpFile').click()">Badilisha DP</button><input type="file" id="dpFile" hidden accept="image/*" onchange="changeDP(event)"><button class="btn btn-blue" onclick="saveProfile()">Save Profile</button></div>
+<div class="stats"><div><b id="statFollowing">12</b><br><small>Following</small></div><div><b id="statFollowers">1.2K</b><br><small>Followers</small></div><div><b id="statLikes">45</b><br><small>Likes</small></div></div>
+<div class="card"><h3>🎨 Creator Marketplace</h3><p>Biashara zinaweza kukutafuta kwa matangazo. Weka bei yako:</p><input id="creatorPrice" placeholder="Bei kwa matangazo: e.g 50,000 TZS"><button class="btn btn-pink" onclick="saveCreator()">Weka Kwenye Marketplace</button><div id="marketList"></div></div>
+<div class="card"><h3>Videos Zangu</h3><div class="grid3" id="myGrid"></div><p style="font-size:12px;color:#aaa;margin-top:8px">DP yako ikibadilika hapa, itabadilika pia kwenye Feed automatically.</p></div>
+</div></div>
+
+<!-- RECORD -->
+<div id="recordPage" class="page"><div class="scrollPage"><div class="card"><h3>🎬 Record / Upload</h3><video id="preview" style="width:100%;border-radius:12px;background:#000;height:300px" playsinline muted></video><div class="filterBar" style="position:static;margin:10px 0"><button onclick="applyFilter('none',this)" class="on">Normal</button><button onclick="applyFilter('grayscale(1)',this)">B&W</button><button onclick="applyFilter('sepia(1)',this)">Sepia</button><button onclick="applyFilter('contrast(1.4) saturate(1.6)',this)">Vivid</button><button onclick="applyFilter('blur(1px) brightness(1.2)',this)">Glow</button><button onclick="applyFilter('hue-rotate(90deg)',this)">Neon</button></div><input id="newCaption" placeholder="Andika caption..."><input id="newTags" placeholder="#Hashtags"><button class="btn btn-pink" onclick="startCamera()">📷 Fungua Kamera</button><button class="btn btn-blue" onclick="publishVideo()">🚀 Post Video</button><p style="font-size:12px;color:#aaa">Kamera itaomba ruhusa. Ukishapost, video inaenda Feed na Me.</p></div></div></div>
+
+<div class="bottomNav">
+<button class="active" onclick="showPage('homePage',this)">🏠<span>Home</span></button>
+<button onclick="showPage('discoverPage',this)">🔍<span>Discover</span></button>
+<button onclick="showPage('recordPage',this)"><span class="plus">+</span></button>
+<button onclick="showPage('livePage',this)">✨<span>LIVE</span></button>
+<button onclick="showPage('inboxPage',this)">💬<span>Inbox</span></button>
+<button onclick="showPage('mePage',this)">👤<span>Me</span></button>
 </div>
 
-<!-- HOME / FEED -->
-<div id="homePage">
-  <div class="feed" id="feed"></div>
-</div>
+<!-- COMMENTS SHEET -->
+<div class="modal" id="commentModal"><div class="sheet"><div style="display:flex;justify-content:space-between"><h3>💬 Comments</h3><button onclick="closeModal('commentModal')" style="background:none;color:#fff;font-size:20px">✕</button></div><div id="commentList"></div><div style="display:flex;gap:8px;margin-top:10px"><input id="commentInput" placeholder="Andika comment..."><button onclick="addComment()" style="background:#ff2d55;color:#fff;padding:10px 16px;border-radius:10px">Tuma</button></div></div></div>
 
-<!-- ME PAGE -->
-<div id="mePage" class="page">
-  <div class="me-top">
-    <div class="me-avatar-wrap">
-      <img id="meAvatar" class="user-avatar" src="https://i.pravatar.cc/300?img=12" alt="profile">
-      <label for="dpInput">📷</label>
-      <input type="file" id="dpInput" accept="image/*">
-    </div>
-    <h2 id="meName">@Mr Vibra</h2>
-    <p>Vibra Creator • Tanzania 🇹🇿</p>
-    <button class="btn" onclick="document.getElementById('dpInput').click()">Badilisha DP</button>
-    <button class="btn blue" onclick="showToast('Profile imesave!')">Save Profile</button>
-  </div>
-  <div class="stats">
-    <div><b>12</b><span>Following</span></div>
-    <div><b>1.2K</b><span>Followers</span></div>
-    <div><b>45</b><span>Likes</span></div>
-  </div>
-  <h3>Videos Zangu</h3>
-  <div class="grid" id="myGrid"></div>
-  <p style="color:#aaa;font-size:12px;margin-top:14px;text-align:center">DP yako ikibadilika hapa, itabadilika pia kwenye Feed automatically.</p>
-</div>
+<!-- SHARE SHEET -->
+<div class="modal" id="shareModal"><div class="sheet"><h3>Share Video</h3><div class="shareRow">
+<div class="shareItem" onclick="shareTo('whatsapp')"><div style="background:#25D366">💬</div>WhatsApp</div>
+<div class="shareItem" onclick="shareTo('facebook')"><div style="background:#1877F2">f</div>Facebook</div>
+<div class="shareItem" onclick="shareTo('instagram')"><div style="background:#E1306C">📸</div>Instagram</div>
+<div class="shareItem" onclick="shareTo('telegram')"><div style="background:#0088cc">✈️</div>Telegram</div>
+<div class="shareItem" onclick="shareTo('capcut')"><div style="background:#000;border:1px solid #fff">✂️</div>CapCut</div>
+<div class="shareItem" onclick="shareTo('chatgpt')"><div style="background:#10a37f">🤖</div>ChatGPT</div>
+<div class="shareItem" onclick="copyLink()"><div style="background:#333">🔗</div>Copy Link</div>
+</div><button class="btn btn-dark" onclick="closeModal('shareModal')">Funga</button></div></div>
 
-<!-- BOTTOM NAV -->
-<div class="bottom-nav">
-  <div class="active" onclick="goHome(this)">🏠<br>Home</div>
-  <div onclick="showToast('Discover bado inaandaliwa')">🔍<br>Discover</div>
-  <div onclick="showToast('Upload - chagua video')"><div class="plus">+</div></div>
-  <div onclick="showToast('VIBRA AI ✨')">✨<br>VIBRA AI</div>
-  <div onclick="showToast('Huna message mpya')">💬<br>Inbox</div>
-  <div onclick="goMe(this)">👤<br>Me</div>
-</div>
-
-<div class="toast" id="toast"></div>
+<!-- SETTINGS -->
+<div class="modal" id="settingsSheet"><div class="sheet"><h3>⚙️ Settings kama TikTok</h3>
+<p>Account</p><select><option>Public Account</option><option>Private Account</option></select>
+<p>Privacy</p><select><option>Everyone can comment</option><option>Friends only</option><option>Nobody</option></select>
+<p>Notifications</p><select><option>On - Likes, Comments, Follows</option><option>Off</option></select>
+<p>Language / Lugha</p><select><option>Kiswahili</option><option>English</option></select>
+<p>Data Saver</p><select><option>Off</option><option>On - Save Data</option></select>
+<button class="btn btn-pink" onclick="alert('Settings zimesave!');closeModal('settingsSheet')">Save Settings</button>
+<button class="btn btn-dark" onclick="closeModal('settingsSheet')">Funga</button></div></div>
 
 <script>
-const DEFAULT_DP = "https://i.pravatar.cc/300?img=12";
-const videos = [
-  {user:"@Mr Vibra", caption:"Kumwekea dawa ya macho, dawa yote inaingia nje ya macho 😂 Huyo demu ni fundi wa kuchekesha, sio wa dawa!", tags:"#Vibra #VibraKenya #Mombasa #Kenya #FunnyVideo #ViralVideo #ForYou #Comedy", video:"https://www.w3schools.com/html/mov_bbb.mp4", cover:"https://picsum.photos/600/800?random=1", likes:1},
-  {user:"@Mr Vibra", caption:"Mombasa vibes 🔥 #Trending #Vibra254", tags:"#Vibra #Mombasa #Trending", video:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", cover:"https://picsum.photos/600/800?random=2", likes:12},
-  {user:"@Mr Vibra", caption:"Usiku wa Mombasa ni moto! 🌙", tags:"#Vibra #Night #Kenya", video:"https://www.w3schools.com/html/movie.mp4", cover:"https://picsum.photos/600/800?random=3", likes:8},
+let DP = localStorage.getItem('vibra_dp') || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300";
+document.getElementById('myDP').src = DP;
+let videos = JSON.parse(localStorage.getItem('vibra_videos') || 'null') || [
+{id:1,user:"@Mr Vibra",img:"https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800",caption:"Kumwekea dawa ya macho, dawa yote inaingia nje ya macho 😂 Huyo demu ni fundi wa kuchekesha, sio wa dawa!",tags:"#Vibra #VibraKenya #Mombasa #Kenya #FunnyVideo #ViralVideo #ForYou #Comedy",likes:1,comments:[{u:"@Zawadi",t:"Hahaha 😂😂"}],saved:false},
+{id:2,user:"@Mr Vibra",img:"https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800",caption:"Mombasa vibes 🔥",tags:"#Trending #Vibra254 #Vibra #Mombasa #Trending",likes:12,comments:[],saved:false},
+{id:3,user:"@Mr Vibra",img:"https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800",caption:"Asubuhi Mombasa 🌅",tags:"#Vibra #Nature #Mombasa",likes:45,comments:[],saved:false},
+{id:4,user:"@Zawadi",img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800",caption:"Dance challenge 💃",tags:"#Dance #Vibra",likes:89,comments:[],saved:false}
 ];
-
-function getDP(){ return localStorage.getItem('vibra_dp') || DEFAULT_DP; }
-
-function renderFeed(){
-  const dp = getDP();
-  const feed = document.getElementById('feed');
-  feed.innerHTML = videos.map((v,i)=>`
-    <div class="video-card">
-      <video src="${v.video}" poster="${v.cover}" controls playsinline loop></video>
-      <div class="side-actions">
-        <img class="user-avatar feed-avatar" src="${dp}" alt="profile">
-        <button onclick="like(this)">❤️</button><span>${v.likes}</span>
-        <button>💬</button><span>0</span>
-        <button>↗️</button><span>Share</span>
-        <button>⬇️</button>
-      </div>
-      <div class="info">
-        <b>${v.user}</b> <span style="background:#ff2d55;padding:3px 8px;border-radius:10px;font-size:11px">Follow</span>
-        <p>${v.caption}</p>
-        <div class="hashtags">${v.tags}</div>
-        <div class="row"><button class="red">Edit Caption</button><button>Delete Video</button><button>Save Offline</button><button>Media Player</button></div>
-        <div class="row"><button>Prev</button><button>Next</button></div>
-      </div>
-    </div>
-  `).join('');
-  // My grid pia itumie DP
-  document.getElementById('myGrid').innerHTML = videos.map(v=>`<img src="${v.cover}">`).join('');
+let currentVideoId = 1;
+let currentFilter = 'none';
+function save(){localStorage.setItem('vibra_videos',JSON.stringify(videos)); localStorage.setItem('vibra_dp',DP);}
+function render(){
+ let feed=document.getElementById('feed'); feed.innerHTML='';
+ videos.forEach(v=>{
+  let div=document.createElement('div'); div.className='video-card';
+  div.innerHTML=`<img src="${v.img}" style="filter:${currentFilter}"><div class="v-gradient"></div>
+  <div class="filterBar"><button class="${currentFilter=='none'?'on':''}" onclick="setGlobalFilter('none')">Normal</button><button onclick="setGlobalFilter('grayscale(1)')">B&W</button><button onclick="setGlobalFilter('sepia(1)')">Sepia</button><button onclick="setGlobalFilter('contrast(1.4) saturate(1.6)')">Vivid</button></div>
+  <button class="playBtn" onclick="this.style.display='none'">▶</button>
+  <div class="rightBar"><img class="dpSmall" src="${v.user=='@Mr Vibra'?DP:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'}">
+  <div><button class="rbtn ${v.liked?'liked':''}" onclick="likeVideo(${v.id},this)">❤️</button><small>${v.likes}</small></div>
+  <div><button class="rbtn" onclick="openComments(${v.id})">💬</button><small>${v.comments.length}</small></div>
+  <div><button class="rbtn" onclick="openShare(${v.id})">↗️</button><small>Share</small></div>
+  <div><button class="rbtn" onclick="saveVideo(${v.id},this)">${v.saved?'⭐':'⬇️'}</button><small>Save</small></div>
+  <div><button class="rbtn" onclick="showPage('livePage')">🔴</button><small>Live</small></div></div>
+  <div class="v-info"><div class="v-user"><img src="${v.user=='@Mr Vibra'?DP:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'}"><b>${v.user}</b><button class="followBtn">Follow</button></div><p class="caption">${v.caption}</p><p class="tags">${v.tags}</p><div class="v-actions"><button onclick="openComments(${v.id})">Edit Caption</button><button onclick="deleteVideo(${v.id})">Delete Video</button><button onclick="saveVideo(${v.id},this)">Save Offline</button><button onclick="showPage('livePage')">Media Player</button></div></div>`;
+  feed.appendChild(div);
+ });
+ document.getElementById('myGrid').innerHTML=videos.filter(v=>v.user=='@Mr Vibra').map(v=>`<img src="${v.img}" onclick="openComments(${v.id})">`).join('');
+ document.getElementById('discoverGrid').innerHTML=videos.map(v=>`<img src="${v.img}" onclick="openComments(${v.id})">`).join('');
+ document.getElementById('trends').innerHTML=['#Vibra','#Mombasa','#Trending','#ForYou','#Comedy','#Dance'].map(t=>`<span class="chip">${t}</span>`).join('');
+ let total=videos.reduce((a,v)=>a+v.likes,0); document.getElementById('statLikes').innerText=total;
 }
-
-function syncDP(){
-  const dp = getDP();
-  document.getElementById('meAvatar').src = dp;
-  document.querySelectorAll('.feed-avatar').forEach(img=> img.src = dp);
-}
-
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.style.display='block';
-  setTimeout(()=> t.style.display='none',2000);
-}
-function like(btn){
-  let s = btn.nextElementSibling;
-  s.textContent = parseInt(s.textContent)+1;
-  btn.style.background='#ff2d55';
-}
-function showTab(el,tab){ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); showToast(tab==='foryou'?'For You':tab); }
-function goHome(el){
-  document.getElementById('homePage').style.display='block';
-  document.getElementById('mePage').classList.remove('active');
-  document.querySelectorAll('.bottom-nav div').forEach(d=>d.classList.remove('active')); el.classList.add('active');
-}
-function goMe(el){
-  document.getElementById('homePage').style.display='none';
-  document.getElementById('mePage').classList.add('active');
-  document.querySelectorAll('.bottom-nav div').forEach(d=>d.classList.remove('active')); el.classList.add('active');
-  syncDP();
-}
-
-// HAPA NDIPO DP INA-SAVE - mara moja inakwenda kote
-document.getElementById('dpInput').addEventListener('change', function(e){
-  if(!e.target.files[0]) return;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    localStorage.setItem('vibra_dp', ev.target.result);
-    localStorage.setItem('profilePic', ev.target.result);
-    renderFeed();
-    syncDP();
-    showToast('DP imebadilika kote! ✅ Me + Feed');
-  };
-  reader.readAsDataURL(e.target.files[0]);
-});
-
-renderFeed();
-syncDP();
+function likeVideo(id,btn){let v=videos.find(x=>x.id==id); if(v.liked){v.likes--; v.liked=false;} else {v.likes++; v.liked=true; btn.style.transform='scale(1.3)'; setTimeout(()=>btn.style.transform='scale(1)',200);} save(); render();}
+function openComments(id){currentVideoId=id; document.getElementById('commentModal').classList.add('open'); let v=videos.find(x=>x.id==id); document.getElementById('commentList').innerHTML=v.comments.map(c=>`<div class="cmt"><b>${c.u}</b><p>${c.t}</p></div>`).join('') || '<p>Hakuna comments bado. Kuwa wa kwanza!</p>';}
+function addComment(){let t=document.getElementById('commentInput').value; if(!t) return; let v=videos.find(x=>x.id==currentVideoId); v.comments.push({u:"@Mr Vibra",t}); document.getElementById('commentInput').value=''; save(); openComments(currentVideoId); render();}
+function openShare(id){currentVideoId=id; document.getElementById('shareModal').classList.add('open');}
+function shareTo(app){let link='https://hamadoski36-source.github.io/vibra-vertical-video/'; let text=encodeURIComponent('Angalia video hii Vibra! 🔥 '+link); let urls={whatsapp:`https://wa.me/?text=${text}`,facebook:`https://www.facebook.com/sharer/sharer.php?u=${link}`,instagram:`https://www.instagram.com/`,telegram:`https://t.me/share/url?url=${link}&text=${text}`,capcut:`https://www.capcut.com/`,chatgpt:`https://chatgpt.com/`}; window.open(urls[app],'_blank'); alert('Inashare kwenda '+app+' ✅');}
+function copyLink(){navigator.clipboard.writeText('https://hamadoski36-source.github.io/vibra-vertical-video/'); alert('Link imenakiliwa!');}
+function saveVideo(id,btn){let v=videos.find(x=>x.id==id); v.saved=!v.saved; alert(v.saved?'Video imesave offline ✅':'Save imetolewa'); save(); render();}
+function deleteVideo(id){if(confirm('Futa video hii?')){videos=videos.filter(v=>v.id!=id); save(); render();}}
+function showPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.bottomNav button').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); window.scrollTo(0,0);}
+function switchTop(btn,label){document.querySelectorAll('.topTabs button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); showPage('homePage'); if(label=='Following') alert('Unaonyesha Following pekee');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openSheet(id){document.getElementById(id).classList.add('open');}
+function changeDP(e){let f=e.target.files[0]; let r=new FileReader(); r.onload=()=>{DP=r.result; document.getElementById('myDP').src=DP; save(); render(); alert('DP imebadilika kote - Feed na Me ✅');}; r.readAsDataURL(f);}
+function saveProfile(){alert('Profile imesave ✅');}
+function saveCreator(){let p=document.getElementById('creatorPrice').value; if(!p) return alert('Weka bei'); document.getElementById('marketList').innerHTML=`<div class="cmt"><b>@Mr Vibra - ${p}</b><p>✅ Uko kwenye Creator Marketplace. Biashara zinaweza kukutafuta.</p></div>`; alert('Umeingia Marketplace ✅');}
+function tagVideo(){let t=document.getElementById('tagInput').value; document.getElementById('tagResult').innerText=t?`✅ Video imetag: ${t} - Watu wanaweza kuiona Live sasa`:'Andika tag kwanza';}
+function voteBattle(who){if(who=='A'){let el=document.getElementById('scoreA'); el.innerText=parseInt(el.innerText)+10;}else{let el=document.getElementById('scoreB'); el.innerText=parseInt(el.innerText)+10;}}
+function sendGift(g){document.getElementById('giftMsg').innerText=`Umetuma ${g} 🎁 Asante!`; }
+function sendChat(){let t=document.getElementById('chatInput').value; if(!t) return; document.getElementById('chatBox').innerHTML+=`<div class="cmt"><b>Wewe</b><p>${t}</p></div>`; document.getElementById('chatInput').value='';}
+function searchVideos(q){if(!q) {render(); return;} let f=videos.filter(v=> (v.caption+v.tags+v.user).toLowerCase().includes(q.toLowerCase())); let feed=document.getElementById('feed'); feed.innerHTML=f.length? '':'<p style="padding:20px">Hakuna matokeo</p>'; /* render filtered simplified */ if(f.length){ feed.innerHTML=''; f.forEach(v=>{let d=document.createElement('div'); d.className='video-card'; d.innerHTML=`<img src="${v.img}"><div class="v-info"><b>${v.user}</b><p>${v.caption}</p></div>`; feed.appendChild(d);});}}
+function setGlobalFilter(f){currentFilter=f; render();}
+function applyFilter(f,btn){currentFilter=f; document.getElementById('preview').style.filter=f; document.querySelectorAll('#recordPage .filterBar button').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); render();}
+async function startCamera(){try{let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('preview').srcObject=s; document.getElementById('preview').play();}catch(e){alert('Ruhusa ya kamera inahitajika. Tumia Upload badala yake.');}}
+function publishVideo(){let cap=document.getElementById('newCaption').value||'Video mpya Vibra 🔥'; let tags=document.getElementById('newTags').value||'#Vibra #ForYou'; let imgs=["https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800","https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800","https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800"]; videos.unshift({id:Date.now(),user:"@Mr Vibra",img:imgs[Math.floor(Math.random()*imgs.length)],caption:cap,tags:tags,likes:0,comments:[],saved:false}); save(); render(); showPage('homePage'); alert('Video imepost ✅ Iko Feed na Me');}
+// Battle timer
+let secs=120; setInterval(()=>{secs--; if(secs<0) secs=120; let m=String(Math.floor(secs/60)).padStart(2,'0'); let s=String(secs%60).padStart(2,'0'); let el=document.getElementById('battleTimer'); if(el) el.innerText=`${m}:${s}`;},1000);
+render();
 </script>
 </body>
 </html>
