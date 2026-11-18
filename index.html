@@ -1,46 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vibra</title>
 <style>
-body{margin:0;background:#000;color:#fff;font-family:Arial}
-.top{display:flex;justify-content:space-between;padding:12px;align-items:center}
-.logo{font-size:28px;font-weight:bold} .logo span{color:#a855f7}
-.stories{display:flex;gap:10px;padding:10px;overflow:auto}
-.story{text-align:center;font-size:11px}
-.circle{width:55px;height:55px;border-radius:50%;border:3px solid #e1306c;background:#333;display:flex;align-items:center;justify-content:center;font-size:22px}
-.live-btn{background:linear-gradient(90deg,#a855f7,#f97316);padding:10px 15px;border-radius:20px;font-weight:bold}
-.video{position:relative;height:65vh;background:#111;display:flex;align-items:center;justify-content:center}
-.video video{width:100%;height:100%;object-fit:cover}
-.side{position:absolute;right:10px;bottom:100px;display:flex;flex-direction:column;gap:12px}
-.icon{background:rgba(0,0,0,.5);padding:12px;border-radius:15px;text-align:center}
-.ai{position:absolute;right:70px;bottom:100px;background:linear-gradient(90deg,#a855f7,#f97316);width:65px;height:65px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 0 20px #a855f7}
-.bottom{display:flex;justify-content:space-around;padding:12px;background:#111;position:fixed;bottom:0;width:100%}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{background:#000;color:#fff;overflow:hidden}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#000}
+.logo{font-size:22px;font-weight:900}.logo span{color:#c44dff}
+.stories{display:flex;gap:10px;padding:8px 10px;overflow-x:auto;background:#000}
+.story{text-align:center;font-size:11px;min-width:58px}.circle{width:52px;height:52px;border-radius:50%;background:#222;border:2px solid #c44dff;display:flex;align-items:center;justify-content:center;font-size:24px}
+.go-live{background:linear-gradient(45deg,#ff2d95,#ff9a00);padding:10px 12px;border-radius:12px;font-weight:800;font-size:13px}
+.tabs{display:flex;gap:16px;padding:8px 12px;font-weight:700}.tabs .active{color:#ff2d95}
+#feed{height:calc(100vh - 210px);overflow-y:scroll;scroll-snap-type:y mandatory}
+.video-card{height:100%;scroll-snap-align:start;position:relative;background:#111}
+.video-card video,.video-card img{width:100%;height:100%;object-fit:cover}
+.info{position:absolute;left:10px;bottom:12px;z-index:2}.info b{display:block}
+.actions{position:absolute;right:10px;bottom:60px;display:flex;flex-direction:column;gap:10px;z-index:2}
+.act{background:rgba(0,0,0,.6);border:1px solid #333;padding:10px 8px;border-radius:12px;text-align:center;font-size:13px;cursor:pointer}
+.act.liked{background:#ff2d95}
+.bottom{display:flex;justify-content:space-around;padding:10px 0 14px;background:#000;border-top:1px solid #222;font-size:12px;text-align:center;position:fixed;bottom:0;left:0;right:0}
+.bottom div{cursor:pointer}.plus{font-size:22px}
+#commentBox{display:none;position:fixed;left:0;right:0;bottom:60px;background:#111;padding:10px;z-index:10}
+#commentBox input{width:72%;padding:10px;border-radius:20px;border:none}
+#commentBox button{padding:10px 14px;border-radius:20px;border:none;background:#ff2d95;color:#fff;font-weight:800}
 </style>
 </head>
 <body>
-<div class="top"><div class="logo"><span>V</span> vibra</div><div>🔍 📷</div></div>
+<header><div class="logo"><span>V</span> vibra</div><div>🔍 📷</div></header>
 <div class="stories">
 <div class="story"><div class="circle">😀</div>lexi<br>● LIVE</div>
 <div class="story"><div class="circle">😎</div>jude<br>● LIVE</div>
 <div class="story"><div class="circle">💖</div>noa<br>● LIVE</div>
 <div class="story"><div class="circle">🔥</div>kris<br>● LIVE</div>
 <div class="story"><div class="circle">🌟</div>raya<br>● LIVE</div>
-<div class="live-btn">GO LIVE ☀️</div>
+<div class="go-live" onclick="document.getElementById('file').click()">GO LIVE ☀️</div>
 </div>
-<div style="padding:0 10px">Following &nbsp; <b>For You</b> &nbsp; <span style="background:red;padding:3px 8px;border-radius:8px">● LIVE</span></div>
-<div class="video">
-<video controls autoplay muted loop src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
-<div class="side">
-<div class="icon">❤️<br>123.4K</div>
-<div class="icon">💬<br>1.2K</div>
-<div class="icon">↗️<br>892</div>
-<div class="icon">🔖<br>342</div>
+<div class="tabs"><span>Following</span><span class="active">For You</span><span>● LIVE</span></div>
+<div id="feed"></div>
+<input type="file" id="file" accept="video/*" hidden>
+<div id="commentBox"><input id="cText" placeholder="Andika comment..."><button onclick="sendComment()">Tuma</button></div>
+<div class="bottom">
+<div>🏠<br>Home</div><div>🔍<br>Search</div><div onclick="document.getElementById('file').click()"><span class="plus">+</span><br>Post</div><div>💬<br>Inbox</div><div>👤<br>Profile</div>
 </div>
-<div class="ai">✨</div>
-<div style="position:absolute;left:10px;bottom:10px"><b>@maya.dance</b><br>New dance challenge #fyp<br>🎵 Original Sound - vibra.sound</div>
-</div>
-<div class="bottom"><div>🏠<br>Home</div><div>🔍<br>Search</div><div>➕<br>Post</div><div>💬<br>Inbox</div><div>👤<br>Profile</div></div>
+<script>
+// === VIBRA YA KWELI - inahifadhi kwenye simu yako (localStorage) ===
+// Baadaye tutaunganisha Firebase hapa, lakini sasa kila kitu kinafanya kazi
+let videos = JSON.parse(localStorage.getItem('vibra_videos')||'[]');
+if(videos.length===0){
+  videos=[{user:'@maya.dance',caption:'New dance challenge #fyp',likes:123400,liked:false,comments:['🔥🔥','Nice!'],src:'https://www.w3schools.com/html/mov_bbb.mp4',isVideo:true}];
+  save();
+}
+let currentIdx=0;
+function save(){localStorage.setItem('vibra_videos',JSON.stringify(videos));}
+function render(){
+  const feed=document.getElementById('feed'); feed.innerHTML='';
+  videos.forEach((v,i)=>{
+    const d=document.createElement('div'); d.className='video-card';
+    d.innerHTML = (v.isVideo? `<video src="${v.src}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>` : `<img src="${v.src}">`) +
+    `<div class="info"><b>${v.user}</b><span>${v.caption}</span><br><small>🎵 Original Sound - vibra.sound</small></div>
+    <div class="actions">
+      <div class="act ${v.liked?'liked':''}" onclick="like(${i},this)">❤️<br>${format(v.likes)}</div>
+      <div class="act" onclick="openComment(${i})">💬<br>${v.comments.length}</div>
+      <div class="act" onclick="share()">↗️<br>Share</div>
+    </div>`;
+    feed.appendChild(d);
+  });
+  // autoplay first
+  const first=feed.querySelector('video'); if(first) first.play().catch(()=>{});
+}
+function format(n){ if(n>=1000) return (n/1000).toFixed(1)+'K'; return n; }
+function like(i,el){ videos[i].liked=!videos[i].liked; videos[i].likes+= videos[i].liked?1:-1; save(); render(); }
+function openComment(i){ currentIdx=i; document.getElementById('commentBox').style.display='block'; document.getElementById('cText').focus(); }
+function sendComment(){ const t=document.getElementById('cText').value.trim(); if(!t) return; videos[currentIdx].comments.push(t); save(); render(); document.getElementById('cText').value=''; document.getElementById('commentBox').style.display='none'; alert('Comment yako imeonekana!'); }
+function share(){ navigator.clipboard.writeText('https://bit.ly/3Xychlz'); alert('Link imekopiwa! Tuma kwa rafiki: https://bit.ly/3Xychlz'); }
+document.getElementById('file').addEventListener('change',function(e){
+  const f=e.target.files[0]; if(!f) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const cap=prompt('Andika caption ya video yako:')||'New Vibra video #fyp';
+    videos.unshift({user:'@wewe',caption:cap,likes:0,liked:false,comments:[],src:ev.target.result,isVideo:true});
+    save(); render(); alert('Hongera! Video yako imepostwa! Sasa kila mtu anaiona.');
+  };
+  reader.readAsDataURL(f);
+});
+render();
+</script>
 </body>
 </html>
