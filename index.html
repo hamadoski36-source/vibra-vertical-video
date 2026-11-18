@@ -1,192 +1,46 @@
 <!DOCTYPE html>
-<html lang="sw">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>VIBRA - Kama TikTok</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vibra</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:#000;color:#fff;font-family:Arial,sans-serif;overflow:hidden;height:100dvh}
-button{cursor:pointer;border:none;font-family:inherit}
-.topbar{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;gap:8px;padding:10px;background:linear-gradient(#000,transparent)}
-.logo{font-size:22px;font-weight:900;color:#ff2d55}.logo span{color:#00e5ff}
-.search{flex:1;background:#222;border-radius:20px;padding:8px 12px;color:#fff;border:none;outline:none}
-.topTabs{display:flex;gap:6px;padding:48px 10px 6px;background:#000;position:fixed;top:0;left:0;right:0;z-index:90}
-.topTabs button{flex:1;padding:9px;border-radius:20px;background:#222;color:#fff;font-weight:700}
-.topTabs button.active{background:linear-gradient(90deg,#ff2d55,#00e5ff)}
-.page{display:none;height:100dvh;padding-top:88px;padding-bottom:62px;overflow:hidden}
-.page.active{display:block}
-.feed{height:calc(100dvh - 150px);overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none}
-.feed::-webkit-scrollbar{display:none}
-.video-card{height:calc(100dvh - 150px);scroll-snap-align:start;position:relative;background:#111;overflow:hidden}
-.video-card .mainImg{width:100%;height:100%;object-fit:cover;display:block}
-.v-gradient{position:absolute;inset:0;background:linear-gradient(transparent 50%,rgba(0,0,0,.92));pointer-events:none}
-.bigHeart{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:90px;z-index:30;pointer-events:none;transition:.3s}
-.bigHeart.show{transform:translate(-50%,-50%) scale(1.3);opacity:0}
-.rightBar{position:absolute;right:10px;bottom:145px;display:flex;flex-direction:column;gap:12px;align-items:center;z-index:20}
-.rbtn{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid #444;color:#fff}
-.rbtn.liked{background:#ff2d55}
-.dpWrap{width:48px;height:48px;border-radius:50%;overflow:hidden;border:2px solid #ff2d55;background:#222;flex-shrink:0}
-.dpWrap img{width:100%;height:100%;object-fit:cover;display:block}
-.v-info{position:absolute;left:10px;bottom:65px;right:70px;z-index:5}
-.v-user{display:flex;align-items:center;gap:8px}
-.v-user .dpWrap{width:38px;height:38px;border-color:#fff}
-.followBtn{background:#ff2d55;color:#fff;padding:5px 10px;border-radius:15px;font-weight:700;font-size:12px}
-.caption{margin:8px 0;font-size:14px;line-height:1.4}
-.tags{color:#00e5ff;font-size:13px}
-.v-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.v-actions button{padding:6px 10px;border-radius:15px;background:#222;color:#fff;font-size:12px}
-.filterBar{position:absolute;top:10px;left:10px;right:10px;display:flex;gap:6px;z-index:6;overflow-x:auto}
-.filterBar button{white-space:nowrap;padding:6px 12px;border-radius:15px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;border:1px solid #555}
-.bottomNav{position:fixed;bottom:0;left:0;right:0;height:62px;background:#000;border-top:1px solid #222;display:flex;justify-content:space-around;align-items:center;z-index:200}
-.bottomNav button{background:none;color:#999;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
-.bottomNav button.active{color:#fff}
-.bottomNav .plus{width:48px;height:32px;background:#fff;color:#000;border-radius:8px;font-size:22px;font-weight:900;display:flex;align-items:center;justify-content:center}
-.card{background:#111;border-radius:14px;padding:14px;margin:10px}
-input,select,textarea{width:100%;background:#222;border:1px solid #333;color:#fff;padding:11px;border-radius:10px;margin:6px 0;outline:none}
-.btn{width:100%;padding:12px;border-radius:12px;font-weight:800;margin-top:8px}
-.btn-pink{background:#ff2d55;color:#fff}.btn-blue{background:#00e5ff;color:#000}.btn-dark{background:#222;color:#fff}.btn-green{background:#00c853;color:#fff}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.grid3 img{width:100%;aspect-ratio:9/16;object-fit:cover;border-radius:10px}
-.profileTop{text-align:center;padding:14px}
-.profileTop .dpBig{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #ff2d55;margin:0 auto;overflow:hidden}
-.profileTop .dpBig img{width:100%;height:100%;object-fit:cover}
-.stats{display:flex;justify-content:space-around;background:#111;border-radius:12px;padding:12px;margin:10px;text-align:center}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;display:none;align-items:flex-end;justify-content:center}
-.modal.open{display:flex}
-.sheet{background:#151515;width:100%;max-height:85dvh;border-radius:20px 20px 0 0;padding:16px;overflow-y:auto}
-.shareRow{display:flex;gap:12px;overflow-x:auto;padding:10px 0}
-.shareItem{min-width:62px;text-align:center;font-size:11px}
-.shareItem div{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 4px}
-.cmt{padding:10px;background:#222;border-radius:10px;margin:6px 0}
-.battleBox{display:flex;gap:8px}.battleBox div{flex:1;text-align:center;background:#222;border-radius:12px;padding:12px}
-.liveBadge{background:red;color:#fff;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:800}
-.scrollPage{height:100%;overflow-y:auto;padding-bottom:20px}
-.chip{display:inline-block;background:#222;padding:6px 12px;border-radius:15px;margin:3px;font-size:12px}
-.regionBar{display:flex;gap:6px;margin:0 10px 10px}.regionBar button{flex:1;padding:8px;border-radius:15px;background:#222;color:#fff}.regionBar button.active{background:#00e5ff;color:#000}
-.aiMsg{padding:10px;background:#222;border-radius:12px;margin:6px 0;max-width:85%}.aiMsg.me{margin-left:auto;background:#ff2d55}
-.privacyBox{background:#1a2a1a;border:1px solid #00c853;border-radius:12px;padding:12px;margin:10px}
-.switch{width:52px;height:28px;background:#333;border-radius:20px;position:relative;display:inline-block}
-.switch.on{background:#00c853}.switch:after{content:'';position:absolute;width:22px;height:22px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s}.switch.on:after{left:27px}
+body{margin:0;background:#000;color:#fff;font-family:Arial}
+.top{display:flex;justify-content:space-between;padding:12px;align-items:center}
+.logo{font-size:28px;font-weight:bold} .logo span{color:#a855f7}
+.stories{display:flex;gap:10px;padding:10px;overflow:auto}
+.story{text-align:center;font-size:11px}
+.circle{width:55px;height:55px;border-radius:50%;border:3px solid #e1306c;background:#333;display:flex;align-items:center;justify-content:center;font-size:22px}
+.live-btn{background:linear-gradient(90deg,#a855f7,#f97316);padding:10px 15px;border-radius:20px;font-weight:bold}
+.video{position:relative;height:65vh;background:#111;display:flex;align-items:center;justify-content:center}
+.video video{width:100%;height:100%;object-fit:cover}
+.side{position:absolute;right:10px;bottom:100px;display:flex;flex-direction:column;gap:12px}
+.icon{background:rgba(0,0,0,.5);padding:12px;border-radius:15px;text-align:center}
+.ai{position:absolute;right:70px;bottom:100px;background:linear-gradient(90deg,#a855f7,#f97316);width:65px;height:65px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;box-shadow:0 0 20px #a855f7}
+.bottom{display:flex;justify-content:space-around;padding:12px;background:#111;position:fixed;bottom:0;width:100%}
 </style>
 </head>
 <body>
-<div class="topbar"><div class="logo">VIBRA<span>•</span></div><input class="search" placeholder="Search..." oninput="searchVideos(this.value)"><span style="font-size:22px" onclick="openSheet('settingsSheet')">⚙️</span></div>
-<div class="topTabs"><button class="active" onclick="setRegion('Worldwide',this)">🌍 Worldwide</button><button onclick="setRegion('TZ',this)">🇹🇿 TZ</button><button onclick="switchTop(this)">Following</button><button onclick="showPage('livePage',this)">🔴 LIVE</button></div>
-
-<div id="homePage" class="page active"><div class="regionBar"><button class="active" onclick="setRegion('Worldwide',this)">🌍 Worldwide</button><button onclick="setRegion('TZ',this)">🇹🇿 Tanzania Tu</button></div><div class="feed" id="feed"></div></div>
-<div id="discoverPage" class="page"><div class="scrollPage"><div class="card"><h3>🔥 Trending <span id="trendLabel">Worldwide</span></h3><div id="trends"></div></div><div class="card"><h3>Discover</h3><div class="grid3" id="discoverGrid"></div></div></div></div>
-<div id="vibraAiPage" class="page"><div class="scrollPage"><div class="card"><h3>✨ VIBRA AI 🤖</h3><div id="aiChat"><div class="aiMsg">Mambo! Mimi ni Vibra AI. Niambie unataka idea gani? 😊</div></div><input id="aiInput" placeholder="Andika swali..."><button class="btn btn-pink" onclick="askAI()">Tuma kwa Vibra AI</button><div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-dark" onclick="quickAI('Nipe caption kali')">Caption</button><button class="btn btn-dark" onclick="quickAI('Nipe idea viral')">Idea Viral</button><button class="btn btn-dark" onclick="quickAI('Nipe hashtags')">Hashtags</button></div></div></div></div>
-<div id="livePage" class="page"><div class="scrollPage"><div class="card"><span class="liveBadge">● LIVE</span><h3>Live Sasa</h3><img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800" style="width:100%;border-radius:12px;height:220px;object-fit:cover"><input id="tagInput" placeholder="Tag video..."><button class="btn btn-pink" onclick="tagVideo()">🏷️ Tag Video</button><p id="tagResult"></p></div><div class="card"><h3>⚔️ BATTLE</h3><div class="battleBox"><div><p>@Mr Vibra</p><h2 id="scoreA">1250</h2><button class="btn btn-pink" onclick="voteBattle('A')">Vote ❤️</button></div><div><p>VS</p><p id="battleTimer">02:00</p></div><div><p>@Zawadi</p><h2 id="scoreB">980</h2><button class="btn btn-blue" onclick="voteBattle('B')">Vote 💙</button></div></div></div></div></div>
-<div id="inboxPage" class="page"><div class="scrollPage"><div id="inboxLock"></div><div class="card"><h3>📩 Inbox</h3><div id="inboxList"><div class="cmt"><b>@Zawadi</b><p>Nimeipenda video yako! 🔥</p><button style="background:#ff2d55;color:#fff;padding:5px 10px;border-radius:10px;margin-top:5px" onclick="blockUser('@Zawadi')">🚫 Block</button></div></div></div><div class="card"><h3>💬 Chat</h3><input id="chatInput" placeholder="Andika ujumbe..."><button class="btn btn-blue" onclick="sendChat()">Tuma</button><div id="chatBox"></div></div></div></div>
-<div id="mePage" class="page"><div class="scrollPage">
-<div class="profileTop"><div class="dpBig"><img id="myDP" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300"></div><h2>@Mr Vibra</h2><p id="profileRegion">Vibra Creator • 🌍 Worldwide</p><button class="btn btn-pink" onclick="document.getElementById('dpFile').click()">Badilisha DP</button><input type="file" id="dpFile" hidden accept="image/*" onchange="changeDP(event)"></div>
-<!-- USINISUMBUE MODE -->
-<div class="privacyBox"><h3>🛡️ USINISUMBUE MODE</h3><p style="font-size:13px;margin:6px 0">Ukiwasha hii, watu hawawezi kukutumia ujumbe, ku-comment, wala kukufollow bila ruhusa yako.</p><div style="display:flex;justify-content:space-between;align-items:center"><b id="dndLabel">ZIMA - Watu wanaweza kukusumbua</b><span class="switch" id="dndSwitch" onclick="toggleDND()"></span></div><button class="btn btn-green" onclick="toggleDND()">Washa Usinisumbue Sasa</button></div>
-<div class="privacyBox" style="background:#1a1a2a;border-color:#ff2d55"><h3>🔒 Private Account</h3><p style="font-size:13px">Video zako zionekane na followers wako tu.</p><div style="display:flex;justify-content:space-between;align-items:center"><b id="privLabel">Public - Wote wanaona</b><span class="switch" id="privSwitch" onclick="togglePrivate()"></span></div></div>
-<div class="stats"><div><b>12</b><br><small>Following</small></div><div><b>1.2K</b><br><small>Followers</small></div><div><b id="statLikes">45</b><br><small>Likes</small></div></div>
-<div class="card"><h3>💾 BACKUP - Video Zisifutike Tena</h3><p style="font-size:13px">Bonyeza Export kila baada ya kupost. Hata ukifuta history, unaweza kurudisha.</p><button class="btn btn-blue" onclick="exportBackup()">⬇️ Export Backup Yangu</button><button class="btn btn-dark" onclick="document.getElementById('importFile').click()">⬆️ Import Backup - Rudisha Video Zangu</button><input type="file" id="importFile" hidden accept=".json" onchange="importBackup(event)"><p id="backupMsg" style="font-size:12px;color:#00e5ff"></p></div>
-<div class="card"><h3>🚫 Watu Niliowablock</h3><div id="blockedList"><p style="font-size:13px">Hakuna mtu uliyemblock bado.</p></div></div>
-<div class="card"><h3>🎨 Creator Marketplace</h3><input id="creatorPrice" placeholder="Bei: e.g 50,000 TZS"><button class="btn btn-pink" onclick="saveCreator()">Weka Marketplace</button><div id="marketList"></div></div>
-<div class="card"><h3>Videos Zangu</h3><div class="grid3" id="myGrid"></div></div>
-</div></div>
-<div id="recordPage" class="page"><div class="scrollPage"><div class="card"><h3>🎬 Record / Upload</h3><video id="preview" style="width:100%;border-radius:12px;background:#000;height:300px" playsinline muted></video><div class="filterBar" style="position:static;margin:10px 0"><button onclick="applyFilter('none',this)" class="on">Normal</button><button onclick="applyFilter('grayscale(1)',this)">B&W</button><button onclick="applyFilter('sepia(1)',this)">Sepia</button><button onclick="applyFilter('contrast(1.4) saturate(1.6)',this)">Vivid</button></div><input id="newCaption" placeholder="Andika caption..."><input id="newTags" placeholder="#Hashtags"><button class="btn btn-pink" onclick="startCamera()">📷 Fungua Kamera</button><button class="btn btn-blue" onclick="publishVideo()">🚀 Post Video</button><p style="font-size:12px;color:#aaa;margin-top:8px">Baada ya kupost, nenda Me > Export Backup ili video isipotee.</p></div></div></div>
-
-<div class="bottomNav">
-<button class="active" onclick="showPage('homePage',this)">🏠<span>Home</span></button>
-<button onclick="showPage('discoverPage',this)">🔍<span>Discover</span></button>
-<button onclick="showPage('recordPage',this)"><span class="plus">+</span></button>
-<button onclick="showPage('vibraAiPage',this)">✨<span>VIBRA AI</span></button>
-<button onclick="showPage('inboxPage',this)">💬<span>Inbox</span></button>
-<button onclick="showPage('mePage',this)">👤<span>Me</span></button>
+<div class="top"><div class="logo"><span>V</span> vibra</div><div>🔍 📷</div></div>
+<div class="stories">
+<div class="story"><div class="circle">😀</div>lexi<br>● LIVE</div>
+<div class="story"><div class="circle">😎</div>jude<br>● LIVE</div>
+<div class="story"><div class="circle">💖</div>noa<br>● LIVE</div>
+<div class="story"><div class="circle">🔥</div>kris<br>● LIVE</div>
+<div class="story"><div class="circle">🌟</div>raya<br>● LIVE</div>
+<div class="live-btn">GO LIVE ☀️</div>
 </div>
-
-<div class="modal" id="commentModal"><div class="sheet"><div style="display:flex;justify-content:space-between"><h3>💬 Comments</h3><button onclick="closeModal('commentModal')" style="background:none;color:#fff;font-size:20px">✕</button></div><div id="commentList"></div><div style="display:flex;gap:8px;margin-top:10px"><input id="commentInput" placeholder="Andika comment..."><button onclick="addComment()" style="background:#ff2d55;color:#fff;padding:10px 16px;border-radius:10px">Tuma</button></div></div></div>
-<div class="modal" id="shareModal"><div class="sheet"><h3>Share</h3><div class="shareRow"><div class="shareItem" onclick="shareTo('whatsapp')"><div style="background:#25D366">💬</div>WhatsApp</div><div class="shareItem" onclick="shareTo('facebook')"><div style="background:#1877F2">f</div>Facebook</div><div class="shareItem" onclick="shareTo('instagram')"><div style="background:#E1306C">📸</div>Instagram</div><div class="shareItem" onclick="shareTo('telegram')"><div style="background:#0088cc">✈️</div>Telegram</div><div class="shareItem" onclick="copyLink()"><div style="background:#333">🔗</div>Copy Link</div></div><button class="btn btn-dark" onclick="closeModal('shareModal')">Funga</button></div></div>
-<div class="modal" id="settingsSheet"><div class="sheet"><h3>⚙️ Settings</h3><p>Usinisumbue</p><button class="btn btn-green" onclick="toggleDND();closeModal('settingsSheet')">Washa / Zima Usinisumbue</button><p>Private</p><button class="btn btn-dark" onclick="togglePrivate()">Badilisha Private/Public</button><button class="btn btn-dark" onclick="closeModal('settingsSheet')">Funga</button></div></div>
-
-<script>
-let DP = localStorage.getItem('vibra_dp') || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300";
-document.getElementById('myDP').src = DP;
-let region='Worldwide';
-let DND = localStorage.getItem('vibra_dnd')=='1';
-let isPrivate = localStorage.getItem('vibra_private')=='1';
-let blocked = JSON.parse(localStorage.getItem('vibra_blocked')||'[]');
-let savedVideos = localStorage.getItem('vibra_videos');
-let videos = savedVideos ? JSON.parse(savedVideos) : [
-{id:1,user:"@Mr Vibra",img:"https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800",caption:"Kumwekea dawa ya macho 😂 Huyo demu ni fundi wa kuchekesha!",tags:"#Vibra #Mombasa #Kenya #FunnyVideo #ForYou",likes:1,comments:[{u:"@Zawadi",t:"Hahaha 😂😂"}],saved:false,region:"TZ"},
-{id:2,user:"@Mr Vibra",img:"https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800",caption:"Mombasa vibes 🔥",tags:"#Trending #Vibra254 #Mombasa",likes:12,comments:[],saved:false,region:"TZ"},
-{id:3,user:"@GlobalStar",img:"https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800",caption:"Worldwide sunset 🌍",tags:"#Worldwide #Nature #Viral",likes:45,comments:[],saved:false,region:"Worldwide"},
-{id:4,user:"@Zawadi",img:"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800",caption:"Dance challenge 💃",tags:"#Dance #Worldwide",likes:89,comments:[],saved:false,region:"Worldwide"}
-];
-let currentVideoId=1, currentFilter='none';
-function save(){localStorage.setItem('vibra_videos',JSON.stringify(videos)); localStorage.setItem('vibra_dp',DP); localStorage.setItem('vibra_dnd',DND?'1':'0'); localStorage.setItem('vibra_private',isPrivate?'1':'0'); localStorage.setItem('vibra_blocked',JSON.stringify(blocked)); updatePrivacyUI();}
-function updatePrivacyUI(){
- let d=document.getElementById('dndSwitch'), l=document.getElementById('dndLabel');
- if(d){ d.className='switch '+(DND?'on':''); l.innerText=DND?'WASHWA ✅ - Hakuna mtu anakusumbua':'ZIMA - Watu wanaweza kukusumbua'; }
- let p=document.getElementById('privSwitch'), pl=document.getElementById('privLabel');
- if(p){ p.className='switch '+(isPrivate?'on':''); pl.innerText=isPrivate?'Private 🔒 - Followers tu':'Public - Wote wanaona'; }
- document.getElementById('inboxLock').innerHTML = DND ? '<div class="card" style="background:#1a2a1a;border:1px solid #00c853"><h3>🛡️ Usinisumbue IMEWASHWA</h3><p>Inbox imefungwa. Hakuna mtu anaweza kukutumia ujumbe sasa.</p></div>' : '';
- document.getElementById('blockedList').innerHTML = blocked.length? blocked.map(b=>`<div class="cmt"><b>${b}</b> <button onclick="unblockUser('${b}')" style="background:#222;color:#fff;padding:4px 10px;border-radius:10px">Unblock</button></div>`).join('') : '<p style="font-size:13px">Hakuna mtu uliyemblock.</p>';
-}
-function toggleDND(){ DND=!DND; save(); alert(DND?'✅ Usinisumbue IMEWASHWA! Hakuna mtu atakusumbua sasa.':'Usinisumbue imezimwa.'); }
-function togglePrivate(){ isPrivate=!isPrivate; save(); alert(isPrivate?'🔒 Sasa ni Private - followers tu wanaona video zako.':'🌍 Sasa ni Public - wote wanaona.'); }
-function blockUser(u){ if(!blocked.includes(u)){ blocked.push(u); save(); alert(u+' ameblockiwa 🚫 Hataweza kukusumbua tena.'); } }
-function unblockUser(u){ blocked=blocked.filter(x=>x!=u); save(); }
-function getFiltered(){ return region=='Worldwide'? videos : videos.filter(v=>v.region=='TZ'||v.user=='@Mr Vibra'); }
-function render(){
- let list=getFiltered(); let feed=document.getElementById('feed'); feed.innerHTML='';
- list.forEach(v=>{
-  let div=document.createElement('div'); div.className='video-card';
-  div.innerHTML=`<img class="mainImg" src="${v.img}" style="filter:${currentFilter}" ondblclick="doubleLike(${v.id},this)"><div class="v-gradient"></div><div class="bigHeart">❤️</div>
-  <div class="filterBar"><button onclick="setGlobalFilter('none')">Normal</button><button onclick="setGlobalFilter('grayscale(1)')">B&W</button><button onclick="setGlobalFilter('sepia(1)')">Sepia</button><button onclick="setGlobalFilter('contrast(1.4) saturate(1.6)')">Vivid</button></div>
-  <div class="rightBar"><div class="dpWrap"><img src="${v.user=='@Mr Vibra'?DP:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'}"></div>
-  <div><button class="rbtn ${v.liked?'liked':''}" onclick="likeVideo(${v.id},this)">❤️</button><small>${v.likes}</small></div>
-  <div><button class="rbtn" onclick="openComments(${v.id})">💬</button><small>${v.comments.length}</small></div>
-  <div><button class="rbtn" onclick="openShare(${v.id})">↗️</button><small>Share</small></div>
-  <div><button class="rbtn" onclick="saveVideo(${v.id})">${v.saved?'⭐':'⬇️'}</button><small>Save</small></div>
-  <div><button class="rbtn" onclick="blockUser('${v.user}')">🚫</button><small>Block</small></div></div>
-  <div class="v-info"><div class="v-user"><div class="dpWrap"><img src="${v.user=='@Mr Vibra'?DP:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100'}"></div><b>${v.user}</b><button class="followBtn" onclick="this.innerText='Following'">Follow</button></div><p class="caption">${v.caption}</p><p class="tags">${v.tags} • ${v.region=='TZ'?'🇹🇿 TZ':'🌍 Worldwide'}</p><div class="v-actions"><button onclick="openComments(${v.id})">Edit Caption</button><button onclick="deleteVideo(${v.id})">Delete</button><button onclick="saveVideo(${v.id})">Save Offline</button></div></div>`;
-  feed.appendChild(div);
- });
- document.getElementById('myGrid').innerHTML=videos.filter(v=>v.user=='@Mr Vibra').map(v=>`<img src="${v.img}" onclick="openComments(${v.id})">`).join('');
- document.getElementById('discoverGrid').innerHTML=getFiltered().map(v=>`<img src="${v.img}" onclick="openComments(${v.id})">`).join('');
- document.getElementById('trends').innerHTML=(region=='Worldwide'?['#VibraWorld','#Worldwide','#ForYou','#Viral']:['#Vibra','#Mombasa','#TZ']).map(t=>`<span class="chip">${t}</span>`).join('');
- document.getElementById('trendLabel').innerText=region;
- document.getElementById('profileRegion').innerText=region=='Worldwide'?'Vibra Creator • 🌍 Worldwide':'Vibra Creator • 🇹🇿 Tanzania';
- document.getElementById('statLikes').innerText=videos.reduce((a,v)=>a+v.likes,0);
- updatePrivacyUI();
-}
-function doubleLike(id,img){ let v=videos.find(x=>x.id==id); if(!v.liked){v.likes++; v.liked=true;} let h=img.parentElement.querySelector('.bigHeart'); h.classList.add('show'); setTimeout(()=>h.classList.remove('show'),500); save(); render(); }
-function likeVideo(id,btn){let v=videos.find(x=>x.id==id); if(v.liked){v.likes--; v.liked=false;}else{v.likes++; v.liked=true;} save(); render();}
-function openComments(id){ if(DND){ alert('🛡️ Usinisumbue imewashwa - Comments zimefungwa ili watu wasikusumbue.'); return; } currentVideoId=id; document.getElementById('commentModal').classList.add('open'); let v=videos.find(x=>x.id==id); document.getElementById('commentList').innerHTML=v.comments.map(c=>`<div class="cmt"><b>${c.u}</b><p>${c.t}</p><button onclick="blockUser('${c.u}')" style="background:#ff2d55;color:#fff;padding:4px 10px;border-radius:10px;margin-top:5px">🚫 Block ${c.u}</button></div>`).join('')||'<p>Hakuna comments.</p>'; }
-function addComment(){ if(DND){alert('Comments zimefungwa - Usinisumbue mode.'); return;} let t=document.getElementById('commentInput').value; if(!t) return; let v=videos.find(x=>x.id==currentVideoId); v.comments.push({u:"@Mr Vibra",t}); document.getElementById('commentInput').value=''; save(); openComments(currentVideoId); render(); }
-function openShare(id){currentVideoId=id; document.getElementById('shareModal').classList.add('open');}
-function shareTo(a){let l='https://hamadoski36-source.github.io/vibra-vertical-video/'; let t=encodeURIComponent('Angalia Vibra! 🔥 '+l); let u={whatsapp:`https://wa.me/?text=${t}`,facebook:`https://www.facebook.com/sharer/sharer.php?u=${l}`,instagram:`https://www.instagram.com/`,telegram:`https://t.me/share/url?url=${l}&text=${t}`}; window.open(u[a],'_blank');}
-function copyLink(){navigator.clipboard.writeText('https://hamadoski36-source.github.io/vibra-vertical-video/'); alert('Link imenakiliwa!');}
-function saveVideo(id){let v=videos.find(x=>x.id==id); v.saved=!v.saved; save(); render();}
-function deleteVideo(id){if(confirm('Futa video hii?')){videos=videos.filter(v=>v.id!=id); save(); render();}}
-function showPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.bottomNav button').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active');}
-function switchTop(btn){document.querySelectorAll('.topTabs button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); showPage('homePage');}
-function setRegion(r,btn){region=r; if(btn){document.querySelectorAll('.topTabs button').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.regionBar button').forEach(b=>b.classList.remove('active')); btn.classList.add('active');} showPage('homePage'); render();}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-function openSheet(id){document.getElementById(id).classList.add('open');}
-function changeDP(e){let f=e.target.files[0]; let r=new FileReader(); r.onload=()=>{DP=r.result; document.getElementById('myDP').src=DP; save(); render();}; r.readAsDataURL(f);}
-function exportBackup(){ let data=JSON.stringify({videos:videos,dp:DP,blocked:blocked,dnd:DND}); let blob=new Blob([data],{type:'application/json'}); let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='vibra-backup.json'; a.click(); document.getElementById('backupMsg').innerText='✅ Backup ime-download! Iweke mahali salama. Hata ukibadilisha simu, unaweza kuirudisha.'; }
-function importBackup(e){ let f=e.target.files[0]; let r=new FileReader(); r.onload=()=>{ try{ let d=JSON.parse(r.result); videos=d.videos; DP=d.dp||DP; blocked=d.blocked||[]; DND=d.dnd||false; document.getElementById('myDP').src=DP; save(); render(); alert('✅ Video zako ZIMERUDI! Zote ziko hapa sasa.'); }catch(err){alert('Backup si sahihi');} }; r.readAsText(f); }
-function saveCreator(){let p=document.getElementById('creatorPrice').value; if(!p) return alert('Weka bei'); document.getElementById('marketList').innerHTML=`<div class="cmt"><b>@Mr Vibra - ${p}</b><p>✅ Uko Marketplace.</p></div>`;}
-function tagVideo(){let t=document.getElementById('tagInput').value; document.getElementById('tagResult').innerText=t?`✅ ${t}`:'Andika tag';}
-function voteBattle(w){if(w=='A') document.getElementById('scoreA').innerText=parseInt(document.getElementById('scoreA').innerText)+10; else document.getElementById('scoreB').innerText=parseInt(document.getElementById('scoreB').innerText)+10;}
-function sendChat(){ if(DND){alert('🛡️ Usinisumbue imewashwa - Chat imefungwa.'); return;} let t=document.getElementById('chatInput').value; if(!t) return; document.getElementById('chatBox').innerHTML+=`<div class="cmt"><b>Wewe</b><p>${t}</p></div>`; document.getElementById('chatInput').value='';}
-function searchVideos(q){if(!q){render(); return;} let f=videos.filter(v=>(v.caption+v.tags+v.user).toLowerCase().includes(q.toLowerCase())); let feed=document.getElementById('feed'); feed.innerHTML=''; f.forEach(v=>{let d=document.createElement('div'); d.className='video-card'; d.innerHTML=`<img class="mainImg" src="${v.img}"><div class="v-info"><b>${v.user}</b><p>${v.caption}</p></div>`; feed.appendChild(d);});}
-function setGlobalFilter(f){currentFilter=f; render();}
-function applyFilter(f,btn){currentFilter=f; document.getElementById('preview').style.filter=f; document.querySelectorAll('#recordPage .filterBar button').forEach(b=>b.classList.remove('on')); btn.classList.add('on');}
-async function startCamera(){try{let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); document.getElementById('preview').srcObject=s; document.getElementById('preview').play();}catch(e){alert('Ruhusa ya kamera inahitajika.');}}
-function publishVideo(){let cap=document.getElementById('newCaption').value||'Video mpya Vibra 🔥'; let tags=document.getElementById('newTags').value||'#Vibra #ForYou'; let imgs=["https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800","https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800","https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800"]; videos.unshift({id:Date.now(),user:"@Mr Vibra",img:imgs[Math.floor(Math.random()*imgs.length)],caption:cap,tags:tags,likes:0,comments:[],saved:false,region:region}); save(); render(); showPage('homePage'); alert('✅ Video imepost! Nenda Me > Export Backup ili isipotee tena.');}
-function askAI(){let q=document.getElementById('aiInput').value; if(!q) return; addAIMsg(q,'me'); document.getElementById('aiInput').value=''; setTimeout(()=>addAIMsg("Idea kali 🔥: Tengeneza video ya '"+q+"' - Anza na hook sekunde 3, caption fupi, hashtag #Vibra #ForYou #Worldwide, post saa 12 jioni. Itaenda viral!",'ai'),600);}
-function quickAI(q){document.getElementById('aiInput').value=q; askAI();}
-function addAIMsg(t,w){let d=document.createElement('div'); d.className='aiMsg '+(w=='me'?'me':''); d.innerText=t; document.getElementById('aiChat').appendChild(d);}
-let secs=120; setInterval(()=>{secs--; if(secs<0) secs=120; let el=document.getElementById('battleTimer'); if(el) el.innerText=`${String(Math.floor(secs/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`;},1000);
-render();
-</script>
+<div style="padding:0 10px">Following &nbsp; <b>For You</b> &nbsp; <span style="background:red;padding:3px 8px;border-radius:8px">● LIVE</span></div>
+<div class="video">
+<video controls autoplay muted loop src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
+<div class="side">
+<div class="icon">❤️<br>123.4K</div>
+<div class="icon">💬<br>1.2K</div>
+<div class="icon">↗️<br>892</div>
+<div class="icon">🔖<br>342</div>
+</div>
+<div class="ai">✨</div>
+<div style="position:absolute;left:10px;bottom:10px"><b>@maya.dance</b><br>New dance challenge #fyp<br>🎵 Original Sound - vibra.sound</div>
+</div>
+<div class="bottom"><div>🏠<br>Home</div><div>🔍<br>Search</div><div>➕<br>Post</div><div>💬<br>Inbox</div><div>👤<br>Profile</div></div>
 </body>
 </html>
