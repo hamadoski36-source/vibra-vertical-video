@@ -1,6 +1,6 @@
 <!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Vibra PRO</title><style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial}body{background:#000;color:#fff;overflow:hidden}
-.top{display:flex;justify-content:space-between;align-items:center;padding:12px}.top b{font-size:15px}.on{border-bottom:2px solid #fff}
+.top{display:flex;justify-content:space-between;align-items:center;padding:8px 12px}.top b{font-size:15px}.on{border-bottom:2px solid #fff}
 #feed{height:calc(100vh - 110px);overflow-y:scroll;scroll-snap-type:y mandatory}
 .card{height:100%;scroll-snap-align:start;position:relative;background:#222;overflow:hidden}
 .card img.bg{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}.card video{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:2}
@@ -23,14 +23,16 @@
 .filterBtn{padding:8px 12px;border-radius:20px;border:2px solid #555;background:#222;color:#fff;margin:3px}.filterBtn.active{background:#fe2c55;border-color:#fe2c55}
 #camPreview{width:100%;height:260px;object-fit:cover;border-radius:12px;background:#000}
 .battleBox{display:flex;gap:8px;margin:10px 0}.battleSide{flex:1;background:#222;padding:10px;border-radius:12px;text-align:center}
-.shareGrid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;text-align:center;margin:12px 0}.shareItem{background:#222;padding:12px 4px;border-radius:14px;cursor:pointer}.shareItem span{font-size:28px;display:block}.shareItem b{font-size:11px}
+.shareGrid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;text-align:center;margin:12px 0}.shareItem{background:#fff;padding:10px 4px;border-radius:14px;cursor:pointer;color:#000}.shareItem img{width:42px;height:42px;object-fit:contain;display:block;margin:0 auto 4px;border-radius:10px}.shareItem b{font-size:11px}
 .commentRow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #333}
+.topDP{width:32px;height:32px;border-radius:50%;overflow:hidden;border:2px solid #fe2c55;display:flex;align-items:center;justify-content:center;background:#c44dff;font-size:16px}.topDP img{width:100%;height:100%;object-fit:cover}
+.myFeedDP{position:absolute;left:10px;top:52px;z-index:6;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.6);padding:4px 10px 4px 4px;border-radius:20px;font-size:12px;font-weight:700}
 </style></head><body>
-<div class="top"><span onclick="openLivePage()" style="cursor:pointer">📺 LIVE • Bonyeza - KWELI SASA</span><div><b>Following</b> &nbsp; <b>Friends</b> &nbsp; <b class="on">For You</b></div><span onclick="openSearch()" style="font-size:20px">🔍</span></div>
+<div class="top"><span onclick="openLivePage()" style="cursor:pointer">📺 LIVE • Bonyeza</span><div><b>Following</b> &nbsp; <b>Friends</b> &nbsp; <b class="on">For You</b></div><div style="display:flex;gap:8px;align-items:center"><span onclick="openSearch()" style="font-size:20px">🔍</span><div class="topDP" id="topDP" onclick="showProfile()">V</div></div></div>
 <div id="feed"></div>
 
 <div id="profile"><div style="display:flex;justify-content:space-between;align-items:center"><b>@vibra_254</b><button class="settingsBtn" onclick="showSettings()">⚙️ SETTINGS</button></div>
-<center><div style="width:85px;height:85px;border-radius:50%;background:#c44dff;display:flex;align-items:center;justify-content:center;font-size:40px;overflow:hidden;margin-top:10px" id="myDP">V</div><button class="dpBtn" onclick="document.getElementById('dpFile').click()">📸 Badilisha DP - Weka Picha Yako</button><p style="font-size:12px;color:#666">DP hii itaonekana kwenye FEED pia!</p><h2 style="margin-top:8px">@vibra_254 ✅</h2><p>0 Following &nbsp; 52 Followers &nbsp; <span id="pLikes">6.6K</span> Likes</p><button onclick="followMe(this)" style="background:#fe2c55;color:#fff;border:none;padding:10px 30px;border-radius:6px;font-weight:800;margin:8px">Follow</button><button onclick="showSaved()" style="background:#000;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-weight:800;margin:8px">🔖 SAVED ZANGU (<span id="savedCount">0</span>)</button><p>🔥 VIBRA APP IS LIVE</p></center><div class="grid" id="pGrid"></div><button onclick="showSettings()" style="width:100%;padding:14px;margin-top:12px;border-radius:10px;background:#000;color:#fff;font-weight:800">⚙️ FUNGUA SETTINGS HAPA</button></div>
+<center><div style="width:85px;height:85px;border-radius:50%;background:#c44dff;display:flex;align-items:center;justify-content:center;font-size:40px;overflow:hidden;margin-top:10px" id="myDP">V</div><button class="dpBtn" onclick="document.getElementById('dpFile').click()">📸 Badilisha DP - Weka Picha Yako</button><p style="font-size:12px;color:#666">DP hii sasa inaonekana JUU ya FEED + kwenye video zako!</p><h2 style="margin-top:8px">@vibra_254 ✅</h2><p>0 Following &nbsp; 52 Followers &nbsp; <span id="pLikes">6.6K</span> Likes</p><button onclick="followMe(this)" style="background:#fe2c55;color:#fff;border:none;padding:10px 30px;border-radius:6px;font-weight:800;margin:8px">Follow</button><button onclick="showSaved()" style="background:#000;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-weight:800;margin:8px">🔖 SAVED (<span id="savedCount">0</span>)</button><p>🔥 VIBRA APP IS LIVE</p></center><div class="grid" id="pGrid"></div><button onclick="showSettings()" style="width:100%;padding:14px;margin-top:12px;border-radius:10px;background:#000;color:#fff;font-weight:800">⚙️ FUNGUA SETTINGS HAPA</button></div>
 
 <div id="savedPage"><h2>🔖 Saved Zangu</h2><p id="savedList"></p><button onclick="showProfile()" style="padding:10px 16px;background:#fe2c55;color:#fff;border:none;border-radius:20px;margin-top:10px">Rudi</button></div>
 <div id="settings"><h2>⚙️ Settings and privacy</h2><p style="color:#888;font-size:12px;margin:10px 0">ACCOUNT</p><div class="set" onclick="alert('Account: @vibra_254')">👤 Manage account - @vibra_254</div><div class="set" onclick="document.getElementById('dpFile').click()">📸 Badilisha DP / Profile Picture</div><div class="set">🔒 Password</div><p style="color:#888;font-size:12px;margin:10px 0">CONTENT</p><div class="set">📢 Ads</div><div class="set">🌐 Language - English (US)</div><div class="set">👁️ Display</div><p style="color:#888;font-size:12px;margin:10px 0">CACHE</p><div class="set" onclick="localStorage.clear();alert('Cache imefutwa!')">🗑️ Free up space</div><div class="set">📶 Data Saver - ON</div><button onclick="showFeed()" style="width:100%;padding:12px;margin-top:12px;background:#fe2c55;color:#fff;border:none;border-radius:8px;font-weight:800">⬅️ Rudi Home</button></div>
@@ -45,15 +47,15 @@
 <div id="commentBox" class="modal"><h3>💬 Comments - <span id="cCount">0</span></h3><div id="cList"></div><input id="cText" placeholder="Andika comment yako..."><button onclick="sendComment()">Tuma 💬</button><button onclick="toggle('commentBox')">Funga</button></div>
 
 <div id="shareBox" class="modal"><h3>↗️ Share Video Hii</h3><p id="shareTitle" style="color:#aaa;font-size:13px"></p><div class="shareGrid">
-<div class="shareItem" onclick="shareWhatsApp()"><span>💚</span><b>WhatsApp</b></div>
-<div class="shareItem" onclick="shareFacebook()"><span>💙</span><b>Facebook</b></div>
-<div class="shareItem" onclick="shareInstagram()"><span>💜</span><b>Instagram</b></div>
-<div class="shareItem" onclick="shareCapCut()"><span>✂️</span><b>CapCut</b></div>
-<div class="shareItem" onclick="shareChatGPT()"><span>🤖</span><b>ChatGPT</b></div>
-<div class="shareItem" onclick="shareFile()"><span>📁</span><b>File / Download</b></div>
-<div class="shareItem" onclick="copyLink()"><span>🔗</span><b>Copy Link</b></div>
-<div class="shareItem" onclick="shareMore()"><span>⋯</span><b>More...</b></div>
-</div><p style="font-size:12px;color:#888">Bonyeza yoyote - itafungua app husika kweli!</p><button onclick="toggle('shareBox')">Funga</button></div>
+<div class="shareItem" onclick="shareWhatsApp()"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/733/733585.png'"><b>WhatsApp</b></div>
+<div class="shareItem" onclick="shareFacebook()"><img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/733/733547.png'"><b>Facebook</b></div>
+<div class="shareItem" onclick="shareInstagram()"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2111/2111463.png'"><b>Instagram</b></div>
+<div class="shareItem" onclick="shareCapCut()"><img src="https://cdn-icons-png.flaticon.com/512/11708/11708133.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2991/2991148.png'"><b>CapCut</b></div>
+<div class="shareItem" onclick="shareChatGPT()"><img src="https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/12222/12222919.png'"><b>ChatGPT</b></div>
+<div class="shareItem" onclick="shareFile()"><img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png"><b>File / Download</b></div>
+<div class="shareItem" onclick="copyLink()"><img src="https://cdn-icons-png.flaticon.com/512/1828/1828817.png"><b>Copy Link</b></div>
+<div class="shareItem" onclick="shareMore()"><img src="https://cdn-icons-png.flaticon.com/512/512/512142.png"><b>More...</b></div>
+</div><p style="font-size:12px;color:#888">Logo halisi sasa - Bonyeza yoyote itafungua app husika kweli!</p><button onclick="toggle('shareBox')">Funga</button></div>
 
 <input type="file" id="file" accept="video/*" hidden><input type="file" id="dpFile" accept="image/*" hidden>
 <div id="toast">❤️ +1</div>
@@ -61,17 +63,17 @@
 <div style="position:fixed;bottom:56px;left:0;right:0;text-align:center;z-index:6"><span class="vibra-shine" onclick="toggle('aiBox')">✨ 🤖 VIBRA AI • BONYEZA HAPA • VIBRA ✨</span></div>
 
 <script>
-let videos=JSON.parse(localStorage.getItem('vibra7')||'[]');
+let videos=JSON.parse(localStorage.getItem('vibra8')||'[]');
 let myDP=localStorage.getItem('vibraDP')||'';
 let saved=JSON.parse(localStorage.getItem('vibraSaved')||'[]');
 let curFilter='none';
 if(videos.length===0){videos=[
+{user:'@vibra_254',caption:'Karibu VIBRA! Hii ni video yangu - DP yangu inaonekana hapa!',tags:'#fyp #vibra #tanzania',likes:3400,comments:[{t:'Wow',likes:3}],saves:180,shares:300,liked:false,img:'https://picsum.photos/seed/b/720/1280',src:'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',filter:'none'},
 {user:'@globalswahilinews',caption:'Tukio la kushangaza Chepsui',tags:'#news #fyp',likes:2000,comments:[{t:'🔥🔥',likes:5},{t:'Safi sana',likes:2}],saves:217,shares:271,liked:false,img:'https://picsum.photos/seed/a/720/1280',src:'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',filter:'none'},
-{user:'@vibra_254',caption:'AZIKWA NA PIKIPIKI YAKE',tags:'#fyp #tanzania',likes:3400,comments:[{t:'Wow',likes:3}],saves:180,shares:300,liked:false,img:'https://picsum.photos/seed/b/720/1280',src:'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',filter:'none'},
 {user:'@maya.dance',caption:'New dance challenge',tags:'#dance #fyp',likes:1234,comments:[{t:'Nice!',likes:1}],saves:900,shares:500,liked:false,img:'https://picsum.photos/seed/c/720/1280',src:'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',filter:'none'}
 ];save()}
 let currentIdx=0,pendingVideo='',mediaRecorder=null,recordedChunks=[],camStream=null,shareIdx=0;
-function save(){localStorage.setItem('vibra7',JSON.stringify(videos));localStorage.setItem('vibraSaved',JSON.stringify(saved))}
+function save(){localStorage.setItem('vibra8',JSON.stringify(videos));localStorage.setItem('vibraSaved',JSON.stringify(saved))}
 function fmt(n){if(n>=1000)return (n/1000).toFixed(1)+'K';return n}
 function getPFP(v){if((v.user==='@wewe'||v.user==='@vibra_254')&&myDP)return `<img src="${myDP}">`;return '😀'}
 function getLink(){return 'https://hamadoski36-source.github.io/vibra-vertical-video/'}
@@ -80,7 +82,10 @@ function render(){
  videos.forEach((v,i)=>{
   let isSaved=saved.includes(i);
   const d=document.createElement('div');d.className='card';
-  d.innerHTML=`<img class="bg" src="${v.img}" style="filter:${v.filter||'none'}"><video src="${v.src}" loop muted playsinline preload="metadata" poster="${v.img}" style="filter:${v.filter||'none'}" onclick="this.paused?this.play():this.pause()" onerror="this.style.display='none'" oncanplay="this.style.display='block'"></video>
+  let myBadge='';
+  if(myDP && (v.user==='@wewe'||v.user==='@vibra_254')) myBadge=`<div class="myFeedDP"><div style="width:26px;height:26px;border-radius:50%;overflow:hidden"><img src="${myDP}" style="width:100%;height:100%;object-fit:cover"></div> DP YAKO • @vibra_254</div>`;
+  if(myDP && i===0) myBadge=`<div class="myFeedDP"><div style="width:26px;height:26px;border-radius:50%;overflow:hidden"><img src="${myDP}" style="width:100%;height:100%;object-fit:cover"></div> WEWE • DP YAKO INAONEKANA HAPA ✅</div>`;
+  d.innerHTML=myBadge+`<img class="bg" src="${v.img}" style="filter:${v.filter||'none'}"><video src="${v.src}" loop muted playsinline preload="metadata" poster="${v.img}" style="filter:${v.filter||'none'}" onclick="this.paused?this.play():this.pause()" onerror="this.style.display='none'" oncanplay="this.style.display='block'"></video>
   <div class="right"><div><div class="pfp">${getPFP(v)}<span class="plus">+</span></div></div>
   <div class="r" id="heart-${i}" onclick="like(${i})"><span>${v.liked?'❤️':'🤍'}</span><small>${fmt(v.likes)}</small></div>
   <div class="r" onclick="openComment(${i})">💬<small>${v.comments.length}</small></div>
@@ -93,7 +98,7 @@ function render(){
  document.getElementById('pGrid').innerHTML=videos.map(v=>`<div style="background-image:url(${v.img});background-size:cover;filter:${v.filter||'none'}">▶️ ${fmt(v.likes)}<br>${v.caption.slice(0,12)}</div>`).join('');
  let total=videos.reduce((a,b)=>a+b.likes,0);document.getElementById('pLikes').innerText=fmt(total);
  document.getElementById('savedCount').innerText=saved.length;
- if(myDP)document.getElementById('myDP').innerHTML=`<img src="${myDP}" style="width:100%;height:100%;object-fit:cover">`;
+ if(myDP){document.getElementById('myDP').innerHTML=`<img src="${myDP}" style="width:100%;height:100%;object-fit:cover">`;document.getElementById('topDP').innerHTML=`<img src="${myDP}">`}else{document.getElementById('topDP').innerHTML='V'}
 }
 function showToast(t){let el=document.getElementById('toast');el.innerText=t;el.style.display='block';setTimeout(()=>el.style.display='none',1400)}
 function like(i){videos[i].liked=!videos[i].liked;videos[i].likes+=videos[i].liked?1:-1;save();let el=document.getElementById('heart-'+i);if(el){el.innerHTML=`<span>${videos[i].liked?'❤️':'🤍'}</span><small>${fmt(videos[i].likes)}</small>`;el.classList.remove('liked');void el.offsetWidth;el.classList.add('liked');}showToast(videos[i].liked?`❤️ +1 = ${fmt(videos[i].likes)} Likes`:'💔 Like imetolewa');render();}
@@ -103,13 +108,13 @@ function sendComment(){let t=document.getElementById('cText').value.trim();if(!t
 function saveV(i){if(saved.includes(i)){saved=saved.filter(x=>x!==i);videos[i].saves--;showToast('🔖 Imetolewa kwenye Saved')}else{saved.push(i);videos[i].saves++;showToast('✅ Imesavewa! Angalia Me > SAVED')}save();render();}
 function showSaved(){hideAll();document.getElementById('savedPage').style.display='block';document.getElementById('savedList').innerHTML=saved.length?saved.map(idx=>`<div style="padding:10px;border:1px solid #eee;border-radius:10px;margin:6px 0"><b>${videos[idx].user}</b><br>${videos[idx].caption}<br><button onclick="saveV(${idx});showSaved()" style="background:#000;color:#fff;border:none;padding:8px 12px;border-radius:20px">Towa kwenye Saved</button> <button onclick="showFeed()" style="background:#fe2c55;color:#fff;border:none;padding:8px 12px;border-radius:20px">Tazama</button></div>`).join(''):'<p>Hujasave kitu bado. Bonyeza 🔖 kwenye video yoyote!</p>'}
 function openShare(i){shareIdx=i;document.getElementById('shareTitle').innerText=videos[i].user+' - '+videos[i].caption;toggle('shareBox')}
-function shareWhatsApp(){let v=videos[shareIdx];window.open('https://wa.me/?text='+encodeURIComponent('🔥 Tazama hii VIBRA: '+v.caption+' '+v.tags+' '+getLink()),'_blank');videos[shareIdx].shares++;save();render();showToast('💚 WhatsApp imefunguka!')}
-function shareFacebook(){let v=videos[shareIdx];window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(getLink()),'_blank');videos[shareIdx].shares++;save();render();showToast('💙 Facebook imefunguka!')}
-function shareInstagram(){navigator.clipboard.writeText(getLink()+' - '+videos[shareIdx].caption);window.open('https://www.instagram.com/','_blank');videos[shareIdx].shares++;save();render();showToast('💜 Link imekopiwa! Weka kwenye Instagram')}
-function shareCapCut(){window.open('https://www.capcut.com/','_blank');showToast('✂️ CapCut imefunguka! Hariri video huko')}
-function shareChatGPT(){let v=videos[shareIdx];window.open('https://chat.openai.com/?q='+encodeURIComponent('Nipe caption na hashtags za video hii: '+v.caption),'_blank');showToast('🤖 ChatGPT imefunguka!')}
-function shareFile(){let v=videos[shareIdx];let a=document.createElement('a');a.href=v.src;a.download='vibra-video.mp4';a.target='_blank';a.click();showToast('📁 Inapakua File...')}
-function copyLink(){navigator.clipboard.writeText(getLink());showToast('🔗 Link imekopiwa!')}
+function shareWhatsApp(){let v=videos[shareIdx];window.open('https://wa.me/?text='+encodeURIComponent('🔥 Tazama hii VIBRA: '+v.caption+' '+v.tags+' '+getLink()),'_blank');videos[shareIdx].shares++;save();render();showToast('WhatsApp imefunguka!')}
+function shareFacebook(){let v=videos[shareIdx];window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(getLink()),'_blank');videos[shareIdx].shares++;save();render();showToast('Facebook imefunguka!')}
+function shareInstagram(){navigator.clipboard.writeText(getLink()+' - '+videos[shareIdx].caption);window.open('https://www.instagram.com/','_blank');videos[shareIdx].shares++;save();render();showToast('Link imekopiwa! Weka kwenye Instagram')}
+function shareCapCut(){window.open('https://www.capcut.com/','_blank');showToast('CapCut imefunguka! Hariri video huko')}
+function shareChatGPT(){let v=videos[shareIdx];window.open('https://chat.openai.com/?q='+encodeURIComponent('Nipe caption na hashtags za video hii: '+v.caption),'_blank');showToast('ChatGPT imefunguka!')}
+function shareFile(){let v=videos[shareIdx];let a=document.createElement('a');a.href=v.src;a.download='vibra-video.mp4';a.target='_blank';a.click();showToast('Inapakua File...')}
+function copyLink(){navigator.clipboard.writeText(getLink());showToast('Link imekopiwa!')}
 async function shareMore(){let v=videos[shareIdx];if(navigator.share){try{await navigator.share({title:'VIBRA Video',text:v.caption+' '+v.tags,url:getLink()})}catch(e){copyLink()}}else{copyLink()}videos[shareIdx].shares++;save();render()}
 function toggle(id){let e=document.getElementById(id);e.style.display=e.style.display==='block'?'none':'block'}
 function showFeed(){hideAll();document.getElementById('feed').style.display='block';render()}
@@ -127,8 +132,8 @@ function setFilter(f,btn){curFilter=f;document.getElementById('camPreview').styl
 function startRec(){if(!camStream)return alert('Fungua kamera kwanza');recordedChunks=[];mediaRecorder=new MediaRecorder(camStream);mediaRecorder.ondataavailable=e=>{if(e.data.size>0)recordedChunks.push(e.data)};mediaRecorder.onstop=()=>{let blob=new Blob(recordedChunks,{type:'video/webm'});let r=new FileReader();r.onload=ev=>{pendingVideo=ev.target.result;document.getElementById('recStatus').innerText='✅ Video imerekodiwa! Sasa weka caption na POST';};r.readAsDataURL(blob)};mediaRecorder.start();document.getElementById('recStatus').innerText='🔴 INARECORD... Bonyeza STOP ukimaliza'}
 function stopRec(){if(mediaRecorder&&mediaRecorder.state!=='inactive')mediaRecorder.stop();document.getElementById('recStatus').innerText='⏹️ Imesimama - inatengeneza video...'}
 document.getElementById('file').addEventListener('change',function(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=function(ev){pendingVideo=ev.target.result;document.getElementById('recStatus').innerText='✅ Video imechaguliwa: '+f.name};r.readAsDataURL(f)});
-document.getElementById('dpFile').addEventListener('change',function(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=function(ev){myDP=ev.target.result;localStorage.setItem('vibraDP',myDP);render();showProfile();alert('Hongera! DP yako imebadilika - sasa inaonekana kwenye FEED pia ✅')};r.readAsDataURL(f)});
-function doPost(){if(!pendingVideo){alert('Record kwanza au chagua video!');return}let cap=document.getElementById('upCap').value||'New Vibra video';let tags=document.getElementById('upTags').value||'#fyp #vibra';videos.unshift({user:'@wewe',caption:cap,tags:tags,likes:0,comments:[],saves:0,shares:0,liked:false,img:'https://picsum.photos/seed/'+Date.now()+'/720/1280',src:pendingVideo,filter:curFilter});save();pendingVideo='';document.getElementById('upCap').value='';closeRecord();showFeed();alert('Hongera! Video + Filter + Caption imepostwa!')}
+document.getElementById('dpFile').addEventListener('change',function(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=function(ev){myDP=ev.target.result;localStorage.setItem('vibraDP',myDP);render();showProfile();alert('Hongera! DP yako sasa inaonekana JUU ya FEED + kwenye video zako ✅')};r.readAsDataURL(f)});
+function doPost(){if(!pendingVideo){alert('Record kwanza au chagua video!');return}let cap=document.getElementById('upCap').value||'New Vibra video';let tags=document.getElementById('upTags').value||'#fyp #vibra';videos.unshift({user:'@wewe',caption:cap,tags:tags,likes:0,comments:[],saves:0,shares:0,liked:false,img:'https://picsum.photos/seed/'+Date.now()+'/720/1280',src:pendingVideo,filter:curFilter});save();pendingVideo='';document.getElementById('upCap').value='';closeRecord();showFeed();alert('Hongera! Video imepostwa na DP yako inaonekana kwenye feed!')}
 async function openLivePage(){hideAll();document.getElementById('livePage').style.display='block';try{let s=await navigator.mediaDevices.getUserMedia({video:true,audio:true});document.getElementById('liveCam').srcObject=s;camStream=s;}catch(e){alert('Ruhusu kamera ili LIVE ionekane kweli!')}setInterval(()=>{let v=document.getElementById('liveViewers');if(v)v.innerText=parseInt(v.innerText)+Math.floor(Math.random()*3)},3000)}
 let myScore=0,oppScore=0;
 function battleVote(who){if(who==='me'){myScore+=10;document.getElementById('myScore').innerText=myScore}else{oppScore+=10;document.getElementById('oppScore').innerText=oppScore}showToast(who==='me'?'🔥 +10 kwa WEWE!':'Vote kwa mpinzani')}
