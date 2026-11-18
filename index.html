@@ -124,9 +124,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ===== SUPABASE - WEKA URL NA KEY YAKO HAPA (Hatua B chini) =====
-const SUPABASE_URL = "WEKA_URL_HAPA"; // mf: https://xyz.supabase.co
-const SUPABASE_KEY = "WEKA_ANON_KEY_HAPA";
-let supabaseClient = null; let supabaseOn = false;
+const SUPABASE_URL = "https://svrjacetnlwlwesferwz.supabase.co";
+const SUPABASE_KEY = "sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc";
+ let supabaseClient = null; let supabaseOn = false;
 try{ if(SUPABASE_URL && !SUPABASE_URL.includes("WEKA")){ supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); supabaseOn = true; } }catch(e){ supabaseOn=false; }
 async function supaSyncVideos(){ if(!supabaseOn) return; try{ let {data} = await supabaseClient.from('vibra_videos').select('*').order('created_at',{ascending:false}).limit(50); if(data && data.length){ videos = data.map(r=>({user:r.username,caption:r.caption,tags:r.tags||'#fyp',likes:r.likes||0,comments:r.comments||[],saves:0,shares:0,liked:false,img:r.img||'https://picsum.photos/seed/'+r.id+'/720/1280',src:r.src,filter:'none'})); render(); } }catch(e){} }
 async function supaPostVideo(v){ if(!supabaseOn) return; try{ await supabaseClient.from('vibra_videos').insert([{username:v.user,caption:v.caption,tags:v.tags,likes:0,comments:[],img:v.img,src:v.src}]); }catch(e){} }
