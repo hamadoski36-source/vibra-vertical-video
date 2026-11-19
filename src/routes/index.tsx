@@ -161,7 +161,8 @@ function VibraApp() {
               <div onClick={() => setPage('me')} style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#333', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white', fontSize: '24px' }}>
                 {dp ? <img src={dp} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
               </div>
-              <div onClick={() => setFollowed(!followed)} style={{ background: followed ? '#555' : '#ff2d55', width: '20px', height: '20px', borderRadius: '50%', margin: '-8px auto 0', fontSize: '13px', cursor: 'pointer' }}>{followed ? '✓' : '+'}</div>
+              {v.user === userHandle ? null : (
+              <div onClick={() => setFollowed(!followed)} style={{ background: followed ? '#555' : '#ff2d55', width: '20px', height: '20px', borderRadius: '50%', margin: '-8px auto 0', fontSize: '13px', cursor: 'pointer' }}>{followed ? '✓' : '+'}</div>)}
             </div>
             <div onClick={() => toggleLike(v.id)} style={{ textAlign: 'center', cursor: 'pointer' }}>
               <div style={{ fontSize: '32px' }}>{likedIds.includes(v.id) ? '❤️' : '🤍'}</div>
