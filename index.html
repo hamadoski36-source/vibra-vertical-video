@@ -127,6 +127,25 @@
 // ===== SUPABASE - WEKA URL NA KEY YAKO HAPA (Hatua B chini) =====
 const SUPABASE_URL = "https://svrjacetnlwlwesferwz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc";
+ // ===== VIBRA AI MPYA - Gemini =====
+const GEMINI_API_KEY = "AQ.Ab8RN6KU1WKkuFN0ChGjE_mhai6D-2YgLJHPqjSDM312LW-OjA";
+async function sendAiMsg(){
+  const inp=document.getElementById('aiInput');
+  let q=inp?inp.value.trim():"";
+  if(!q) return;
+  if(inp) inp.value="";
+  let box=document.getElementById('aiChat')||document.getElementById('aiMessages')||document.getElementById('aiChatBox')||document.getElementById('vibraAiChat');
+  if(box) box.innerHTML+=`<div style="padding:8px;background:#222;color:#fff;margin:6px;border-radius:10px">🧑 Wewe: ${q}</div><div id="aiTyping" style="padding:8px;color:#aaa">🤖 VIBRA AI anaandika...</div>`;
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:"Wewe ni VIBRA AI, rafiki wa karibu wa Mtanzania. Jibu kwa Kiswahili rahisi na kirafiki, kama Meta AI. Jibu swali hili: "+q}]}]})});
+    const data=await res.json();
+    const reply=data.candidates&&data.candidates[0]?data.candidates[0].content.parts[0].text:"Samahani, sijaelewa. Jaribu tena.";
+    const t=document.getElementById('aiTyping'); if(t) t.remove();
+    if(box) box.innerHTML+=`<div style="padding:8px;background:#000;color:#fff;border:1px solid #333;margin:6px;border-radius:10px">🤖 VIBRA AI: ${reply}</div>`;
+    if(box) box.scrollTop=box.scrollHeight;
+  }catch(e){ const t=document.getElementById('aiTyping'); if(t) t.remove(); if(box) box.innerHTML+=`<div>Samahani, kuna shida ya mtandao.</div>`; }
+}
+function quickAi(q){ const inp=document.getElementById('aiInput'); if(inp) inp.value=q; sendAiMsg(); }
  let supabaseClient = null; let supabaseOn = false;
 try{ if(SUPABASE_URL && !SUPABASE_URL.includes("WEKA")){ supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); supabaseOn = true; } }catch(e){ supabaseOn=false; }
 async function supaSyncVideos(){ if(!supabaseOn) return; try{ let {data} = await supabaseClient.from('vibra_videos').select('*').order('created_at',{ascending:false}).limit(50); if(data && data.length){ videos = data.map(r=>({user:r.username,caption:r.caption,tags:r.tags||'#fyp',likes:r.likes||0,comments:r.comments||[],saves:0,shares:0,liked:false,img:r.img||'https://picsum.photos/seed/'+r.id+'/720/1280',src:r.src,filter:'none'})); render(); } }catch(e){} }
