@@ -158,7 +158,7 @@ function VibraApp() {
           </div>
           <div style={{ position: 'absolute', right: '12px', bottom: '110px', display: 'flex', flexDirection: 'column', gap: '18px', alignItems: 'center' }}>
             <div style={{ textAlign: 'center' }}>
-              <div onClick={() => setPage('me')} style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#333', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white', fontSize: '24px' }}>
+               <div onClick={() => { if (v.user === userHandle) setPage('me') }}style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#333', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white', fontSize: '24px' }}>
                 {dp ? <img src={dp} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
               </div>
               {v.user === userHandle ? null : (
