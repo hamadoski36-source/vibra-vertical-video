@@ -324,4 +324,20 @@ async function loadRealVideos(){
   }
 }
 loadRealVideos();
+ // FIX PREVIEW - lazima ionekane
+function handleFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  tempFile=f;
+  const url=URL.createObjectURL(f);
+  tempVideoUrl=url;
+  // Tafuta video yoyote iliyopo kwenye ukurasa
+  let vid=document.getElementById('previewVideo') || document.querySelector('video');
+  if(vid){
+    vid.src=url; vid.style.display='block'; vid.classList.remove('hidden');
+    vid.muted=true; vid.play().catch(()=>{});
+  }
+  let ph=document.getElementById('uploadPlaceholder');
+  if(ph) ph.style.display='none';
+  showToast('Video imechaguliwa ✅ sasa bonyeza POST SASA');
+}
 </script></body></html>
