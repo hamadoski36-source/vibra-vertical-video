@@ -128,22 +128,10 @@
 const SUPABASE_URL = "https://svrjacetnlwlwesferwz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc";
  // ===== VIBRA AI MPYA - Gemini =====
-const GEMINI_API_KEY = "AQ.Ab8RN6KQvVwDjlW-QMsI1FfsacuSSr8dZi7XPCKdp4GenZrmpQ";
 async function sendAiMsg(){
-  const inp=document.getElementById('aiInput');
-  let q=inp?inp.value.trim():"";
-  if(!q) return;
-  if(inp) inp.value="";
-  let box=document.getElementById('aiChat')||document.getElementById('aiMessages')||document.getElementById('aiChatBox')||document.getElementById('vibraAiChat');
-  if(box) box.innerHTML+=`<div style="padding:8px;background:#222;color:#fff;margin:6px;border-radius:10px">🧑 Wewe: ${q}</div><div id="aiTyping" style="padding:8px;color:#aaa">🤖 VIBRA AI anaandika...</div>`;
-  try{
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:"Wewe ni VIBRA AI, rafiki wa karibu wa Mtanzania. Jibu kwa Kiswahili rahisi na kirafiki, kama Meta AI. Jibu swali hili: "+q}]}]})});
-    const data=await res.json();
-    const reply=data.candidates&&data.candidates[0]?data.candidates[0].content.parts[0].text:"Samahani, sijaelewa. Jaribu tena.";
-    const t=document.getElementById('aiTyping'); if(t) t.remove();
-    if(box) box.innerHTML+=`<div style="padding:8px;background:#000;color:#fff;border:1px solid #333;margin:6px;border-radius:10px">🤖 VIBRA AI: ${reply}</div>`;
-    if(box) box.scrollTop=box.scrollHeight;
-  }catch(e){ const t=document.getElementById('aiTyping'); if(t) t.remove(); if(box) box.innerHTML+=`<div>Samahani, kuna shida ya mtandao.</div>`; }
+let inp=document.getElementById('aiInput');let q=inp?inp.value.trim():"";if(!q)return;if(inp)inp.value="";
+let box=document.getElementById('aiMessages');if(box)box.innerHTML+=`<div style="padding:8px;background:#222;color:#fff;margin:6px;border-radius:10px">🧑 Wewe: ${q}</div><div id="aiTyping" style="padding:8px;color:#aaa">🤖 VIBRA AI anaandika...</div>`;
+try{let res=await fetch("https://text.pollinations.ai/"+encodeURIComponent("Wewe ni VIBRA AI, jibu kwa Kiswahili rahisi kama swali ni Kiswahili, English kama ni English. Swali: "+q));let reply=await res.text();let t=document.getElementById('aiTyping');if(t)t.remove();if(box)box.innerHTML+=`<div style="padding:8px;background:#000;color:#fff;border:1px solid #333;margin:6px;border-radius:10px">🤖 VIBRA AI: ${reply}</div>`;if(box)box.scrollTop=box.scrollHeight;}catch(e){let t=document.getElementById('aiTyping');if(t)t.remove();if(box)box.innerHTML+=`<div>Kuna shida ya mtandao, jaribu tena.</div>`;}
 }
 function quickAi(q){ const inp=document.getElementById('aiInput'); if(inp) inp.value=q; sendAiMsg(); }
  let supabaseClient = null; let supabaseOn = false;
