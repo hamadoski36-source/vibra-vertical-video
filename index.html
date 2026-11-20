@@ -247,12 +247,6 @@ function renderAi(){
 function editAiMsg(idx){let chat=aiChats[curAiChat];let old=chat.msgs[idx].text||chat.msgs[idx].voice||'';let nw=prompt('Edit message yako:',old);if(nw===null)return;if(chat.msgs[idx].voice)chat.msgs[idx].voice=nw;else chat.msgs[idx].text=nw;saveAi();renderAi();showToast('✅ Ime-editiwa!')}
 function deleteAiMsg(idx){if(!confirm('Futa message hii?'))return;aiChats[curAiChat].msgs.splice(idx,1);saveAi();renderAi();showToast('🗑️ Imefutwa!')}
 function quickAi(q){document.getElementById('aiInput').value=q;sendAiMsg()}
-function sendAiMsg(){
- let inp=document.getElementById('aiInput');let q=inp.value.trim();if(!q)return;
- let chat=aiChats[curAiChat];chat.msgs.push({role:'me',text:q});inp.value='';saveAi();renderAi();
- let box=document.getElementById('aiMessages');box.innerHTML+=`<div style="margin:8px 0"><div class="vibraMsgBot">🤖 Vibra AI inaandika...</div></div>`;box.scrollTop=box.scrollHeight;
- setTimeout(()=>{let a=aiReply(q);chat.msgs.push({role:'bot',text:a});saveAi();renderAi();},700);
-}
 function aiVoice(){
  let SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!SR){let v=prompt('🎤 Sema / Andika voice note yako:');if(v)sendAiVoice(v);return}
