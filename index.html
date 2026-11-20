@@ -291,4 +291,37 @@ if(data)currentLiveId=data.id;
 supabaseClient.channel('vibra-live-real').on('postgres_changes',{event:'INSERT',schema:'public',table:'vibra_live_comments'},p=>{let c=document.getElementById('liveChat');if(c)c.innerHTML+='<p>@'+p.new.username+': '+p.new.message+'</p>';}).subscribe();
 }
 render(); supaSyncVideos();
+ let tempFile=null;
+function handleFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  tempFile=f; tempVideoUrl=URL.createObjectURL(f);
+  const vid=document.getElementById('previewVideo');
+  vid.src=tempVideoUrl; vid.classList.remove('hidden');
+  document.getElementById('uploadPlaceholder').classList.add('hidden');
+  vid.play();
+}
+async function publishVideo(){
+  const cap=document.getElementById('captionInput').value || 'New Vibra Video 🔥 #Vibra';
+  if(!tempFile){ showToast('Chagua video kwanza'); return; }
+  showToast('Inapakia video... subiri ⏳');
+  const fileName = Date.now()+'-'+tempFile.name.replace(/[^a-zA-Z0-9.]/g,'');
+  const {error:upErr} = await supabaseClient.storage.from('vibra-videos').upload(fileName, tempFile);
+  if(upErr){ showToast('Imeshindikana kupakia'); return; }
+  const {data:pub} = supabaseClient.storage.from('vibra-videos').getPublicUrl(fileName);
+  const realUrl = pub.publicUrl;
+  await supabaseClient.from('vibra_videos').insert([{username:myUser||'Mr vibra', caption:cap, video_url:realUrl}]);
+  VIDEOS.unshift({id:'v'+Date.now(), user:'@'+(myUser||'Mr vibra'), name:myUser||'Mr vibra', caption:cap, likes:0, comments:0, video:realUrl, poster:''});
+  saveVideos(); showToast('Video imetumwa kwa wote! ✅'); go('home');
+}
+async function loadRealVideos(){
+  if(!supabaseClient) return;
+  const {data} = await supabaseClient.from('vibra_videos').select('*').order('created_at',{ascending:false});
+  if(data && data.length){
+    const real = data.map(r=>({id:'real'+r.id, user:'@'+r.username, name:r.username, caption:r.caption, likes:r.likes||0, comments:0, video:r.video_url, poster:''}));
+    // Weka video za kweli juu, za zamani chini
+    VIDEOS = [...real, ...VIDEOS.filter(v=>!String(v.id).startsWith('real'))];
+    render();
+  }
+}
+loadRealVideos();
 </script></body></html>
