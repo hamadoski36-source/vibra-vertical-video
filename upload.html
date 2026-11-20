@@ -4,16 +4,15 @@
 <style>body{background:#000;color:#fff;font-family:sans-serif;padding:15px;text-align:center}video{width:100%;max-height:350px;background:#222;border-radius:12px}input,textarea{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:0}button{width:100%;padding:15px;background:#ff0050;color:#fff;border:0;border-radius:10px;font-size:18px;font-weight:bold}label{display:block;background:#333;padding:15px;border-radius:10px;margin:10px 0}</style>
 </head><body>
 <h2>🔥 VIBRA - Post Video Mpya</h2>
-<label>📁 BON YEZA HAPA KUCHAGUA VIDEO<input type="file" id="file" accept="video/*" style="display:none"></label>
+<label>📁 BONYEZA HAPA KUCHAGUA VIDEO<input type="file" id="file" accept="video/*" style="display:none"></label>
 <video id="vid" controls playsinline></video>
 <textarea id="cap" rows="3">Mbosso amemnyooshea mikono juu Konde Bwoy 🙌🔥 Verse yake imeshika balaa! Unaipa ngapi 1-10? 👇 #Mbosso #KondeBwoy #Vibra</textarea>
 <button onclick="post()">POST SASA 🟢</button>
 <p id="msg"></p>
 <p><a href="index.html" style="color:#aaa">← Rudi VIBRA</a></p>
 <script>
-// BADILISHA HAPA - weka URL na KEY zako kutoka index.html
-const SUPA_URL = "WEKA_HAPA_SUPABASE_URL";
-const SUPA_KEY = "WEKA_HAPA_SUPABASE_KEY";
+const SUPA_URL = "https://svrjacetniwlwesferwz.supabase.co";
+const SUPA_KEY = "sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc";
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 let myFile=null;
 document.getElementById('file').onchange = (e)=>{
