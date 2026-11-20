@@ -1,0 +1,38 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VIBRA Upload</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body{background:#000;color:#fff;font-family:sans-serif;padding:15px;text-align:center}video{width:100%;max-height:350px;background:#222;border-radius:12px}input,textarea{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:0}button{width:100%;padding:15px;background:#ff0050;color:#fff;border:0;border-radius:10px;font-size:18px;font-weight:bold}label{display:block;background:#333;padding:15px;border-radius:10px;margin:10px 0}</style>
+</head><body>
+<h2>🔥 VIBRA - Post Video Mpya</h2>
+<label>📁 BON YEZA HAPA KUCHAGUA VIDEO<input type="file" id="file" accept="video/*" style="display:none"></label>
+<video id="vid" controls playsinline></video>
+<textarea id="cap" rows="3">Mbosso amemnyooshea mikono juu Konde Bwoy 🙌🔥 Verse yake imeshika balaa! Unaipa ngapi 1-10? 👇 #Mbosso #KondeBwoy #Vibra</textarea>
+<button onclick="post()">POST SASA 🟢</button>
+<p id="msg"></p>
+<p><a href="index.html" style="color:#aaa">← Rudi VIBRA</a></p>
+<script>
+// BADILISHA HAPA - weka URL na KEY zako kutoka index.html
+const SUPA_URL = "WEKA_HAPA_SUPABASE_URL";
+const SUPA_KEY = "WEKA_HAPA_SUPABASE_KEY";
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+let myFile=null;
+document.getElementById('file').onchange = (e)=>{
+  myFile = e.target.files[0];
+  if(!myFile) return;
+  let v=document.getElementById('vid');
+  v.src=URL.createObjectURL(myFile);
+  v.play();
+  document.getElementById('msg').innerText="Video imechaguliwa ✅ : "+myFile.name;
+};
+async function post(){
+  if(!myFile){ alert('Chagua video kwanza!'); return; }
+  document.getElementById('msg').innerText="Inapakia... subiri ⏳";
+  let name=Date.now()+'-'+myFile.name.replace(/[^a-zA-Z0-9.]/g,'');
+  let {error}=await supa.storage.from('vibra-videos').upload(name, myFile);
+  if(error){ document.getElementById('msg').innerText="Imeshindikana: "+error.message; return; }
+  let {data}=supa.storage.from('vibra-videos').getPublicUrl(name);
+  await supa.from('vibra_videos').insert([{username:'Mr vibra', caption:document.getElementById('cap').value, video_url:data.publicUrl}]);
+  document.getElementById('msg').innerText="✅ IMETUMWA! Fungua VIBRA uione.";
+  setTimeout(()=>location.href="index.html",1500);
+}
+</script></body></html>
