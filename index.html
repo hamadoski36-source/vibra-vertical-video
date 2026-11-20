@@ -283,5 +283,6 @@ let myScore=0,oppScore=0;
 function battleVote(who){if(who==='me'){myScore+=10;document.getElementById('myScore').innerText=myScore}else{oppScore+=10;document.getElementById('oppScore').innerText=oppScore}showToast(who==='me'?'🔥 +10 kwa WEWE!':'Vote kwa mpinzani')}
 function sendGift(g){let c=document.getElementById('liveChat');c.innerHTML+=`<p>🎁 @wewe ametuma ${g} ${g} ${g}!</p>`;myScore+=5;document.getElementById('myScore').innerText=myScore;showToast(`🎁 ${g} Imemtumwa!`)}
 function sendLiveMsg(){let m=document.getElementById('liveMsg').value.trim();if(!m)return;document.getElementById('liveChat').innerHTML+=`<p>👤 ${myUser||'@wewe'}: ${m}</p>`;document.getElementById('liveMsg').value=''}
+ 
 render(); supaSyncVideos();
 </script></body></html>
