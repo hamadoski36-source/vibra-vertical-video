@@ -1,34 +1,18 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VIBRA Upload</title>
-<style>body{background:#000;color:#fff;font-family:sans-serif;padding:15px;text-align:center}button{background:#ff0050;color:#fff;border:0;padding:15px;border-radius:12px;width:100%;font-size:18px;font-weight:bold;margin-top:10px}textarea{width:100%;padding:10px;border-radius:10px;margin:10px 0}#msg{background:#222;padding:15px;border-radius:10px;margin-top:15px;word-break:break-all}</style>
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VIBRA</title>
+<style>body{margin:0;background:#000;color:#fff;font-family:sans-serif}.feed{scroll-snap-type:y mandatory;overflow-y:scroll;height:100vh}.vid{height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center}video{height:100%;width:100%;object-fit:cover}.info{position:absolute;bottom:20px;left:10px;right:70px}.top{position:fixed;top:10px;left:0;right:0;text-align:center;z-index:10;font-size:22px;font-weight:bold}.up{position:fixed;bottom:20px;right:10px;background:#ff0050;color:#fff;padding:12px 15px;border-radius:20px;text-decoration:none;z-index:10;font-weight:bold}</style>
 </head><body>
-<h2>🔥 VIBRA - Post Video Mpya</h2>
-<input type="file" id="file" accept="video/*" style="background:#222;padding:15px;width:100%;border-radius:12px">
-<textarea id="cap" rows="3">Mbosso amemnyooshea mikono juu Konde Bwoy 🔥🔥 Verse yake imeshika balaa! Unaipa ngapi 1-10? 👇 #Mbosso #KondeBwoy #Vibra</textarea>
-<button id="btn">POST SASA 🟢</button>
-<div id="msg">Chagua video kwanza...</div>
-<p><a href="index.html" style="color:#aaa">← Rudi VIBRA</a></p>
+<div class="top">🔥 VIBRA</div>
+<a class="up" href="upload.html">+ POST</a>
+<div class="feed" id="feed"><div style="padding:100px;text-align:center">⏳ Inapakia video...</div></div>
 <script>
-const URL="https://svrjacetniwljwesferwz.supabase.co";
+const URL="https://svrjacetnlwlwesferwz.supabase.co";
 const KEY="sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc";
-let f=null;
-document.getElementById('file').addEventListener('change',e=>{
-  f=e.target.files[0];
-  document.getElementById('msg').innerText = f ? "✅ Umechagua: "+f.name+" | "+(f.size/1024/1024).toFixed(1)+"MB | Sasa bonyeza POST SASA" : "Hakuna file";
-});
-document.getElementById('btn').addEventListener('click', async ()=>{
-  let m=document.getElementById('msg');
-  if(!f){ m.innerText="❌ CHAGUA VIDEO KWANZA!"; return; }
-  m.innerText="⏳ INAPAKIA... USIFUNGE! 0%";
-  let name=Date.now()+"-"+f.name.replace(/[^a-zA-Z0-9.-]/g,'');
-  try{
-    let up=await fetch(URL+"/storage/v1/object/vibra-videos/"+name, {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "Content-Type":f.type, "x-upsert":"true"}, body:f});
-    if(!up.ok){ m.innerText="❌ KOSA STORAGE: "+up.status+" "+await up.text(); return; }
-    let video_url=URL+"/storage/v1/object/public/vibra-videos/"+name;
-    m.innerText="⏳ Video imepanda! Inahifadhi kwenye VIBRA...";
-    let ins=await fetch(URL+"/rest/v1/vibra_videos", {method:"POST", headers:{apikey:KEY, Authorization:"Bearer "+KEY, "Content-Type":"application/json", Prefer:"return=minimal"}, body:JSON.stringify({username:"Mr vibra", caption:document.getElementById('cap').value, video_url:video_url})});
-    if(!ins.ok){ m.innerText="❌ KOSA TABLE: "+ins.status+" "+await ins.text(); return; }
-    m.innerText="✅✅ IMETUMWA! Fungua VIBRA uione!";
-    setTimeout(()=>location.href='index.html',2000);
-  }catch(e){ m.innerText="❌ KOSA: "+e.message; }
-});
+async function load(){
+  let r=await fetch(URL+"/rest/v1/vibra_videos?select=*&order=created_at.desc&limit=20",{headers:{apikey:KEY,Authorization:"Bearer "+KEY}});
+  let data=await r.json();
+  let feed=document.getElementById('feed');
+  if(!data.length){feed.innerHTML='<div style="padding:100px;text-align:center">Hakuna video bado.<br><br><a href="upload.html" style="color:#ff0050">Post ya kwanza -></a></div>';return;}
+  feed.innerHTML=data.map(v=>`<div class="vid"><video src="${v.video_url}" controls loop playsinline preload="metadata"></video><div class="info"><b>@${v.username||'Mr vibra'}</b><p>${v.caption||''}</p></div></div>`).join('');
+}
+load();
 </script></body></html>
