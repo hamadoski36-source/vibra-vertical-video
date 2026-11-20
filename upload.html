@@ -1,18 +1,17 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VIBRA Upload</title>
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VIBRA Upload</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>body{background:#000;color:#fff;font-family:sans-serif;padding:15px;text-align:center}video{width:100%;max-height:350px;background:#222;border-radius:12px}input,textarea{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:0}button{width:100%;padding:15px;background:#ff0050;color:#fff;border:0;border-radius:10px;font-size:18px;font-weight:bold}label{display:block;background:#333;padding:15px;border-radius:10px;margin:10px 0}</style>
+<style>body{background:#000;color:#fff;font-family:sans-serif;padding:15px;text-align:center}button{background:#ff0050;color:#fff;border:0;padding:15px;border-radius:12px;width:100%;font-size:18px;font-weight:bold}textarea{width:100%;padding:10px;border-radius:10px;margin:10px 0}video{width:100%;max-height:400px;border-radius:12px}</style>
 </head><body>
 <h2>🔥 VIBRA - Post Video Mpya</h2>
-<label>📁 BONYEZA HAPA KUCHAGUA VIDEO<input type="file" id="file" accept="video/*" style="display:none"></label>
+<label style="display:block;background:#222;padding:15px;border-radius:12px">📁 BONYEZA HAPA KUCHAGUA VIDEO<input type="file" id="file" accept="video/*" style="display:none"></label>
 <video id="vid" controls playsinline></video>
-<textarea id="cap" rows="3">Mbosso amemnyooshea mikono juu Konde Bwoy 🙌🔥 Verse yake imeshika balaa! Unaipa ngapi 1-10? 👇 #Mbosso #KondeBwoy #Vibra</textarea>
+<textarea id="cap" rows="3">Mbosso amemnyooshea mikono juu Konde Bwoy 🔥🔥 Verse yake imeshika balaa! Unaipa ngapi 1-10? 👇 #Mbosso #KondeBwoy #Vibra</textarea>
 <button onclick="post()">POST SASA 🟢</button>
 <p id="msg"></p>
 <p><a href="index.html" style="color:#aaa">← Rudi VIBRA</a></p>
 <script>
-const SUPA_URL = "https://svrjacetniwlwesferwz.supabase.co";
-const SUPA_KEY = "sb_publishable_iXum9XuFOTo261UcV49ZNQ_LtZBp5kc";
+const SUPA_URL = "https://svrjacetniwljwesferwz.supabase.co";
+const SUPA_KEY = "PASTE_EYJ_KEY_YAKO_HAPA";
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 let myFile=null;
 document.getElementById('file').onchange = (e)=>{
@@ -21,17 +20,17 @@ document.getElementById('file').onchange = (e)=>{
   let v=document.getElementById('vid');
   v.src=URL.createObjectURL(myFile);
   v.play();
-  document.getElementById('msg').innerText="Video imechaguliwa ✅ : "+myFile.name;
+  document.getElementById('msg').innerText="Video imechaguliwa ✅ : "+myFile.name+" | Size: "+(myFile.size/1024/1024).toFixed(1)+"MB";
 };
 async function post(){
   if(!myFile){ alert('Chagua video kwanza!'); return; }
-  document.getElementById('msg').innerText="Inapakia... subiri ⏳";
-  let name=Date.now()+'-'+myFile.name.replace(/[^a-zA-Z0-9.]/g,'');
-  let {error}=await supa.storage.from('vibra-videos').upload(name, myFile);
-  if(error){ document.getElementById('msg').innerText="Imeshindikana: "+error.message; return; }
+  document.getElementById('msg').innerText='Inapakia... subiri ⏳';
+  let name=Date.now()+'-'+myFile.name.replace(/[^a-zA-Z0-9.-]/g,'');
+  let {error}=await supa.storage.from('vibra-videos').upload(name, myFile, {upsert:true});
+  if(error){ document.getElementById('msg').innerText='Kosa Storage: '+error.message+' | '+JSON.stringify(error); return; }
   let {data}=supa.storage.from('vibra-videos').getPublicUrl(name);
   await supa.from('vibra_videos').insert([{username:'Mr vibra', caption:document.getElementById('cap').value, video_url:data.publicUrl}]);
-  document.getElementById('msg').innerText="✅ IMETUMWA! Fungua VIBRA uione.";
-  setTimeout(()=>location.href="index.html",1500);
+  document.getElementById('msg').innerText='✅ IMETUMWA! Fungua VIBRA uione.';
+  setTimeout(()=>location.href='index.html',1500);
 }
 </script></body></html>
