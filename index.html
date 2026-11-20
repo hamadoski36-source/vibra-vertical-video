@@ -341,7 +341,7 @@ function handleFile(e){
   showToast('Video imechaguliwa ✅ sasa bonyeza POST SASA');
 }
  // FIX KABISA - unganisha tempFile na pendingVideo
-let pendingVideo = null;
+ pendingVideo = null;
 function handleFile(e){
   const f=e.target.files[0]; if(!f) return;
   tempFile=f; pendingVideo=f;
@@ -358,4 +358,17 @@ setTimeout(()=>{
   let inp=document.getElementById('file');
   if(inp){ inp.onchange=handleFile; }
 },500);
+ // FIX doPost - itumie tempFile pia
+async function doPost(){
+  let cap=document.getElementById('captionInput').value || 'New Vibra Video 🔥 #Vibra';
+  let fileToUpload = pendingVideo || tempFile;
+  if(!fileToUpload){ alert('Record kwanza au chagua video!'); return; }
+  showToast('Inapakia video... subiri ⏳');
+  const fileName = Date.now()+'-'+fileToUpload.name.replace(/[^a-zA-Z0-9.]/g,'');
+  const {error:upErr} = await supabaseClient.storage.from('vibra-videos').upload(fileName, fileToUpload);
+  if(upErr){ showToast('Imeshindikana kupakia'); return; }
+  const {data:pub} = await supabaseClient.storage.from('vibra-videos').getPublicUrl(fileName);
+  await supabaseClient.from('vibra_videos').insert([{username:myUser||'Mr vibra', caption:cap, video_url:pub.publicUrl}]);
+  showToast('Video imetumwa kwa wote! ✅'); go('home');
+}
 </script></body></html>
