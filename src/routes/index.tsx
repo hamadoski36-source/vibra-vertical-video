@@ -452,7 +452,13 @@ const sendAiMessage = async () => {
         background: '#ff2d55', color: '#fff', padding: '5px 17px',
         borderRadius: '8px', fontSize: '22px', cursor: 'pointer',
       }}>＋</span>
-      <span onClick={() => setPage('inbox')} style={{ cursor: 'pointer' }}>📥<br/>Inbox</span>
+      <span onClick={() => setPage     <span onClick={() => setPage('ai')} style={{
+  cursor: 'pointer',
+  color: page === 'ai' ? '#ff2d78' : '#fff',
+  fontWeight: page === 'ai' ? 800 : 400,
+}}>
+  <Bot size={23} /><br/>AI
+</span> ('inbox')} style={{ cursor: 'pointer' }}>📥<br/>Inbox</span>
       <span onClick={() => setPage('me')} style={{ cursor: 'pointer', fontWeight: page === 'me' ? 800 : 400 }}>👤<br/>Me</span>
     </div>
   )
