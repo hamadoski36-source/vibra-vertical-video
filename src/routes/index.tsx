@@ -481,7 +481,109 @@ const sendAiMessage = async () => {
       </div>
     )
   }
+// VIBRA AI
+if (page === 'ai') {
+  return (
+    <div style={{
+      background: '#080810',
+      color: '#fff',
+      minHeight: '100vh',
+      maxWidth: 500,
+      margin: '0 auto',
+      fontFamily: 'sans-serif',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <div style={{
+        padding: 18,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        borderBottom: '1px solid #292936',
+      }}>
+        <button onClick={() => setPage('home')}>←</button>
+        <Bot size={28} color="#ff2d78" />
+        <div>
+          <b>VIBRA AI</b>
+          <div style={{ color: '#aaa', fontSize: 12 }}>
+            Your smart assistant
+          </div>
+        </div>
+        <Sparkles color="#ff2d78" />
+      </div>
 
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: 16,
+        paddingBottom: 100,
+      }}>
+        {aiMessages.length === 0 && (
+          <div style={{ textAlign: 'center', marginTop: 70 }}>
+            <Bot size={55} color="#ff2d78" />
+            <h2>Karibu VIBRA AI!</h2>
+            <p style={{ color: '#aaa' }}>
+              Uliza swali lolote. Niko hapa kukusaidia.
+            </p>
+          </div>
+        )}
+
+        {aiMessages.map((message, index) => (
+          <div key={index} style={{
+            background: message.role === 'user' ? '#6325a8' : '#20202c',
+            padding: 14,
+            borderRadius: 16,
+            marginBottom: 12,
+            maxWidth: '85%',
+            marginLeft: message.role === 'user' ? 'auto' : 0,
+            whiteSpace: 'pre-wrap',
+          }}>
+            {message.text}
+          </div>
+        ))}
+
+        {aiLoading && <p style={{ color: '#ff2d78' }}>VIBRA AI inafikiria...</p>}
+      </div>
+
+      <div style={{
+        display: 'flex',
+        gap: 8,
+        padding: 12,
+        position: 'sticky',
+        bottom: 0,
+        background: '#080810',
+      }}>
+        <input
+          value={aiInput}
+          onChange={e => setAiInput(e.target.value)}
+          placeholder="Andika swali lako..."
+          style={{
+            flex: 1,
+            padding: 14,
+            borderRadius: 25,
+            border: '1px solid #444',
+            background: '#20202c',
+            color: '#fff',
+            outline: 'none',
+          }}
+        />
+        <button
+          onClick={sendAiMessage}
+          disabled={aiLoading || !aiInput.trim()}
+          style={{
+            background: '#ff2d78',
+            color: '#fff',
+            border: 0,
+            borderRadius: 25,
+            padding: '0 18px',
+          }}
+        >
+          Tuma
+        </button>
+      </div>
+    </div>
+  )
+}
   // PROFILE
   if (page === 'me') {
     return (
