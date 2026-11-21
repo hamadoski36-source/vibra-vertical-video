@@ -31,6 +31,9 @@ type Comment = {
 
 function VibraApp() {
   const [page, setPage] = useState('home')
+  const [aiMessages, setAiMessages] = useState<{role: 'user' | 'assistant'; text: string}[]>([])
+  const [aiInput, setAiInput] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
   const [userId, setUserId] = useState('')
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState('')
