@@ -61,7 +61,35 @@ function VibraApp() {
 
   const fileRef = useRef<HTMLInputElement>(null)
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({})
+  
+const sendAiMessage = async () => {
+  const question = aiInput.trim()
+  if (!question || aiLoading) return
 
+  setAiMessages(prev => [...prev, { role: 'user', text: question }])
+  setAiInput('')
+  setAiLoading(true)
+
+  try {
+    const { data, error } = await supabase.functions.invoke('Vibra-AI', {
+      body: { message: question }
+    })
+
+    if (error) throw error
+
+    const answer = data?.answer || data?.reply || data?.message
+    if (!answer) throw new Error('AI haijarudisha jibu')
+
+    setAiMessages(prev => [...prev, { role: 'assistant', text: answer }])
+  } catch {
+    setAiMessages(prev => [...prev, {
+      role: 'assistant',
+      text: 'Samahani, VIBRA AI haijaunganishwa vizuri bado. Jaribu tena baadaye.'
+    }])
+  } finally {
+    setAiLoading(false)
+  }
+}
   // Unganisha akaunti ya muda ya mtumiaji.
   useEffect(() => {
     let mounted = true
