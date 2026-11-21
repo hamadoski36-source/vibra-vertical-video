@@ -435,31 +435,22 @@ const sendAiMessage = async () => {
       // Mtumiaji akifunga share, hakuna hatua inayohitajika.
     }
   }
-
   const bottomNav = (
     <div style={{
       position: 'fixed', bottom: 0, left: '50%',
       transform: 'translateX(-50%)', width: '100%',
       maxWidth: '500px', background: '#050505',
       display: 'flex', justifyContent: 'space-around',
-      alignItems: 'center', padding: '13px 0',
-      paddingBottom: 'max(13px, env(safe-area-inset-bottom))',
+      alignItems: 'center', padding: '9px 0',
+      paddingBottom: 'max(9px, env(safe-area-inset-bottom))',
       borderTop: '1px solid #292929', zIndex: 50, color: '#fff',
     }}>
-      <span onClick={() => setPage('home')} style={{ cursor: 'pointer', fontWeight: page === 'home' ? 800 : 400 }}>🏠<br/>Home</span>
-      <span onClick={() => setPage('discover')} style={{ cursor: 'pointer' }}>🔍<br/>Discover</span>
-      <span onClick={() => fileRef.current?.click()} style={{
-        background: '#ff2d55', color: '#fff', padding: '5px 17px',
-        borderRadius: '8px', fontSize: '22px', cursor: 'pointer',
-      }}>＋</span>
-      <span onClick={() => setPage     <span onClick={() => setPage('ai')} style={{
-  cursor: 'pointer',
-  color: page === 'ai' ? '#ff2d78' : '#fff',
-  fontWeight: page === 'ai' ? 800 : 400,
-}}>
-  <Bot size={23} /><br/>AI
-</span> ('inbox')} style={{ cursor: 'pointer' }}>📥<br/>Inbox</span>
-      <span onClick={() => setPage('me')} style={{ cursor: 'pointer', fontWeight: page === 'me' ? 800 : 400 }}>👤<br/>Me</span>
+      <span onClick={() => setPage('home')} style={{cursor:'pointer', color:page==='home'?'#ff2d78':'#fff', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontSize:11}}><Home size={23}/><b>Home</b></span>
+      <span onClick={() => setPage('discover')} style={{cursor:'pointer', color:page==='discover'?'#ff2d78':'#fff', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontSize:11}}><Search size={23}/><b>Explore</b></span>
+      <span onClick={() => fileRef.current?.click()} style={{background:'#ff0050', color:'#fff', width:54, height:44, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:10, cursor:'pointer'}}><Plus size={30}/></span>
+      <span onClick={() => setPage('ai')} style={{cursor:'pointer', color:'#b52cff', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontSize:11}}><Bot size={24}/><b>VIBRA AI</b></span>
+      <span onClick={() => setPage('inbox')} style={{cursor:'pointer', color:page==='inbox'?'#ff2d78':'#fff', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontSize:11}}><Inbox size={23}/><b>Inbox</b></span>
+      <span onClick={() => setPage('me')} style={{cursor:'pointer', color:page==='me'?'#ff2d78':'#fff', display:'flex', flexDirection:'column', alignItems:'center', gap:3, fontSize:11}}><User size={23}/><b>Me</b></span>
     </div>
   )
 
