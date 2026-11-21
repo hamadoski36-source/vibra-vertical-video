@@ -1,6 +1,6 @@
 
 import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { supabase } from '../lib/supabase'
 
 export const Route = createFileRoute('/')({
@@ -8,10 +8,14 @@ export const Route = createFileRoute('/')({
 })
 
 type Video = {
-  id: number
-  user: string
-  desc: string
-  emoji: string
+  id: string
+  user_id: string | null
+  video_url: string
+  caption: string
+  username: string
+  avatar: string | null
+  country: string
+  created_at: string
 }
 
 type Comment = {
@@ -22,39 +26,41 @@ type Comment = {
   created_at: string
 }
 
-const videos: Video[] = [
-  { id: 1, user: '@hamadoski', desc: 'VIBRA yangu ya kwanza 🔥 #vibra #mombasa', emoji: '🔥' },
-  { id: 2, user: '@vibra_tz', desc: 'Mombasa vibes 🌊 #mombasa', emoji: '🌊' },
-  { id: 3, user: '@doski47', desc: 'Dance challenge mpya 💃 #dance', emoji: '💃' },
-  { id: 4, user: '@mr_vibra', desc: 'New song out now 🎵', emoji: '🎵' },
-  { id: 5, user: '@hamadoski', desc: 'Leo Mombasa inawaka ☀️', emoji: '☀️' },
-]
-
 function VibraApp() {
   const [page, setPage] = useState('home')
   const [userId, setUserId] = useState('')
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState('')
-  const [likedIds, setLikedIds] = useState<number[]>([])
-  const [likeCounts, setLikeCounts] = useState<Record<number, number>>({})
-  const [commentCounts, setCommentCounts] = useState<Record<number, number>>({})
-  const [followed, setFollowed] = useState(false)
+  const [videos, setVideos] = useState<Video[]>([])
+  const [loadingVideos, setLoadingVideos] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [likedIds, setLikedIds] = useState<string[]>([])
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({})
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({})
+  const [followedIds, setFollowedIds] = useState<string[]>([])
   const [dp, setDp] = useState(() => localStorage.getItem('vibra_dp') || '')
   const [userName] = useState('Mr vibra')
   const [userHandle] = useState('@hamadoski')
-  const [activeVideo, setActiveVideo] = useState<number | null>(null)
+  const [activeVideo, setActiveVideo] = useState<string | null>(null)
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState('')
   const [loadingComments, setLoadingComments] = useState(false)
   const [sendingComment, setSendingComment] = useState(false)
-  const [workingLike, setWorkingLike] = useState<number | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [workingLike, setWorkingLike] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [progress, setProgress] = useState<Record<string, number>>({})
+  const [durations, setDurations] = useState<Record<string, number>>({})
+  const [muted, setMuted] = useState(true)
 
-  // Pata utambulisho wa kipekee bila mtumiaji kujisajili.
+  const fileRef = useRef<HTMLInputElement>(null)
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({})
+
+  // Unganisha akaunti ya muda ya mtumiaji.
   useEffect(() => {
     let mounted = true
 
-    async function startAnonymousSession() {
+    async function startSession() {
       try {
         const { data: sessionData, error: sessionError } =
           await supabase.auth.getSession()
@@ -69,7 +75,7 @@ function VibraApp() {
           currentUser = data.user
         }
 
-        if (!currentUser) throw new Error('Imeshindikana kupata utambulisho.')
+        if (!currentUser) throw new Error('Imeshindikana kupata akaunti.')
 
         if (mounted) {
           setUserId(currentUser.id)
@@ -77,57 +83,72 @@ function VibraApp() {
         }
       } catch (error: any) {
         if (mounted) {
-          setAuthError(error?.message || 'Imeshindikana kuunganisha Supabase.')
+          setAuthError(error?.message || 'Tatizo la kuunganisha Supabase.')
           setAuthReady(true)
         }
       }
     }
 
-    startAnonymousSession()
-
-    return () => {
-      mounted = false
-    }
+    startSession()
+    return () => { mounted = false }
   }, [])
 
-  // Pakua likes na comments kutoka Supabase.
+  // Pakua video halisi kutoka Supabase.
+  const loadVideos = async () => {
+    setLoadingVideos(true)
+
+    const { data, error } = await supabase
+      .from('vibra_videos')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      alert('Video hazijapakiwa: ' + error.message)
+    } else {
+      setVideos((data || []) as Video[])
+    }
+
+    setLoadingVideos(false)
+  }
+
+  useEffect(() => {
+    if (!userId) return
+    loadVideos()
+  }, [userId])
+
+  // Pakua likes na comments.
   useEffect(() => {
     if (!userId) return
 
     async function loadActivity() {
-      const { data: likes, error: likesError } = await supabase
+      const { data: likes } = await supabase
         .from('vibra_likes')
         .select('video_id,user_email')
 
-      if (!likesError && likes) {
-        const counts: Record<number, number> = {}
-        const mine: number[] = []
+      if (likes) {
+        const counts: Record<string, number> = {}
+        const mine: string[] = []
 
         likes.forEach((like: any) => {
-          const id = Number(like.video_id)
+          const id = String(like.video_id)
           counts[id] = (counts[id] || 0) + 1
-
-          if (like.user_email === userId) {
-            mine.push(id)
-          }
+          if (like.user_email === userId) mine.push(id)
         })
 
         setLikeCounts(counts)
         setLikedIds(mine)
       }
 
-      const { data: allComments, error: commentsError } = await supabase
+      const { data: allComments } = await supabase
         .from('vibra_comments')
         .select('video_id')
 
-      if (!commentsError && allComments) {
-        const counts: Record<number, number> = {}
-
+      if (allComments) {
+        const counts: Record<string, number> = {}
         allComments.forEach((comment: any) => {
-          const id = Number(comment.video_id)
+          const id = String(comment.video_id)
           counts[id] = (counts[id] || 0) + 1
         })
-
         setCommentCounts(counts)
       }
     }
@@ -135,18 +156,67 @@ function VibraApp() {
     loadActivity()
   }, [userId])
 
-  const toggleLike = async (id: number) => {
+  // Video inachezwa ikiwa imeonekana kwenye skrini.
+  useEffect(() => {
+    if (page !== 'home' || videos.length === 0) return
+
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.65) {
+            const id = entry.target.getAttribute('data-video-id')
+            if (id) setActiveVideoId(id)
+          }
+        })
+      },
+      { threshold: [0.3, 0.65, 0.9] }
+    )
+
+    document.querySelectorAll('[data-video-id]').forEach(element => {
+      observer.observe(element)
+    })
+
+    return () => observer.disconnect()
+  }, [videos, page])
+
+  // Simamisha video zote isipokuwa iliyo mbele.
+  useEffect(() => {
+    Object.entries(videoRefs.current).forEach(([id, video]) => {
+      if (!video) return
+
+      if (id === activeVideoId && page === 'home') {
+        video.muted = muted
+        video.play().catch(() => {
+          video.muted = true
+          setMuted(true)
+          video.play().catch(() => {})
+        })
+      } else {
+        video.pause()
+        video.muted = true
+      }
+    })
+  }, [activeVideoId, page, videos, muted])
+
+  const toggleSound = (id: string) => {
+    const video = videoRefs.current[id]
+    if (!video) return
+
+    const nextMuted = !muted
+    setMuted(nextMuted)
+    video.muted = nextMuted
+
+    if (!nextMuted) video.play().catch(() => {})
+  }
+
+  const toggleLike = async (id: string) => {
     if (!userId || workingLike !== null) return
 
     setWorkingLike(id)
     const alreadyLiked = likedIds.includes(id)
-    const videoId = String(id)
 
-    // Badilisha UI mara moja.
     setLikedIds(previous =>
-      alreadyLiked
-        ? previous.filter(item => item !== id)
-        : [...previous, id]
+      alreadyLiked ? previous.filter(item => item !== id) : [...previous, id]
     )
     setLikeCounts(previous => ({
       ...previous,
@@ -158,38 +228,32 @@ function VibraApp() {
         const { error } = await supabase
           .from('vibra_likes')
           .delete()
-          .eq('video_id', videoId)
+          .eq('video_id', id)
           .eq('user_email', userId)
 
         if (error) throw error
       } else {
         const { error } = await supabase
           .from('vibra_likes')
-          .insert({
-            video_id: videoId,
-            user_email: userId,
-          })
+          .insert({ video_id: id, user_email: userId })
 
         if (error) throw error
       }
     } catch (error: any) {
-      // Rudisha hali ya awali kama kuhifadhi kumeshindikana.
       setLikedIds(previous =>
-        alreadyLiked
-          ? [...previous, id]
-          : previous.filter(item => item !== id)
+        alreadyLiked ? [...previous, id] : previous.filter(item => item !== id)
       )
       setLikeCounts(previous => ({
         ...previous,
         [id]: Math.max(0, (previous[id] || 0) + (alreadyLiked ? 1 : -1)),
       }))
-      alert(error?.message || 'Like haijahifadhiwa. Jaribu tena.')
+      alert(error?.message || 'Like haijahifadhiwa.')
     } finally {
       setWorkingLike(null)
     }
   }
 
-  const openComments = async (id: number) => {
+  const openComments = async (id: string) => {
     setActiveVideo(id)
     setComments([])
     setCommentText('')
@@ -198,11 +262,11 @@ function VibraApp() {
     const { data, error } = await supabase
       .from('vibra_comments')
       .select('id,video_id,username,text,created_at')
-      .eq('video_id', String(id))
+      .eq('video_id', id)
       .order('created_at', { ascending: false })
 
     if (error) {
-      alert(error.message || 'Imeshindikana kupakia comments.')
+      alert(error.message)
     } else {
       setComments((data || []) as Comment[])
     }
@@ -211,26 +275,24 @@ function VibraApp() {
   }
 
   const addComment = async () => {
-    if (!userId || activeVideo === null || !commentText.trim()) return
+    if (!userId || !activeVideo || !commentText.trim()) return
 
     setSendingComment(true)
-
-    const newText = commentText.trim()
 
     const { data, error } = await supabase
       .from('vibra_comments')
       .insert({
-        video_id: String(activeVideo),
+        video_id: activeVideo,
         user_email: userId,
         username: userHandle,
         avatar: dp || '',
-        text: newText,
+        text: commentText.trim(),
       })
       .select('id,video_id,username,text,created_at')
       .single()
 
     if (error) {
-      alert(error.message || 'Comment haijahifadhiwa.')
+      alert(error.message)
     } else {
       setComments(previous => [data as Comment, ...previous])
       setCommentCounts(previous => ({
@@ -243,62 +305,145 @@ function VibraApp() {
     setSendingComment(false)
   }
 
-  const changePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  // Upload video kutoka kwenye simu.
+  const uploadVideo = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !userId) return
+
+    if (!file.type.startsWith('video/')) {
+      alert('Tafadhali chagua faili la video.')
+      return
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      alert('Video imezidi 50 MB. Chagua video ndogo.')
+      return
+    }
+
+    const caption = window.prompt('Andika maelezo ya video yako:') || ''
+
+    setUploading(true)
+
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const filePath = `${userId}/${Date.now()}-${safeName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('vibra-videos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type,
+        })
+
+      if (uploadError) throw uploadError
+
+      const { data: publicData } = supabase.storage
+        .from('vibra-videos')
+        .getPublicUrl(filePath)
+
+      const { error: insertError } = await supabase
+        .from('vibra_videos')
+        .insert({
+          user_id: userId,
+          video_url: publicData.publicUrl,
+          caption,
+          username: userHandle,
+          avatar: dp || null,
+          country: 'Kenya',
+        })
+
+      if (insertError) throw insertError
+
+      alert('Video imepakiwa VIBRA WORLDWIDE! 🎉')
+      setPage('home')
+      await loadVideos()
+    } catch (error: any) {
+      alert('Upload imeshindikana: ' + (error?.message || 'Jaribu tena.'))
+    } finally {
+      setUploading(false)
+      event.target.value = ''
+    }
+  }
+
+  const changePhoto = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (!file) return
+
+    if (file.size > 3 * 1024 * 1024) {
+      alert('Picha iwe chini ya 3 MB.')
+      return
+    }
 
     const reader = new FileReader()
     reader.onload = () => {
       const url = reader.result as string
       setDp(url)
       localStorage.setItem('vibra_dp', url)
-      alert('DP imebadilika! ✅')
+      alert('Picha imebadilika!')
     }
     reader.readAsDataURL(file)
   }
 
+  const shareVideo = async (video: Video) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'VIBRA WORLDWIDE',
+          text: video.caption,
+          url: video.video_url,
+        })
+      } else {
+        await navigator.clipboard.writeText(video.video_url)
+        alert('Link imenakiliwa.')
+      }
+    } catch {
+      // Mtumiaji akifunga share, hakuna hatua inayohitajika.
+    }
+  }
+
   const bottomNav = (
     <div style={{
-      position: 'fixed',
-      bottom: 0,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: '100%',
-      maxWidth: '500px',
-      background: '#000',
-      display: 'flex',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-      padding: '14px 0',
-      borderTop: '1px solid #222',
-      zIndex: 50,
-      color: '#fff',
+      position: 'fixed', bottom: 0, left: '50%',
+      transform: 'translateX(-50%)', width: '100%',
+      maxWidth: '500px', background: '#050505',
+      display: 'flex', justifyContent: 'space-around',
+      alignItems: 'center', padding: '13px 0',
+      paddingBottom: 'max(13px, env(safe-area-inset-bottom))',
+      borderTop: '1px solid #292929', zIndex: 50, color: '#fff',
     }}>
-      <span onClick={() => setPage('home')} style={{ cursor: 'pointer', fontWeight: page === 'home' ? 800 : 400 }}>🏠 Home</span>
-      <span onClick={() => setPage('discover')} style={{ cursor: 'pointer' }}>🔍 Discover</span>
-      <span onClick={() => alert('Upload itaongezwa kwenye hatua inayofuata.')} style={{ background: '#fff', color: '#000', padding: '2px 14px', borderRadius: '8px', cursor: 'pointer' }}>➕</span>
-      <span onClick={() => setPage('inbox')} style={{ cursor: 'pointer' }}>📥 Inbox</span>
-      <span onClick={() => setPage('me')} style={{ cursor: 'pointer', fontWeight: page === 'me' ? 800 : 400 }}>👤 Me</span>
+      <span onClick={() => setPage('home')} style={{ cursor: 'pointer', fontWeight: page === 'home' ? 800 : 400 }}>🏠<br/>Home</span>
+      <span onClick={() => setPage('discover')} style={{ cursor: 'pointer' }}>🔍<br/>Discover</span>
+      <span onClick={() => fileRef.current?.click()} style={{
+        background: '#ff2d55', color: '#fff', padding: '5px 17px',
+        borderRadius: '8px', fontSize: '22px', cursor: 'pointer',
+      }}>＋</span>
+      <span onClick={() => setPage('inbox')} style={{ cursor: 'pointer' }}>📥<br/>Inbox</span>
+      <span onClick={() => setPage('me')} style={{ cursor: 'pointer', fontWeight: page === 'me' ? 800 : 400 }}>👤<br/>Me</span>
     </div>
   )
 
   if (!authReady) {
     return (
-      <div style={{ background: '#000', color: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', fontFamily: 'sans-serif' }}>
-        <h1 style={{ color: '#ff2d55', fontSize: '38px' }}>VIBRA</h1>
-        <p>Inaunganisha VIBRA WORLDWIDE...</p>
+      <div style={{
+        background: '#000', color: '#fff', minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', fontFamily: 'sans-serif',
+      }}>
+        <h1 style={{ color: '#ff2d55', fontSize: '48px', margin: 0 }}>VIBRA</h1>
+        <p>VIBRA WORLDWIDE</p>
+        <p style={{ color: '#aaa' }}>Inaunganisha...</p>
       </div>
     )
   }
 
   if (authError) {
     return (
-      <div style={{ background: '#000', color: '#fff', minHeight: '100vh', padding: '30px', fontFamily: 'sans-serif' }}>
+      <div style={{ background: '#000', color: '#fff', minHeight: '100vh', padding: 30 }}>
         <h1 style={{ color: '#ff2d55' }}>VIBRA</h1>
-        <h3>Imeshindikana kuunganisha akaunti ya muda.</h3>
+        <p>Imeshindikana kuunganisha akaunti ya muda.</p>
         <p style={{ color: '#aaa' }}>{authError}</p>
-        <p>Hakikisha Anonymous Sign-Ins imewashwa kwenye Supabase Authentication.</p>
-        <button onClick={() => window.location.reload()} style={{ padding: '12px 20px', border: 0, borderRadius: '8px' }}>Jaribu tena</button>
+        <button onClick={() => window.location.reload()}>Jaribu tena</button>
       </div>
     )
   }
@@ -306,51 +451,55 @@ function VibraApp() {
   // PROFILE
   if (page === 'me') {
     return (
-      <div style={{ background: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '20px 16px 90px', maxWidth: '500px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span onClick={() => setPage('home')} style={{ fontSize: '22px', cursor: 'pointer' }}>←</span>
-          <b>{userHandle}</b>
-          <span>⋯</span>
+      <div style={{ background: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '20px 16px 100px', maxWidth: 500, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span onClick={() => setPage('home')} style={{ fontSize: 24 }}>←</span>
+          <b>{userHandle}</b><span>⋯</span>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '28px' }}>
-          <div onClick={() => fileRef.current?.click()} style={{ width: '120px', height: '120px', borderRadius: '50%', background: '#333', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '55px', overflow: 'hidden', cursor: 'pointer', border: '3px solid #fff' }}>
+        <div style={{ textAlign: 'center', marginTop: 28 }}>
+          <div onClick={() => fileRef.current?.click()} style={{
+            width: 115, height: 115, borderRadius: '50%', background: '#333',
+            margin: 'auto', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 50, overflow: 'hidden',
+            border: '3px solid #ff2d55',
+          }}>
             {dp ? <img src={dp} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
           </div>
-          <p style={{ color: '#aaa', fontSize: '13px' }}>Bonyeza picha kubadilisha</p>
-          <input ref={fileRef} type="file" accept="image/*" onChange={changePhoto} style={{ display: 'none' }} />
-
-          <button onClick={() => fileRef.current?.click()} style={{ background: '#ff2d55', color: '#fff', border: 'none', padding: '13px 28px', borderRadius: '25px', fontWeight: '800', fontSize: '15px', cursor: 'pointer', width: '100%', maxWidth: '300px' }}>
-            Change DP - Badilisha Picha
-          </button>
-          <br />
-          <button onClick={() => { setDp(''); localStorage.removeItem('vibra_dp') }} style={{ background: 'transparent', color: '#aaa', border: '1px solid #444', padding: '10px 20px', borderRadius: '20px', marginTop: '12px', cursor: 'pointer' }}>
-            Remove DP
-          </button>
+          <p style={{ color: '#aaa', fontSize: 13 }}>Bonyeza picha kubadilisha</p>
+          <button onClick={() => fileRef.current?.click()} style={{
+            background: '#ff2d55', color: '#fff', border: 0,
+            padding: '12px 25px', borderRadius: 25, fontWeight: 800,
+          }}>Change DP - Badilisha Picha</button>
+          <br/>
+          <button onClick={() => { setDp(''); localStorage.removeItem('vibra_dp') }} style={{
+            background: 'transparent', color: '#aaa', border: '1px solid #444',
+            padding: 9, borderRadius: 20, marginTop: 10,
+          }}>Remove DP</button>
         </div>
 
-        <h2 style={{ textAlign: 'center', margin: '22px 0 0' }}>{userName}</h2>
-        <p style={{ textAlign: 'center', color: '#aaa', margin: '6px 0' }}>{userHandle} • Mombasa, Kenya</p>
-        <p style={{ textAlign: 'center', fontSize: '14px' }}>🔥 VIBRA Creator • Mombasa vibes 🌊</p>
+        <h2 style={{ textAlign: 'center', marginBottom: 5 }}>{userName}</h2>
+        <p style={{ textAlign: 'center', color: '#aaa' }}>{userHandle} • Kenya</p>
+        <p style={{ textAlign: 'center' }}>🔥 VIBRA Creator 🌍</p>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '32px', marginTop: '20px', textAlign: 'center' }}>
-          <div><b>0</b><br /><span style={{ color: '#aaa', fontSize: '13px' }}>Following</span></div>
-          <div><b>0</b><br /><span style={{ color: '#aaa', fontSize: '13px' }}>Followers</span></div>
-          <div><b>{likedIds.length}</b><br /><span style={{ color: '#aaa', fontSize: '13px' }}>Likes</span></div>
+        <div style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center', margin: '25px 0' }}>
+          <div><b>0</b><br/><small>Following</small></div>
+          <div><b>0</b><br/><small>Followers</small></div>
+          <div><b>{likedIds.length}</b><br/><small>Likes</small></div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginTop: '22px' }}>
-          <button onClick={() => alert('Edit Profile itaongezwa baadaye.')} style={{ flex: 1, background: '#fff', color: '#000', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700' }}>Edit Profile</button>
-          <button onClick={() => navigator.clipboard?.writeText(window.location.href)} style={{ flex: 1, background: '#222', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px' }}>Share Profile</button>
-        </div>
+        <button onClick={() => setPage('home')} style={{
+          width: '100%', padding: 12, background: '#222',
+          color: '#fff', border: 0, borderRadius: 8,
+        }}>Back to Videos</button>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginTop: '24px', borderTop: '1px solid #222', paddingTop: '14px' }}>
-          <span>🎬 Videos</span><span style={{ opacity: 0.5 }}>❤️ Liked</span><span style={{ opacity: 0.5 }}>🔖 Saved</span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginTop: '12px' }}>
-          {videos.map(v => (
-            <div key={v.id} style={{ background: '#222', aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', borderRadius: '6px' }}>{v.emoji}</div>
+        <h3>🎬 My Videos</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 5 }}>
+          {videos.filter(v => v.user_id === userId).map(v => (
+            <video key={v.id} src={v.video_url} muted playsInline style={{
+              width: '100%', aspectRatio: '3/4', objectFit: 'cover',
+              background: '#222', borderRadius: 5,
+            }} />
           ))}
         </div>
         {bottomNav}
@@ -360,16 +509,30 @@ function VibraApp() {
 
   // DISCOVER
   if (page === 'discover') {
+    const filteredVideos = videos.filter(v =>
+      `${v.username} ${v.caption}`.toLowerCase().includes(search.toLowerCase())
+    )
+
     return (
-      <div style={{ background: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '16px 16px 90px', maxWidth: '500px', margin: '0 auto' }}>
-        <h2>🔍 Discover</h2>
-        <input placeholder="Search VIBRA..." style={{ width: '100%', padding: '12px', borderRadius: '20px', border: 'none', background: '#222', color: '#fff' }} />
-        <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
-          {['#vibra', '#mombasa', '#dance', '#music', '#trending'].map(t => <span key={t} style={{ background: '#222', padding: '8px 14px', borderRadius: '20px', fontSize: '13px' }}>{t}</span>)}
+      <div style={{ background: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '16px 16px 100px', maxWidth: 500, margin: '0 auto' }}>
+        <h2>🔍 Discover VIBRA</h2>
+        <input value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Search VIBRA..." style={{
+            width: '100%', padding: 13, borderRadius: 20,
+            border: 0, background: '#222', color: '#fff',
+          }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 16 }}>
+          {filteredVideos.map(v => (
+            <div key={v.id} onClick={() => { setPage('home'); setActiveVideoId(v.id) }} style={{ position: 'relative' }}>
+              <video src={v.video_url} muted playsInline style={{
+                width: '100%', aspectRatio: '3/4', objectFit: 'cover',
+                background: '#222', borderRadius: 7,
+              }} />
+              <small>{v.username}</small>
+            </div>
+          ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '16px' }}>
-          {videos.map(v => <div key={v.id} style={{ background: '#222', aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '50px', borderRadius: '8px' }}>{v.emoji}</div>)}
-        </div>
+        {filteredVideos.length === 0 && <p style={{ color: '#aaa' }}>Hakuna video iliyopatikana.</p>}
         {bottomNav}
       </div>
     )
@@ -378,11 +541,10 @@ function VibraApp() {
   // INBOX
   if (page === 'inbox') {
     return (
-      <div style={{ background: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '16px 16px 90px', maxWidth: '500px', margin: '0 auto' }}>
+      <div style={{ background: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif', padding: '16px 16px 100px', maxWidth: 500, margin: '0 auto' }}>
         <h2>📥 Inbox</h2>
-        <p style={{ color: '#aaa' }}>Notifications zako</p>
-        <div style={{ background: '#111', padding: '14px', borderRadius: '12px', marginTop: '10px' }}>❤️ VIBRA likes na comments</div>
-        <div style={{ background: '#111', padding: '14px', borderRadius: '12px', marginTop: '10px' }}>👤 Karibu VIBRA WORLDWIDE</div>
+        <p style={{ color: '#aaa' }}>Karibu VIBRA WORLDWIDE!</p>
+        <div style={{ background: '#151515', padding: 15, borderRadius: 12 }}>❤️ Likes na comments zako zitaonekana hapa.</div>
         {bottomNav}
       </div>
     )
@@ -390,93 +552,218 @@ function VibraApp() {
 
   // HOME FEED
   return (
-    <div style={{ background: '#000', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', position: 'fixed', top: 0, width: '100%', zIndex: 10, maxWidth: '500px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.6)' }}>
-        <span style={{ fontWeight: '900', fontSize: '24px' }}>VIBRA</span>
-        <div style={{ display: 'flex', gap: '16px', fontSize: '14px' }}>
-          <span style={{ opacity: 0.6 }}>Following</span>
-          <span style={{ fontWeight: '700', borderBottom: '2px solid white' }}>For You</span>
-        </div>
-        <span onClick={() => setPage('discover')} style={{ fontSize: '20px', cursor: 'pointer' }}>🔍</span>
+    <div style={{
+      background: '#000', color: '#fff', fontFamily: 'sans-serif',
+      height: '100dvh', overflowY: 'auto', scrollSnapType: 'y mandatory',
+    }}>
+      <input ref={fileRef} type="file" accept="video/*"
+        onChange={uploadVideo} style={{ display: 'none' }} />
+
+      <div style={{
+        position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: '100%', maxWidth: 500, zIndex: 10,
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', padding: '12px 16px',
+        background: 'linear-gradient(#0009,transparent)',
+        pointerEvents: 'none',
+      }}>
+        <b style={{ fontSize: 25, color: '#ff2d55' }}>VIBRA</b>
+        <span style={{ fontWeight: 800 }}>For You</span>
+        <span onClick={() => setPage('discover')} style={{ fontSize: 22, pointerEvents: 'auto' }}>🔍</span>
       </div>
 
-      {videos.map(v => (
-        <div key={v.id} style={{ height: '100vh', position: 'relative', borderBottom: '1px solid #111' }}>
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center' }}>
-            <div style={{ fontSize: '90px' }}>{v.emoji}</div>
-            <p style={{ opacity: 0.7 }}>VIBRA Video {v.id}</p>
-          </div>
+      {uploading && (
+        <div style={{
+          position: 'fixed', top: 65, left: 0, right: 0,
+          zIndex: 80, textAlign: 'center', background: '#ff2d55',
+          padding: 10, color: '#fff',
+        }}>Inapakia video yako...</div>
+      )}
 
-          <div style={{ position: 'absolute', right: '12px', bottom: '110px', display: 'flex', flexDirection: 'column', gap: '18px', alignItems: 'center' }}>
-            <div style={{ textAlign: 'center' }}>
-              <div onClick={() => { if (v.user === userHandle) setPage('me') }} style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#333', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white', fontSize: '24px' }}>
-                {dp ? <img src={dp} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
-              </div>
-              {v.user !== userHandle && (
-                <div onClick={() => setFollowed(!followed)} style={{ background: followed ? '#555' : '#ff2d55', width: '20px', height: '20px', borderRadius: '50%', margin: '-8px auto 0', fontSize: '13px', cursor: 'pointer' }}>{followed ? '✓' : '+'}</div>
-              )}
-            </div>
-
-            <div onClick={() => toggleLike(v.id)} style={{ textAlign: 'center', cursor: 'pointer' }}>
-              <div style={{ fontSize: '32px' }}>{likedIds.includes(v.id) ? '❤️' : '🤍'}</div>
-              <div style={{ fontSize: '12px' }}>{likeCounts[v.id] || 0}</div>
-            </div>
-
-            <div onClick={() => openComments(v.id)} style={{ textAlign: 'center', cursor: 'pointer' }}>
-              <div style={{ fontSize: '30px' }}>💬</div>
-              <div style={{ fontSize: '12px' }}>{commentCounts[v.id] || 0}</div>
-            </div>
-
-            <div onClick={() => navigator.clipboard?.writeText(window.location.href)} style={{ textAlign: 'center', fontSize: '30px', cursor: 'pointer' }}>↗️</div>
-          </div>
-
-          <div style={{ position: 'absolute', bottom: '90px', left: '14px', right: '80px' }}>
-            <p style={{ fontWeight: '700', margin: 0 }}>{v.user}</p>
-            <p style={{ fontSize: '14px', margin: '6px 0' }}>{v.desc}</p>
-            <p style={{ fontSize: '13px', opacity: 0.8 }}>🎵 Original sound - {v.user}</p>
-          </div>
+      {loadingVideos ? (
+        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+          <h1 style={{ color: '#ff2d55' }}>VIBRA</h1>
+          <p>Inapakia video...</p>
         </div>
-      ))}
+      ) : videos.length === 0 ? (
+        <div style={{
+          height: '100%', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', flexDirection: 'column',
+          textAlign: 'center', padding: 30,
+        }}>
+          <h1 style={{ color: '#ff2d55', fontSize: 42 }}>VIBRA</h1>
+          <h3>Karibu VIBRA WORLDWIDE 🌍</h3>
+          <p style={{ color: '#aaa' }}>Bado hakuna video. Kuwa wa kwanza kupakia video!</p>
+          <button onClick={() => fileRef.current?.click()} style={{
+            background: '#ff2d55', color: '#fff', border: 0,
+            padding: '14px 25px', borderRadius: 25, fontWeight: 800,
+          }}>＋ Upload Video</button>
+        </div>
+      ) : (
+        videos.map(v => (
+          <div key={v.id} data-video-id={v.id} style={{
+            height: '100dvh', width: '100%', maxWidth: 500,
+            margin: '0 auto', position: 'relative',
+            background: '#000', scrollSnapAlign: 'start',
+            overflow: 'hidden',
+          }}>
+            <video
+              ref={element => { videoRefs.current[v.id] = element }}
+              src={v.video_url}
+              playsInline
+              loop
+              muted={muted || activeVideoId !== v.id}
+              preload="metadata"
+              onClick={() => toggleSound(v.id)}
+              onTimeUpdate={e => setProgress(previous => ({
+                ...previous, [v.id]: e.currentTarget.currentTime,
+              }))}
+              onLoadedMetadata={e => setDurations(previous => ({
+                ...previous, [v.id]: e.currentTarget.duration || 0,
+              }))}
+              style={{
+                width: '100%', height: '100%', objectFit: 'contain',
+                background: '#000',
+              }}
+            />
+
+            <div onClick={() => toggleSound(v.id)} style={{
+              position: 'absolute', top: 75, right: 15,
+              background: '#0008', padding: '8px 11px',
+              borderRadius: 25, fontSize: 20,
+            }}>{muted ? '🔇' : '🔊'}</div>
+
+            <div style={{
+              position: 'absolute', right: 12, bottom: 115,
+              display: 'flex', flexDirection: 'column',
+              gap: 20, alignItems: 'center',
+            }}>
+              <div onClick={() => v.user_id === userId && setPage('me')} style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: '#333', border: '2px solid white',
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'center', overflow: 'hidden',
+              }}>
+                {v.avatar ? <img src={v.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '👤'}
+              </div>
+
+              {v.user_id !== userId && (
+                <div onClick={() => setFollowedIds(previous =>
+                  previous.includes(v.user_id || '')
+                    ? previous.filter(id => id !== v.user_id)
+                    : [...previous, v.user_id || '']
+                )} style={{
+                  background: followedIds.includes(v.user_id || '') ? '#555' : '#ff2d55',
+                  borderRadius: '50%', padding: '2px 7px', marginTop: -25,
+                }}>{followedIds.includes(v.user_id || '') ? '✓' : '+'}</div>
+              )}
+
+              <div onClick={() => toggleLike(v.id)} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 32 }}>{likedIds.includes(v.id) ? '❤️' : '🤍'}</div>
+                <small>{likeCounts[v.id] || 0}</small>
+              </div>
+
+              <div onClick={() => openComments(v.id)} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 30 }}>💬</div>
+                <small>{commentCounts[v.id] || 0}</small>
+              </div>
+
+              <div onClick={() => shareVideo(v)} style={{ fontSize: 30 }}>↗️</div>
+            </div>
+
+            <div style={{
+              position: 'absolute', bottom: 100, left: 14, right: 75,
+              textShadow: '1px 1px 4px #000',
+            }}>
+              <b>{v.username}</b>
+              <p style={{ fontSize: 14, margin: '6px 0' }}>{v.caption}</p>
+              <small>🎵 Original sound • {v.username}</small>
+            </div>
+
+            <div style={{
+              position: 'absolute', bottom: 83, left: 0, right: 0,
+              height: 3, background: '#ffffff55',
+            }}>
+              <div style={{
+                height: '100%', background: '#ff2d55',
+                width: `${durations[v.id] ? Math.min(100, (progress[v.id] || 0) / durations[v.id] * 100) : 0}%`,
+              }} />
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max={durations[v.id] || 100}
+              value={Math.min(progress[v.id] || 0, durations[v.id] || 100)}
+              onChange={e => {
+                const video = videoRefs.current[v.id]
+                if (video) {
+                  video.currentTime = Number(e.target.value)
+                  setProgress(previous => ({ ...previous, [v.id]: video.currentTime }))
+                }
+              }}
+              style={{
+                position: 'absolute', bottom: 75, left: 0,
+                width: '100%', height: 12, opacity: 0.01,
+              }}
+            />
+          </div>
+        ))
+      )}
 
       {bottomNav}
 
       {activeVideo !== null && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div style={{ width: '100%', maxWidth: '500px', height: '70vh', background: '#171717', borderRadius: '18px 18px 0 0', color: '#fff', display: 'flex', flexDirection: 'column', padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '12px' }}>
+        <div style={{
+          position: 'fixed', inset: 0, background: '#000b',
+          zIndex: 100, display: 'flex', alignItems: 'flex-end',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: 500, height: '70vh',
+            background: '#171717', borderRadius: '18px 18px 0 0',
+            color: '#fff', display: 'flex', flexDirection: 'column',
+            padding: 16,
+          }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between',
+              borderBottom: '1px solid #333', paddingBottom: 12,
+            }}>
               <b>Comments ({comments.length})</b>
-              <span onClick={() => setActiveVideo(null)} style={{ fontSize: '24px', cursor: 'pointer' }}>✕</span>
+              <span onClick={() => setActiveVideo(null)} style={{ fontSize: 24 }}>✕</span>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
               {loadingComments ? (
-                <p style={{ color: '#aaa', textAlign: 'center' }}>Inapakia comments...</p>
+                <p style={{ color: '#aaa', textAlign: 'center' }}>Inapakia...</p>
               ) : comments.length === 0 ? (
-                <p style={{ color: '#aaa', textAlign: 'center' }}>Hakuna comment bado. Kuwa wa kwanza!</p>
-              ) : (
-                comments.map(comment => (
-                  <div key={comment.id} style={{ padding: '10px 0', borderBottom: '1px solid #292929' }}>
-                    <b style={{ fontSize: '13px' }}>{comment.username || 'VIBRA User'}</b>
-                    <p style={{ margin: '5px 0', fontSize: '14px' }}>{comment.text}</p>
-                    <small style={{ color: '#888' }}>{new Date(comment.created_at).toLocaleString()}</small>
-                  </div>
-                ))
-              )}
+                <p style={{ color: '#aaa', textAlign: 'center' }}>Hakuna comment bado.</p>
+              ) : comments.map(comment => (
+                <div key={comment.id} style={{ padding: 10, borderBottom: '1px solid #333' }}>
+                  <b>{comment.username}</b>
+                  <p>{comment.text}</p>
+                  <small style={{ color: '#888' }}>{new Date(comment.created_at).toLocaleString()}</small>
+                </div>
+              ))}
             </div>
 
-            <div style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid #333' }}>
+            <div style={{ display: 'flex', gap: 8, paddingTop: 10 }}>
               <input
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') addComment() }}
                 placeholder="Andika comment..."
-                style={{ flex: 1, minWidth: 0, padding: '12px', borderRadius: '22px', border: '1px solid #444', background: '#292929', color: '#fff' }}
+                style={{
+                  flex: 1, minWidth: 0, padding: 12,
+                  borderRadius: 22, border: '1px solid #444',
+                  background: '#292929', color: '#fff',
+                }}
               />
-              <button
-                onClick={addComment}
-                disabled={sendingComment || !commentText.trim()}
-                style={{ background: '#ff2d55', color: '#fff', border: 0, borderRadius: '22px', padding: '0 16px', fontWeight: 700 }}
-              >
+              <button onClick={addComment} disabled={sendingComment || !commentText.trim()}
+                style={{
+                  background: '#ff2d55', color: '#fff',
+                  border: 0, borderRadius: 22, padding: '0 16px',
+                }}>
                 {sendingComment ? '...' : 'Send'}
               </button>
             </div>
