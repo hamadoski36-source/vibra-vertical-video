@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   Home, Search, Plus, Inbox, User, Heart,
-  MessageCircle, Share2, Volume2, VolumeX
+  MessageCircle, Share2, Volume2, VolumeX, Bot, Sparkles
 } from 'lucide-react'
 export const Route = createFileRoute('/')({
   component: VibraApp,
